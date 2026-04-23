@@ -1,0 +1,41 @@
+# 依赖
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# 数据库
+*.db
+*.db-journal
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 构建产物
+dist/
+build/
+
+# 日志
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# TypeScript 编译缓存
+*.tsbuildinfo
+
+# 测试覆盖率
+coverage/
+
+# Railway/Render
+.vercel/
