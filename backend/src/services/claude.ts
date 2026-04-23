@@ -1,0 +1,145 @@
+// Claude AI 服务封装
+import Anthropic from '@anthropic-ai/sdk';
+import { z } from 'zod';
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || '',
+});
+
+const TitleOutputSchema = z.object({
+  titles: z.array(z.object({
+    title: z.string(),
+    type: z.enum(['震惊体', '数字体', '故事体', '对比体', '情绪体', '反差别', '实用体', '疑问体']),
+    score: z.number().min(1).max(10),
+    explanation: z.string(),
+    hashtags: z.array(z.string())
+  }))
+});
+
+export async function generateTitles(keywords: string[], context?: string): Promise<z.infer<typeof TitleOutputSchema>> {
+  const prompt = `你是一个专注于小红书保险内容创作的专业标题专家。
+
+用户输入的关键词：${keywords.join(', ')}
+
+${context ? `当前背景：${context}` : ''}
+
+请根据以下原则生成 12 个爆款标题：
+
+1. **情感共鸣**：触及用户痛点（健康焦虑、养老焦虑、家庭责任）
+2. **数字钩子**：使用具体数字增加可信度
+3. **对比反差**：制造认知冲突
+4. **疑问引导**：引发好奇心
+5. **情绪刺激**：惊讶、恐惧、期待等情绪
+
+每个标题需要包含：
+- 标题内容（简洁有力，控制在20字以内）
+- 类型
+- 爆款概率评分（1-10分）
+- 适用场景说明
+- 推荐的小红书标签（3-5个）
+
+请以 JSON 格式输出结果。`;
+
+  const message = await anthropic.messages.create({
+    model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+    max_tokens: 1024,
+    messages: [{
+      role: 'user',
+      content: prompt
+    }]
+  });
+
+  const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+
+  // 提取 JSON
+  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('AI 返回格式错误');
+  }
+
+  return TitleOutputSchema.parse(JSON.parse(jsonMatch[0]));
+}
+
+const CaseAnalysisSchema = z.object({
+  viralFactors: z.array(z.string()),
+  contentStructure: z.object({
+    opening: z.string(),
+    middle: z.string(),
+    ending: z.string()
+  }),
+  topicAngle: z.string(),
+  reusableFormula: z.string(),
+  suggestions: z.array(z.string())
+});
+
+export async function analyzeViralCase(
+  title: string,
+  content: string,
+  metrics: { likes: number; favorites: number; comments: number }
+): Promise<z.infer<typeof CaseAnalysisSchema>> {
+  const prompt = `请分析以下小红书爆款笔记的爆款原因：
+
+标题：${title}
+内容：${content}
+数据表现：点赞 ${metrics.likes} | 收藏 ${metrics.favorites} | 评论 ${metrics.comments}
+
+分析维度：
+1. 标题吸引力（钩子、情绪、数字等）
+2. 内容结构（开头/中间/结尾）
+3. 选题角度（为什么能引发讨论）
+4. 可复用的元素
+
+请输出：
+- 爆款因素总结（3-5条）
+- 内容结构分析
+- 选题角度解读
+- 可模仿的写作公式
+- 生成类似标题的建议（3条）
+
+请以 JSON 格式输出结果。`;
+
+  const message = await anthropic.messages.create({
+    model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+    max_tokens: 1024,
+    messages: [{
+      role: 'user',
+      content: prompt
+    }]
+  });
+
+  const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+
+  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('AI 返回格式错误');
+  }
+
+  return CaseAnalysisSchema.parse(JSON.parse(jsonMatch[0]));
+}
+
+export async function summarizeIntelligence(
+  title: string,
+  content: string
+): Promise<string> {
+  const prompt = `请帮我将以下内容提炼成一段简洁的摘要（100字以内），保留核心信息：
+
+标题：${title}
+内容：${content}
+
+摘要要求：
+- 提取关键信息
+- 语言简洁易懂
+- 突出对保险内容创作者的价值`;
+
+  const message = await anthropic.messages.create({
+    model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+    max_tokens: 256,
+    messages: [{
+      role: 'user',
+      content: prompt
+    }]
+  });
+
+  const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+  return responseText.trim();
+}
