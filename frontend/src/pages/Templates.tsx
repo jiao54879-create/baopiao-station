@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Card, Row, Col, Tabs, Tag, List, Empty, Spin, Button, Select, message } from 'antd'
-import { ThunderboltOutlined, FileTextOutlined, ClockCircleOutlined, CopyOutlined } from '@ant-design/icons'
+import { Card, Row, Col, Tabs, Tag, Empty, Spin, Button, Select, message } from 'antd'
+import { ThunderboltOutlined, FileTextOutlined, CopyOutlined } from '@ant-design/icons'
 import api from '../utils/api'
 
 interface TitleTemplate {
