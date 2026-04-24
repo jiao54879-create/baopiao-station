@@ -1,20 +1,22 @@
 FROM node:20-alpine
 
+# 安装 OpenSSL 1.1（Alpine 默认只有 3.x）
+RUN apk add --no-cache openssl1.1
+
 WORKDIR /app
 
-# 安装所有依赖（包括 devDependencies，因为 tsx 需要）
+# 复制 package 文件
 COPY package*.json ./
-RUN npm ci
 
-# 复制代码
-COPY prisma ./prisma
-COPY src ./src
+# 安装依赖（包括 Prisma）
+RUN npm install
 
-# 生成 Prisma 客户端
+# 复制源码
+COPY . .
+
+# 预生成 Prisma Client（针对 linux-musl）
 RUN npx prisma generate
 
-# 暴露端口
 EXPOSE 3001
 
-# 使用 tsx 直接运行 TypeScript（跳过编译步骤）
 CMD ["npx", "tsx", "src/index.ts"]
