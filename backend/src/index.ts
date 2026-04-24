@@ -25,10 +25,24 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 app.use(compression());
 app.use(morgan('combined'));
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+// CORS 配置
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // 允许本地开发、Railway 前端、或无 origin（Postman 等）
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://proud-perception-production-700e.up.railway.app',
+      undefined // 无 origin 的请求（如 Postman）
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('不允许的 CORS 来源'));
+    }
+  },
   credentials: true
-}));
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // 公共路由
