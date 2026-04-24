@@ -2,12 +2,13 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# 安装依赖
-COPY package*.json ./
+# 复制后端代码
+COPY backend/package*.json ./backend/
+WORKDIR /app/backend
 RUN npm install
 
-# 复制源码
-COPY . .
+# 复制全部代码
+COPY backend/ .
 
 # 预生成 Prisma Client
 RUN npx prisma generate
