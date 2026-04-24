@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  // 开发环境使用 SQLite，生产环境改为 postgresql
-  provider = "sqlite"
+  // 生产环境使用 PostgreSQL
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
