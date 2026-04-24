@@ -1,20 +1,15 @@
-FROM node:20-alpine
-
-# 安装 OpenSSL 1.1（Alpine 默认只有 3.x）
-RUN apk add --no-cache openssl1.1
+FROM node:20-slim
 
 WORKDIR /app
 
-# 复制 package 文件
+# 安装依赖
 COPY package*.json ./
-
-# 安装依赖（包括 Prisma）
 RUN npm install
 
 # 复制源码
 COPY . .
 
-# 预生成 Prisma Client（针对 linux-musl）
+# 预生成 Prisma Client
 RUN npx prisma generate
 
 EXPOSE 3001
