@@ -15,9 +15,9 @@ export class EducationScraper extends BaseScraper {
     const allItems: any[] = [];
 
     const results = await Promise.allSettled([
-      this.scrapeMoe(),           // 教育部
-      this.scrapeEdu163(),        // 网易教育
-      this.scrapeSinaEdu()        // 新浪教育
+      this.scrapeMoe(),
+      this.scrapeEdu163(),
+      this.scrapeSinaEdu()
     ]);
 
     results.forEach((result) => {
@@ -35,60 +35,60 @@ export class EducationScraper extends BaseScraper {
     };
   }
 
-  // 教育部官网
   private async scrapeMoe(): Promise<any[]> {
     const items: any[] = [];
-
     try {
-      // 教育部最新政策
       const response = await axios.get(
         'http://www.moe.gov.cn/srcsite/A06/',
         {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
           },
           timeout: 15000
         }
       );
-
       return items;
-    } catch (e) {
+    } catch (e: any) {
       console.log('教育部抓取失败:', e.message);
     }
-
     return items;
   }
 
-  // 网易教育
   private async scrapeEdu163(): Promise<any[]> {
     const items: any[] = [];
-
     try {
       const response = await axios.get(
         'https://edu.163.com/article/',
         {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
           },
           timeout: 15000
         }
       );
-
       return items;
-    } catch (e) {
+    } catch (e: any) {
       console.log('网易教育抓取失败:', e.message);
     }
-
     return items;
   }
 
-  // 新浪教育
   private async scrapeSinaEdu(): Promise<any[]> {
     const items: any[] = [];
-
     try {
       const response = await axios.get(
         'https://edu.sina.com.cn/',
         {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          },
+          timeout: 15000
+        }
+      );
+      return items;
+    } catch (e: any) {
+      console.log('新浪教育抓取失败:', e.message);
+    }
+    return items;
+  }
+}
