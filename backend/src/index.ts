@@ -56,9 +56,12 @@ app.get('/health', (req, res) => {
 // 错误处理
 app.use(errorHandler);
 
+// Railway 环境变量
+const HOST = process.env.HOST || '0.0.0.0';
+
 // 启动服务
-app.listen(PORT, () => {
-  console.log(`🚀 爆款情报站 API 服务运行在 http://localhost:${PORT}`);
+app.listen(+PORT, HOST, () => {
+  console.log(`🚀 爆款情报站 API 服务运行在 http://${HOST}:${PORT}`);
 });
 
 // 优雅关闭
