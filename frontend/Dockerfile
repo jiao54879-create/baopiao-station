@@ -1,4 +1,4 @@
-# Frontend Dockerfile - Static site with nginx
+# Frontend Dockerfile - Static site with nginx and API proxy
 FROM node:18-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
