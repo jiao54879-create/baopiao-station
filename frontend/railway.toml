@@ -1,7 +1,2 @@
-[build]
-builder = "NIXPACKS"
-buildCommand = "npm run build"
-startCommand = "npx serve -s dist -l 8080"
-
-[env]
-  NODE_VERSION = "20"
+[ railway ]
+template = "docker"
