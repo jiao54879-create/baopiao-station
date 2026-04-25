@@ -1,9 +1,10 @@
-// Claude AI 服务封装
-import Anthropic from '@anthropic-ai/sdk';
+// DeepSeek AI 服务封装（替代 Claude）
+import OpenAI from 'openai';
 import { z } from 'zod';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
+const deepseek = new OpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY || '',
+  baseURL: 'https://api.deepseek.com',
 });
 
 const TitleOutputSchema = z.object({
@@ -40,16 +41,14 @@ ${context ? `当前背景：${context}` : ''}
 
 请以 JSON 格式输出结果。`;
 
-  const message = await anthropic.messages.create({
-    model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+  const response = await deepseek.chat.completions.create({
+    model: 'deepseek-chat',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.8,
     max_tokens: 1024,
-    messages: [{
-      role: 'user',
-      content: prompt
-    }]
   });
 
-  const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+  const responseText = response.choices[0]?.message?.content || '';
 
   // 提取 JSON
   const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -98,16 +97,14 @@ export async function analyzeViralCase(
 
 请以 JSON 格式输出结果。`;
 
-  const message = await anthropic.messages.create({
-    model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+  const response = await deepseek.chat.completions.create({
+    model: 'deepseek-chat',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
     max_tokens: 1024,
-    messages: [{
-      role: 'user',
-      content: prompt
-    }]
   });
 
-  const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+  const responseText = response.choices[0]?.message?.content || '';
 
   const jsonMatch = responseText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
@@ -131,15 +128,12 @@ export async function summarizeIntelligence(
 - 语言简洁易懂
 - 突出对保险内容创作者的价值`;
 
-  const message = await anthropic.messages.create({
-    model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+  const response = await deepseek.chat.completions.create({
+    model: 'deepseek-chat',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.5,
     max_tokens: 256,
-    messages: [{
-      role: 'user',
-      content: prompt
-    }]
   });
 
-  const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
-  return responseText.trim();
+  return response.choices[0]?.message?.content?.trim() || '';
 }
