@@ -18,7 +18,7 @@ router.post('/', async (req, res, next) => {
   try {
     const { keywords, context, count } = GenerateSchema.parse(req.body);
 
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!process.env.DEEPSEEK_API_KEY) {
       throw new AppError('AI 服务未配置，请联系管理员', 500);
     }
 

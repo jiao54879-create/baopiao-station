@@ -27,7 +27,7 @@ router.post('/generate', async (req, res, next) => {
   try {
     const { keywords, context } = GenerateTitleSchema.parse(req.body);
 
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!process.env.DEEPSEEK_API_KEY) {
       throw new AppError('AI 服务未配置', 500);
     }
 
@@ -43,7 +43,7 @@ router.post('/analyze', async (req, res, next) => {
   try {
     const { title, content, metrics } = AnalyzeCaseSchema.parse(req.body);
 
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!process.env.DEEPSEEK_API_KEY) {
       throw new AppError('AI 服务未配置', 500);
     }
 

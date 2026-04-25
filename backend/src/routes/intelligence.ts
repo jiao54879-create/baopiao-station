@@ -138,7 +138,7 @@ router.post('/', async (req, res, next) => {
 
     // 如果有 AI Key，尝试自动摘要
     let summary = data.summary;
-    if (!summary && data.content && process.env.ANTHROPIC_API_KEY) {
+    if (!summary && data.content && process.env.DEEPSEEK_API_KEY) {
       try {
         summary = await summarizeIntelligence(data.title, data.content);
       } catch (e) {
