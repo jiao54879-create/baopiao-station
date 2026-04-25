@@ -76,6 +76,17 @@ const HOST = process.env.HOST || '0.0.0.0';
 // 启动服务
 app.listen(+PORT, HOST, () => {
   console.log(`🚀 爆款情报站 API 服务运行在 http://${HOST}:${PORT}`);
+
+  // 启动数据采集调度器
+  try {
+    import('./scrapers/scheduler.js').then(({ default: scheduler }) => {
+      scheduler.start();
+    }).catch(e => {
+      console.log('调度器启动失败（继续运行）:', e.message);
+    });
+  } catch (e) {
+    console.log('调度器导入失败（继续运行）');
+  }
 });
 
 // 优雅关闭
