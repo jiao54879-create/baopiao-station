@@ -10,12 +10,21 @@ const deepseek = new OpenAI({
 const TitleOutputSchema = z.object({
   titles: z.array(z.object({
     title: z.string(),
-    type: z.enum(['震惊体', '数字体', '故事体', '对比体', '情绪体', '反差别', '实用体', '疑问体']),
+    type: z.string(), // 放宽类型验证
     score: z.number().min(1).max(10),
     explanation: z.string(),
     hashtags: z.array(z.string())
   }))
 });
+
+// 宽松的数组格式（直接返回标题数组）
+const TitleArraySchema = z.array(z.object({
+  title: z.string(),
+  type: z.string(),
+  score: z.number().min(1).max(10),
+  explanation: z.string(),
+  hashtags: z.array(z.string())
+}));
 
 const tripleBacktick = '\x60\x60\x60';
 
@@ -53,8 +62,11 @@ export async function generateTitles(keywords: string[], context?: string): Prom
 
   // 方法1：直接解析
   try {
-    return TitleOutputSchema.parse(JSON.parse(jsonStr));
-  } catch (e) {}
+    const parsed = JSON.parse(jsonStr);
+    return TitleOutputSchema.parse(parsed);
+  } catch (e1: any) {
+    console.error('方法1解析失败:', e1.message);
+  }
 
   // 方法2：提取 {...} 部分
   const braceStart = jsonStr.indexOf('{');
@@ -62,8 +74,21 @@ export async function generateTitles(keywords: string[], context?: string): Prom
   if (braceStart !== -1 && braceEnd !== -1 && braceEnd > braceStart) {
     jsonStr = jsonStr.substring(braceStart, braceEnd + 1);
     try {
-      return TitleOutputSchema.parse(JSON.parse(jsonStr));
-    } catch (e) {}
+      const parsed = JSON.parse(jsonStr);
+      return TitleOutputSchema.parse(parsed);
+    } catch (e2: any) {
+      console.error('方法2解析失败:', e2.message);
+    }
+  }
+
+  // 方法3：尝试解析为纯数组格式 [...]
+  try {
+    const parsed = JSON.parse(cleanText);
+    if (Array.isArray(parsed)) {
+      return { titles: TitleArraySchema.parse(parsed) };
+    }
+  } catch (e3: any) {
+    console.error('方法3解析失败:', e3.message);
   }
 
   console.error('AI 返回内容:', responseText);
