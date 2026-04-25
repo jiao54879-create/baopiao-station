@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/auth'
 import { Spin } from 'antd'
@@ -33,6 +34,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const { checkAuth } = useAuthStore()
+
+  useEffect(() => {
+    checkAuth()
+  }, [])
+
   return (
     <Routes>
       {/* 公开路由 */}
