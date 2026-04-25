@@ -10,6 +10,9 @@ import techScraper from './tech.js';
 import xhsScraper from './xiaohongshu.js';
 import financeScraper from './finance.js';
 import educationScraper from './education.js';
+import insuranceScraper from './insurance.js';
+import policyScraper from './policy.js';
+import productScraper from './product.js';
 
 interface ScrapeJob {
   name: string;
@@ -22,6 +25,24 @@ interface ScrapeJob {
 
 // 爬虫任务配置
 const scrapeJobs: ScrapeJob[] = [
+  {
+    name: '保险行业资讯',
+    scraper: insuranceScraper,
+    schedule: '0 */15 * * * *', // 每15分钟
+    enabled: true
+  },
+  {
+    name: '政策法规动态',
+    scraper: policyScraper,
+    schedule: '0 */30 * * * *', // 每30分钟
+    enabled: true
+  },
+  {
+    name: '保险产品资讯',
+    scraper: productScraper,
+    schedule: '0 */20 * * * *', // 每20分钟
+    enabled: true
+  },
   {
     name: '银保监会动态',
     scraper: cbircScraper,
