@@ -1,6 +1,8 @@
-// 金融行业数据采集
+// 金融行业数据采集 - 精准版
+// 只采集与保险、养老、医疗相关的金融内容
 import { BaseScraper, ScrapeResult } from './base.js';
 import axios from 'axios';
+import { filterInsuranceContent, extractTags, isWithinLastMonth } from './keywords.js';
 
 export class FinanceScraper extends BaseScraper {
   constructor() {
@@ -86,7 +88,7 @@ export class FinanceScraper extends BaseScraper {
     return items;
   }
 
-  // 同花顺财经
+  // 同花顺财经 - 精准采集
   private async scrapeTHS(): Promise<any[]> {
     const items: any[] = [];
 
@@ -99,7 +101,7 @@ export class FinanceScraper extends BaseScraper {
             page: 1,
             tag: '',
             track: 'website',
-            pageSize: 20
+            pageSize: 50  // 增加采集数量，过滤后会减少
           },
           headers: {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
@@ -111,36 +113,56 @@ export class FinanceScraper extends BaseScraper {
 
       const data = response.data;
       if (data?.data?.list) {
-        data.data.list.forEach((item: any) => {
+        for (const item of data.data.list) {
+          // 时间过滤：只采集最近一个月
+          if (!isWithinLastMonth(item.time)) {
+            continue;
+          }
+
+          // 关键词过滤：只采集保险相关内容
+          const filterResult = filterInsuranceContent(
+            item.title,
+            item.summary || item.content,
+            5  // 最低相关度分数
+          );
+
+          if (!filterResult.isValid) {
+            console.log(`  [过滤] ${item.title.slice(0, 30)}... - ${filterResult.reason}`);
+            continue;
+          }
+
           items.push({
             title: item.title,
             summary: item.summary || item.content,
             source: '同花顺',
             sourceUrl: item.url || item.artUrl,
             publishTime: item.time ? new Date(item.time) : undefined,
-            tags: ['金融', '股市', '同花顺']
+            tags: filterResult.tags,
+            relevanceScore: filterResult.relevanceScore,
+            primaryCategory: filterResult.primaryCategory
           });
-        });
+        }
       }
     } catch (e) {
       console.log('同花顺抓取失败:', e.message);
     }
 
+    console.log(`  同花顺精准采集: ${items.length} 条保险相关内容`);
     return items;
   }
 
-  // 东方财富
+  // 东方财富 - 精准采集
   private async scrapeEastMoney(): Promise<any[]> {
     const items: any[] = [];
 
     try {
-      // 东方财富财经新闻
+      // 东方财富财经新闻 - 增加采集量
       const response = await axios.get(
         'https://feed.eastmoney.com/more.html',
         {
           params: {
             pageIndex: 1,
-            pageSize: 20,
+            pageSize: 50,  // 增加采集数量
             type: '1,2,3,4,5,6,7,8,9,10,11,12'
           },
           headers: {
@@ -153,21 +175,41 @@ export class FinanceScraper extends BaseScraper {
 
       const data = response.data;
       if (data?.data?.list) {
-        data.data.list.forEach((item: any) => {
+        for (const item of data.data.list) {
+          // 时间过滤：只采集最近一个月
+          if (!isWithinLastMonth(item.showtime)) {
+            continue;
+          }
+
+          // 关键词过滤：只采集保险相关内容
+          const filterResult = filterInsuranceContent(
+            item.title,
+            item.summary,
+            5
+          );
+
+          if (!filterResult.isValid) {
+            console.log(`  [过滤] ${item.title.slice(0, 30)}... - ${filterResult.reason}`);
+            continue;
+          }
+
           items.push({
             title: item.title,
             summary: item.summary,
             source: '东方财富',
             sourceUrl: item.url,
             publishTime: item.showtime ? new Date(item.showtime) : undefined,
-            tags: ['金融', '财经', '东方财富']
+            tags: filterResult.tags,
+            relevanceScore: filterResult.relevanceScore,
+            primaryCategory: filterResult.primaryCategory
           });
-        });
+        }
       }
     } catch (e) {
       console.log('东方财富抓取失败:', e.message);
     }
 
+    console.log(`  东方财富精准采集: ${items.length} 条保险相关内容`);
     return items;
   }
 }

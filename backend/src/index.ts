@@ -14,6 +14,7 @@ import generatorRoutes from './routes/generator.js';
 import teamRoutes from './routes/teams.js';
 import statsRoutes from './routes/stats.js';
 import templatesRoutes from './routes/templates.js';
+import titleOptimizationRoutes from './routes/titleOptimization.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authLimiter } from './middleware/rateLimiter.js';
 
@@ -61,6 +62,7 @@ app.use('/api/generator', generatorRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/templates', templatesRoutes);
+app.use('/api/title-optimization', titleOptimizationRoutes);  // AI标题优化（方案二）
 
 // 健康检查
 app.get('/health', (req, res) => {

@@ -1,6 +1,7 @@
-// 小红书爆款笔记采集
+// 小红书爆款笔记采集 - 精准版
 import { BaseScraper, ScrapeResult } from './base.js';
 import axios from 'axios';
+import { isWithinLastMonth } from './keywords.js';
 
 export class XiaohongshuScraper extends BaseScraper {
   private cookies: string = '';
@@ -70,8 +71,15 @@ export class XiaohongshuScraper extends BaseScraper {
 
       const data = response.data;
       if (data?.data?.items) {
-        data.data.items.forEach((item: any) => {
+        for (const item of data.data.items) {
           const noteCard = item.note_card || item;
+          const publishedAt = noteCard.time ? new Date(noteCard.time * 1000) : undefined;
+
+          // 时间过滤：只采集最近一个月
+          if (!isWithinLastMonth(publishedAt)) {
+            continue;
+          }
+
           items.push({
             platform: 'XHS',
             title: noteCard.title || noteCard.display_title,
@@ -84,9 +92,9 @@ export class XiaohongshuScraper extends BaseScraper {
             commentsCount: noteCard.interact_info?.comment_count || 0,
             tags: this.extractTags(noteCard.desc || noteCard.title),
             insuranceType: this.guessInsuranceType(keyword),
-            publishedAt: noteCard.time ? new Date(noteCard.time) : undefined
+            publishedAt
           });
-        });
+        }
       }
     } catch (e) {
       // 如果 API 失败，尝试网页抓取

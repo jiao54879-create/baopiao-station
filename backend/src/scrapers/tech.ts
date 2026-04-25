@@ -1,6 +1,7 @@
-// 科技/AI 热点数据采集
+// 科技/AI 热点数据采集 - 精准版
 import { BaseScraper, ScrapeResult } from './base.js';
 import axios from 'axios';
+import { filterInsuranceContent, isWithinLastMonth } from './keywords.js';
 
 export class TechHotScraper extends BaseScraper {
   constructor() {
@@ -13,6 +14,7 @@ export class TechHotScraper extends BaseScraper {
 
   async scrape(): Promise<ScrapeResult> {
     const allItems: any[] = [];
+    let totalFiltered = 0;
 
     // 并行抓取多个科技源
     const results = await Promise.allSettled([
@@ -24,9 +26,39 @@ export class TechHotScraper extends BaseScraper {
 
     results.forEach((result) => {
       if (result.status === 'fulfilled' && result.value) {
-        allItems.push(...result.value);
+        // 应用关键词过滤和时间过滤
+        const filtered = result.value.filter((item: any) => {
+          // 时间过滤：只采集最近一个月
+          if (!isWithinLastMonth(item.publishTime)) {
+            return false;
+          }
+
+          // 关键词过滤：只采集保险相关内容
+          const filterResult = filterInsuranceContent(
+            item.title,
+            item.summary,
+            5
+          );
+
+          if (!filterResult.isValid) {
+            totalFiltered++;
+            return false;
+          }
+
+          // 添加过滤后的标签
+          item.tags = filterResult.tags;
+          item.relevanceScore = filterResult.relevanceScore;
+
+          return true;
+        });
+
+        allItems.push(...filtered);
       }
     });
+
+    if (totalFiltered > 0) {
+      console.log(`  [科技热点] 已过滤 ${totalFiltered} 条不相关内容`);
+    }
 
     const saved = await this.saveIntelligence(allItems);
 

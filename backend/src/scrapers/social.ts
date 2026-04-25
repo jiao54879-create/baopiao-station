@@ -1,6 +1,7 @@
-// 社会热点数据采集（微博热搜、知乎热榜等）
+// 社会热点数据采集 - 精准版（只采集保险相关内容）
 import { BaseScraper, ScrapeResult } from './base.js';
 import axios from 'axios';
+import { filterInsuranceContent, isWithinLastMonth } from './keywords.js';
 
 export class SocialHotScraper extends BaseScraper {
   constructor() {
@@ -22,28 +23,50 @@ export class SocialHotScraper extends BaseScraper {
       this.scrapeWeiboNews()
     ]);
 
+    let totalFiltered = 0;
+
     results.forEach((result, index) => {
       if (result.status === 'fulfilled' && result.value) {
-        allItems.push(...result.value);
+        // 应用关键词过滤和时间过滤
+        const filtered = result.value.filter((item: any) => {
+          // 时间过滤：只采集最近一个月
+          if (!isWithinLastMonth(item.publishTime)) {
+            return false;
+          }
+
+          // 关键词过滤：只采集保险相关内容
+          const filterResult = filterInsuranceContent(
+            item.title,
+            item.summary,
+            5
+          );
+
+          if (!filterResult.isValid) {
+            totalFiltered++;
+            return false;
+          }
+
+          // 添加过滤后的标签
+          item.tags = filterResult.tags;
+          item.relevanceScore = filterResult.relevanceScore;
+          item.primaryCategory = filterResult.primaryCategory;
+
+          return true;
+        });
+
+        allItems.push(...filtered);
       }
     });
 
-    // 过滤与保险相关的内容
-    const insuranceKeywords = [
-      '保险', '医疗', '健康', '养老', '退休', '社保', '医保',
-      '重疾', '癌症', '看病', '费用', '保障', '理赔'
-    ];
+    if (totalFiltered > 0) {
+      console.log(`  [社会热点] 已过滤 ${totalFiltered} 条不相关内容`);
+    }
 
-    const filteredItems = allItems.filter(item => {
-      const text = `${item.title} ${item.summary || ''}`;
-      return insuranceKeywords.some(keyword => text.includes(keyword));
-    });
-
-    const saved = await this.saveIntelligence(filteredItems);
+    const saved = await this.saveIntelligence(allItems);
 
     return {
       success: true,
-      data: filteredItems,
+      data: allItems,
       count: saved
     };
   }

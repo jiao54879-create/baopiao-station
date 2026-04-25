@@ -205,4 +205,90 @@ router.delete('/:id/save', async (req, res, next) => {
   }
 });
 
+// 删除情报（管理员或创建者可删除）
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const intelligenceId = Number(req.params.id);
+
+    // 检查情报是否存在
+    const intelligence = await prisma.intelligence.findUnique({
+      where: { id: intelligenceId }
+    });
+
+    if (!intelligence) {
+      throw new AppError('情报不存在', 404);
+    }
+
+    // 删除关联的收藏记录
+    await prisma.savedIntelligence.deleteMany({
+      where: { intelligenceId }
+    });
+
+    // 删除情报本身
+    await prisma.intelligence.delete({
+      where: { id: intelligenceId }
+    });
+
+    res.json({ success: true, message: '情报已删除' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 批量删除情报
+router.post('/batch-delete', async (req, res, next) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new AppError('请提供要删除的情报ID数组', 400);
+    }
+
+    const idNumbers = ids.map((id: any) => Number(id));
+
+    // 删除关联的收藏记录
+    await prisma.savedIntelligence.deleteMany({
+      where: { intelligenceId: { in: idNumbers } }
+    });
+
+    // 批量删除情报
+    const result = await prisma.intelligence.deleteMany({
+      where: { id: { in: idNumbers } }
+    });
+
+    res.json({
+      success: true,
+      message: `已删除 ${result.count} 条情报`,
+      deletedCount: result.count
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 按分类删除情报
+router.delete('/category/:category', async (req, res, next) => {
+  try {
+    const { category } = req.params;
+
+    // 删除关联的收藏记录
+    await prisma.savedIntelligence.deleteMany({
+      where: { intelligence: { category } }
+    });
+
+    // 删除该分类的所有情报
+    const result = await prisma.intelligence.deleteMany({
+      where: { category }
+    });
+
+    res.json({
+      success: true,
+      message: `已删除分类 ${category} 下的 ${result.count} 条情报`,
+      deletedCount: result.count
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

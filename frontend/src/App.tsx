@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
 import TeamInvite from './pages/TeamInvite'
 import Templates from './pages/Templates'
+import TitleOptimizer from './pages/TitleOptimizer'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore()
@@ -61,6 +62,7 @@ function App() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="templates" element={<Templates />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="title-optimizer" element={<TitleOptimizer />} />
       </Route>
     </Routes>
   )
