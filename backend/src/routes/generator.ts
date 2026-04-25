@@ -34,7 +34,7 @@ router.post('/', async (req, res, next) => {
         userId: req.user!.id,
         action: 'GENERATE_TITLES',
         resource: 'saved_title',
-        details: { keywords, count: limitedTitles.length }
+        details: JSON.stringify({ keywords, count: limitedTitles.length })
       }
     });
 
