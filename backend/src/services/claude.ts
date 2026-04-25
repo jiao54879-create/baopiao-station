@@ -39,13 +39,20 @@ ${context ? `当前背景：${context}` : ''}
 - 适用场景说明
 - 推荐的小红书标签（3-5个）
 
-请以 JSON 格式输出结果。`;
+请**只输出 JSON**，不要任何解释文字。格式如下：
+```json
+{
+  "titles": [
+    {"title": "标题1", "type": "震惊体", "score": 9, "explanation": "说明", "hashtags": ["标签1"]}
+  ]
+}
+````;
 
   const response = await deepseek.chat.completions.create({
     model: 'deepseek-chat',
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.8,
-    max_tokens: 1024,
+    max_tokens: 1500,
   });
 
   const responseText = response.choices[0]?.message?.content || '';
@@ -53,17 +60,29 @@ ${context ? `当前背景：${context}` : ''}
   // 清理 JSON（移除 markdown 代码块）
   let cleanText = responseText.trim();
   if (cleanText.startsWith('```')) {
-    cleanText = cleanText.replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '');
+    cleanText = cleanText.replace(/```json\s*/, '').replace(/```\s*$/, '').trim();
   }
 
-  // 提取 JSON
-  const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    console.error('AI 返回内容:', responseText);
-    throw new Error('AI 返回格式错误');
+  // 尝试多种方式提取 JSON
+  let jsonStr = cleanText;
+  
+  // 方法1：直接解析
+  try {
+    return TitleOutputSchema.parse(JSON.parse(jsonStr));
+  } catch (e) {}
+  
+  // 方法2：提取 {...} 部分
+  const braceStart = jsonStr.indexOf('{');
+  const braceEnd = jsonStr.lastIndexOf('}');
+  if (braceStart !== -1 && braceEnd !== -1 && braceEnd > braceStart) {
+    jsonStr = jsonStr.substring(braceStart, braceEnd + 1);
+    try {
+      return TitleOutputSchema.parse(JSON.parse(jsonStr));
+    } catch (e) {}
   }
 
-  return TitleOutputSchema.parse(JSON.parse(jsonMatch[0]));
+  console.error('AI 返回内容:', responseText);
+  throw new Error('AI 返回格式错误');
 }
 
 const CaseAnalysisSchema = z.object({
