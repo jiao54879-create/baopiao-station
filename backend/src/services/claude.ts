@@ -50,9 +50,16 @@ ${context ? `当前背景：${context}` : ''}
 
   const responseText = response.choices[0]?.message?.content || '';
 
+  // 清理 JSON（移除 markdown 代码块）
+  let cleanText = responseText.trim();
+  if (cleanText.startsWith('```')) {
+    cleanText = cleanText.replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '');
+  }
+
   // 提取 JSON
-  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+  const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
+    console.error('AI 返回内容:', responseText);
     throw new Error('AI 返回格式错误');
   }
 
