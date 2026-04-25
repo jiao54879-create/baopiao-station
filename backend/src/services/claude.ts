@@ -68,7 +68,7 @@ export async function generateTitles(keywords: string[], context?: string): Prom
 
   console.error('AI 返回内容:', responseText);
   console.error('清理后:', jsonStr);
-  throw new Error('AI 返回格式错误，无法解析为有效的标题数据');
+  throw new Error('AI 返回格式错误，返回内容: ' + responseText.substring(0, 500));
 }
 
 const CaseAnalysisSchema = z.object({
