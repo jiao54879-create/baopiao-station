@@ -40,13 +40,13 @@ ${context ? `当前背景：${context}` : ''}
 - 推荐的小红书标签（3-5个）
 
 请**只输出 JSON**，不要任何解释文字。格式如下：
-```json
-{
+` + '```json\n' +
+`{
   "titles": [
     {"title": "标题1", "type": "震惊体", "score": 9, "explanation": "说明", "hashtags": ["标签1"]}
   ]
 }
-````;
+` + '```' + `;
 
   const response = await deepseek.chat.completions.create({
     model: 'deepseek-chat',
