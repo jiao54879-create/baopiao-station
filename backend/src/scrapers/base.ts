@@ -72,7 +72,7 @@ export abstract class BaseScraper {
               source: item.source,
               sourceUrl: item.sourceUrl,
               category: this.category as any,
-              tags: item.tags || [],
+              tags: JSON.stringify(item.tags || []),
               publishTime: item.publishTime
             }
           });
@@ -115,7 +115,8 @@ export abstract class BaseScraper {
           data: {
             ...item,
             viralScore,
-            platform: item.platform as any
+            platform: item.platform as any,
+            tags: JSON.stringify(item.tags || [])
           }
         });
         return true;
