@@ -27,12 +27,18 @@ export async function generateTitles(keywords: string[], context?: string): Prom
 
   const prompt = '你是一个专注于小红书保险内容创作的专业标题专家。\n\n用户输入的关键词：' + keywords.join(', ') + background + '\n请根据以下原则生成 12 个爆款标题：\n\n1. 情感共鸣：触及用户痛点（健康焦虑、养老焦虑、家庭责任）\n2. 数字钩子：使用具体数字增加可信度\n3. 对比反差：制造认知冲突\n4. 疑问引导：引发好奇心\n5. 情绪刺激：惊讶、恐惧、期待等情绪\n\n每个标题需要包含：\n- 标题内容（简洁有力，控制在20字以内）\n- 类型\n- 爆款概率评分（1-10分）\n- 适用场景说明\n- 推荐的小红书标签（3-5个）\n\n请只输出 JSON，不要任何解释文字。格式如下：\n' + tripleBacktick + 'json\n{\n  "titles": [\n    {"title": "标题1", "type": "震惊体", "score": 9, "explanation": "说明", "hashtags": ["标签1"]}\n  ]\n}\n' + tripleBacktick;
 
-  const response = await deepseek.chat.completions.create({
-    model: 'deepseek-chat',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.8,
-    max_tokens: 1500,
-  });
+  let response;
+  try {
+    response = await deepseek.chat.completions.create({
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.8,
+      max_tokens: 1500,
+    });
+  } catch (error: any) {
+    console.error('DeepSeek API 调用失败:', error?.message || error);
+    throw new Error('AI 服务调用失败: ' + (error?.message || '未知错误'));
+  }
 
   const responseText = response.choices[0]?.message?.content || '';
 
@@ -61,7 +67,8 @@ export async function generateTitles(keywords: string[], context?: string): Prom
   }
 
   console.error('AI 返回内容:', responseText);
-  throw new Error('AI 返回格式错误');
+  console.error('清理后:', jsonStr);
+  throw new Error('AI 返回格式错误，无法解析为有效的标题数据');
 }
 
 const CaseAnalysisSchema = z.object({
