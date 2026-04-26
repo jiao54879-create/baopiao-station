@@ -19,7 +19,7 @@ function verifyTrigger(req: any): boolean {
   return token === hash;
 }
 
-// POST /api/trigger/collect - 触发数据采集
+// POST /api/trigger/collect - 触发数据采集（需要token）
 router.post('/collect', async (req, res) => {
   try {
     // 验证触发令牌
@@ -27,6 +27,44 @@ router.post('/collect', async (req, res) => {
     if (triggerToken !== TRIGGER_SECRET) {
       return res.status(401).json({ error: '未授权的采集请求' });
     }
+
+    console.log('📦 收到采集触发请求');
+
+    // 动态导入调度器并执行
+    const { default: scheduler } = await import('../scrapers/scheduler.js');
+
+    // 执行所有采集任务
+    const results: any[] = [];
+    for (const job of scheduler.getStatus()) {
+      if (job.enabled) {
+        try {
+          await scheduler.runOne(job.name);
+          results.push({ name: job.name, status: 'success' });
+        } catch (e: any) {
+          results.push({ name: job.name, status: 'error', message: e.message });
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: '采集任务执行完成',
+      results,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('采集触发失败:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// POST /api/trigger/collect-test - 公开测试采集接口（无需认证）
+router.post('/collect-test', async (req, res) => {
+  try {
+    console.log('📦 收到测试采集请求');
 
     console.log('📦 收到采集触发请求');
     
