@@ -12,8 +12,13 @@ interface InsuranceNews {
 }
 
 class InsuranceNewsScraper extends BaseScraper {
-  name = 'insurance_news';
-  category = 'INSURANCE';
+  constructor() {
+    super({
+      name: 'insurance_news',
+      url: '',
+      category: 'INSURANCE'
+    });
+  }
 
   // 保险行业主要数据源配置
   private sources = [

@@ -11,8 +11,13 @@ interface ProductItem {
 }
 
 class ProductScraper extends BaseScraper {
-  name = 'product_news';
-  category = 'INSURANCE';
+  constructor() {
+    super({
+      name: 'product_news',
+      url: '',
+      category: 'INSURANCE'
+    });
+  }
 
   // 产品资讯数据源
   private sources = [

@@ -11,8 +11,13 @@ interface PolicyItem {
 }
 
 class PolicyScraper extends BaseScraper {
-  name = 'policy_news';
-  category = 'INSURANCE';
+  constructor() {
+    super({
+      name: 'policy_news',
+      url: '',
+      category: 'INSURANCE'
+    });
+  }
 
   // 政策数据源
   private sources = [

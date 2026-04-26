@@ -44,8 +44,13 @@ const KEY_ACCOUNTS = [
 ];
 
 export class WeChatViralScraper extends BaseScraper {
-  name = 'wechat_viral';
-  category = 'SOCIAL';
+  constructor() {
+    super({
+      name: 'wechat_viral',
+      url: '',
+      category: 'SOCIAL'
+    });
+  }
 
   async scrape(): Promise<ScrapeResult> {
     const allCases: WeChatViralCase[] = [];

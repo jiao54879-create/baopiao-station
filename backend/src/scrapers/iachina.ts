@@ -11,8 +11,13 @@ interface IACHINANews {
 }
 
 export class IACHINAScraper extends BaseScraper {
-  name = 'iachina';
-  category = 'INSURANCE';
+  constructor() {
+    super({
+      name: 'iachina',
+      url: 'https://www.iachina.cn',
+      category: 'INSURANCE'
+    });
+  }
 
   // 中保协官方数据源
   private sources = [

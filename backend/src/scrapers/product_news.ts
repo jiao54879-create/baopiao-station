@@ -18,8 +18,13 @@ interface ProductNews {
 }
 
 export class ProductNewsScraper extends BaseScraper {
-  name = 'product_news';
-  category = 'INSURANCE';
+  constructor() {
+    super({
+      name: 'product_news',
+      url: '',
+      category: 'INSURANCE'
+    });
+  }
 
   // 产品信息来源
   private sources = [

@@ -14,8 +14,13 @@ interface WeChatArticle {
 }
 
 export class WeChatScraper extends BaseScraper {
-  name = 'wechat';
-  category = 'INSURANCE';
+  constructor() {
+    super({
+      name: 'wechat',
+      url: '',
+      category: 'INSURANCE'
+    });
+  }
 
   // 保险行业重点公众号列表
   private accounts = [
