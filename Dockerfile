@@ -8,7 +8,9 @@ WORKDIR /app
 # 复制后端代码
 COPY backend/package*.json ./backend/
 WORKDIR /app/backend
-RUN npm install
+
+# 强制重新安装依赖
+RUN npm cache clean --force && npm install
 
 # 复制全部代码
 COPY backend/ .
