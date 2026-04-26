@@ -92,3 +92,5 @@ export class EducationScraper extends BaseScraper {
     return items;
   }
 }
+
+export default new EducationScraper();
