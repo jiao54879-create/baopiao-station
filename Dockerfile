@@ -18,5 +18,5 @@ RUN npx prisma generate
 
 EXPOSE 3001
 
-# 启动时强制同步数据库（重建所有表）
-CMD ["sh", "-c", "npx prisma db push --force-reset --skip-generate && npx tsx src/index.ts"]
+# 启动时：先删除旧表，再运行迁移，最后启动服务
+CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx src/index.ts"]
