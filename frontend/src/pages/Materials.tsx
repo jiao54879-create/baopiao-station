@@ -14,7 +14,7 @@ function FileIcon({ mimeType, size }: { mimeType: string; size?: number }) {
 }
 
 export default function Materials() {
-  const [uploading, setUploading] = useState(false)
+  const [_uploading, setUploading] = useState(false)
   const [materials, setMaterials] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
