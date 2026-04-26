@@ -69,7 +69,13 @@ router.get('/status', async (req, res) => {
     
     res.json({
       success: true,
-      tasks: status,
+      tasks: status.map(task => ({
+        name: task?.name || '未知任务',
+        enabled: task?.enabled ?? false,
+        schedule: task?.schedule || '',
+        lastRun: task?.lastRun,
+        nextRun: task?.nextRun
+      })),
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
