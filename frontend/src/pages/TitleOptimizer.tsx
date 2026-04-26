@@ -1,7 +1,6 @@
 // AI标题优化页面 - 方案二
 import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
-import { api } from '../lib/api';
+import api from '../utils/api';
 
 interface TitleAnalysis {
   title: string;
@@ -154,8 +153,7 @@ export default function TitleOptimizer() {
   };
 
   return (
-    <Layout>
-      <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">AI标题优化</h1>
@@ -543,7 +541,6 @@ export default function TitleOptimizer() {
             </div>
           )}
         </div>
-      </div>
-    </Layout>
+    </div>
   );
 }

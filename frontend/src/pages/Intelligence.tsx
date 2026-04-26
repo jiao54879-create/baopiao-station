@@ -119,11 +119,6 @@ export default function Intelligence() {
     })
   }
 
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (keys: any) => setSelectedRowKeys(keys)
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -198,7 +193,6 @@ export default function Intelligence() {
         <List
           dataSource={data}
           locale={{ emptyText: <Empty description="暂无情报" /> }}
-          rowSelection={rowSelection}
           renderItem={(item) => (
             <List.Item
               actions={[

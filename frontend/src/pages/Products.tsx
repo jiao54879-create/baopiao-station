@@ -2,14 +2,14 @@
 import { useState, useEffect } from 'react';
 import { 
   Card, Table, Tag, Button, Space, Input, Select, Modal, Form, 
-  InputNumber, DatePicker, message, Tabs, Badge, Statistic, Row, Col,
-  Descriptions, Collapse, Empty, Spin, Tooltip, Alert
+  InputNumber, DatePicker, message, Statistic, Row, Col,
+  Descriptions, Collapse, Empty, Alert
 } from 'antd';
 import { 
-  PlusOutlined, EditOutlined, DeleteOutlined, FireOutlined, 
-  ShoppingOutlined, ClockCircleOutlined, CheckCircleOutlined,
-  ExclamationCircleOutlined, UpCircleOutlined, DownCircleOutlined,
-  TrophyOutlined, SafetyOutlined, DollarOutlined
+  PlusOutlined, FireOutlined, 
+  ClockCircleOutlined, CheckCircleOutlined,
+  UpCircleOutlined, DownCircleOutlined,
+  SafetyOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from '../utils/api';
