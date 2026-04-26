@@ -4,8 +4,8 @@ import crypto from 'crypto';
 
 const router = Router();
 
-// 从环境变量获取触发密钥
-const TRIGGER_SECRET = process.env.TRIGGER_SECRET || 'your-trigger-secret-key';
+// 从环境变量获取触发密钥，默认值用于本地开发
+const TRIGGER_SECRET = process.env.TRIGGER_SECRET || 'baopiao2024secret';
 
 // 简单的触发密钥验证
 function verifyTrigger(req: any): boolean {
