@@ -13,7 +13,6 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from '../utils/api';
-import './Products.css';
 
 const { Search } = Input;
 const { Panel } = Collapse;
