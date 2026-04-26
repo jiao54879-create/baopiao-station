@@ -20,9 +20,9 @@ export interface SourceConfig {
 
 // 基础爬虫类
 export abstract class BaseScraper {
-  protected name: string;
-  protected baseUrl: string;
-  protected category: string;
+  public name: string;
+  public baseUrl: string;
+  public category: string;
   protected headers: Record<string, string>;
 
   constructor(config: SourceConfig) {
