@@ -63,37 +63,123 @@ class InsuranceNewsScraper extends BaseScraper {
     }
   ];
 
-  // 保险公司官网
+  // 保险公司官网（主要目标：一手产品消息）
   private companySources = [
+    // 大型保险公司
     {
       name: '中国人寿',
       url: 'https://www.chinalife.com.cn/chinalife/zxxx/',
-      type: 'company'
+      type: 'company',
+      rss: null
     },
     {
       name: '中国平安',
       url: 'https://www.pingan.com/common/about/news/',
-      type: 'company'
+      type: 'company',
+      rss: null
     },
     {
       name: '太平洋保险',
       url: 'https://www.cpic.com.cn/cx/news/',
-      type: 'company'
+      type: 'company',
+      rss: null
     },
     {
       name: '新华保险',
       url: 'http://www.newchinalife.com/lhxw/xwgg/',
-      type: 'company'
+      type: 'company',
+      rss: null
     },
     {
       name: '泰康保险',
       url: 'https://www.taikang.com/tkcare/news/',
-      type: 'company'
+      type: 'company',
+      rss: null
     },
     {
       name: '友邦保险',
       url: 'https://www.aia.com.cn/zh/about/news.html',
-      type: 'company'
+      type: 'company',
+      rss: null
+    },
+    // 互联网保险公司（重点）
+    {
+      name: '君龙人寿',
+      url: 'https://www.jlrlife.com/news',
+      type: 'company',
+      rss: null,
+      notes: '重点关注：超级玛丽系列产品'
+    },
+    {
+      name: '复星联合健康险',
+      url: 'https://www.fosun.com/health.html',
+      type: 'company',
+      rss: null,
+      notes: '重点关注：达尔文、妈咪宝贝系列产品'
+    },
+    {
+      name: '信泰保险',
+      url: 'https://www.sinctrust.com/news',
+      type: 'company',
+      rss: null,
+      notes: '重点关注：达尔文系列'
+    },
+    {
+      name: '昆仑健康险',
+      url: 'https://www.kunlunhealth.com.cn/news',
+      type: 'company',
+      rss: null
+    },
+    {
+      name: '和泰人寿',
+      url: 'https://www.htlife.com.cn/news',
+      type: 'company',
+      rss: null,
+      notes: '重点关注：超级玛丽系列'
+    },
+    {
+      name: '北京人寿',
+      url: 'https://www.beijinglife.com.cn/news',
+      type: 'company',
+      rss: null
+    },
+    {
+      name: '华贵保险',
+      url: 'https://www.huaguilife.cn/news',
+      type: 'company',
+      rss: null,
+      notes: '重点关注：大麦定期寿险'
+    },
+    {
+      name: '瑞华保险',
+      url: 'https://www.rehuacare.com/news',
+      type: 'company',
+      rss: null
+    },
+    {
+      name: '海保人寿',
+      url: 'https://www.haibao-life.com/news',
+      type: 'company',
+      rss: null
+    },
+    {
+      name: '横琴人寿',
+      url: 'https://www.hq.cn/news',
+      type: 'company',
+      rss: null
+    },
+    {
+      name: '三峡人寿',
+      url: 'https://www.sanxialife.com/news',
+      type: 'company',
+      rss: null
+    },
+    {
+      name: '光大永明',
+      url: 'https://www.sunlife-everbright.com/news',
+      type: 'company',
+      rss: null,
+      notes: '重点关注：达尔文系列'
     }
   ];
 

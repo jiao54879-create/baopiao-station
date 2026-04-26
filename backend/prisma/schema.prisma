@@ -80,12 +80,21 @@ model Intelligence {
   publishTime  DateTime?
   createdAt    DateTime  @default(now())
 
+  // 关联产品ID
+  linkedProductId  Int?
+  linkedProduct    InsuranceProduct? @relation(fields: [linkedProductId], references: [id])
+  // 是否为产品相关情报
+  isProductNews    Boolean   @default(false)
+  // 产品新闻类型
+  productNewsType  String?   // NEW_PRODUCT, PRODUCT_UPDATE, PRODUCT_OFFLINE, RATE_ADJUSTMENT
+
   // 关系
   savedBy      SavedIntelligence[]
 
   @@index([category])
   @@index([publishTime])
   @@index([hotScore])
+  @@index([linkedProductId])
   @@map("intelligence")
 }
 
@@ -111,13 +120,84 @@ model ViralCase {
   publishedAt     DateTime?
   createdAt       DateTime  @default(now())
 
+  // 关联产品
+  linkedProductId Int?
+  linkedProduct   InsuranceProduct? @relation(fields: [linkedProductId], references: [id])
+
   // 关系
   savedBy         SavedCase[]
 
   @@index([platform])
   @@index([viralScore])
   @@index([publishedAt])
+  @@index([linkedProductId])
   @@map("viral_cases")
+}
+
+// ==================== 保险产品分析 ====================
+
+model InsuranceProduct {
+  id              Int       @id @default(autoincrement())
+  
+  // 基础信息
+  name            String    // 产品名称（如"超级玛丽13号"）
+  company         String    // 保险公司（如"君龙人寿"）
+  insuranceType   String    // 险种（HEALTH/TERM/LIFE/ACCIDENT/ENDOWMENT/CRITICAL_ILLNESS/CHILDREN）
+  
+  // 产品状态
+  status          String    @default("NEW")  // NEW(新上架)/HOT(热门)/NORMAL(在售)/OFFLINE(已下架)
+  
+  // 价格计算（标准化：成人30岁/30万/30年交/保终身；儿童0岁/50万/30年交/保终身）
+  priceAdult30    Decimal?  @db.Decimal(10,2)  // 成人年缴保费
+  priceChild0     Decimal?  @db.Decimal(10,2)  // 儿童年缴保费
+  
+  // 时间管理
+  launchDate      DateTime? // 上架时间
+  offlineDate     DateTime? // 下架时间
+  estimatedOffline DateTime? // 预估下架时间
+  
+  // ====== 深度分析字段 ======
+  
+  // 产品亮点（JSON数组）
+  highlights重症     String @default("[]") // 重症保障亮点
+  highlights轻症     String @default("[]") // 轻症保障亮点  
+  highlights豁免     String @default("[]") // 豁免功能亮点
+  highlights特色     String @default("[]") // 特色保障亮点（癌症多次赔等）
+  highlights增值     String @default("[]") // 增值服务亮点
+  
+  // 核心优势（JSON数组）
+  advantagesPrice      String @default("[]") // 价格优势
+  advantagesCoverage   String @default("[]") // 保障优势
+  advantages核保      String @default("[]") // 核保优势
+  advantagesService    String @default("[]") // 服务优势
+  
+  // 竞品对比
+  competitors          String @default("[]") // JSON数组，竞品名称列表
+  competitorComparison String?             // 竞品对比详情（JSON格式）
+  
+  // 产品缺点/注意事项
+  drawbacks            String @default("[]") // JSON数组
+  
+  // ====== 元数据 ======
+  
+  // 来源追踪
+  source          String?   // 发现来源
+  sourceUrl       String?   // 来源链接
+  notes           String?   // 备注信息
+  lastUpdated     DateTime @default(now())  // 最后更新时间
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // 关联关系
+  intelligences   Intelligence[]
+  viralCases      ViralCase[]
+  
+  @@index([status])
+  @@index([insuranceType])
+  @@index([company])
+  @@index([launchDate])
+  @@map("insurance_products")
 }
 
 // ==================== 标题收藏 ====================

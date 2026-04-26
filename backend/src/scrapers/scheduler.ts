@@ -13,6 +13,9 @@ import educationScraper from './education.js';
 import insuranceScraper from './insurance.js';
 import policyScraper from './policy.js';
 import productScraper from './product.js';
+import productNewsScraper from './product_news.js';
+import iachinaScraper from './iachina.js';
+import wechatScraper from './wechat_public.js';
 
 interface ScrapeJob {
   name: string;
@@ -47,6 +50,24 @@ const scrapeJobs: ScrapeJob[] = [
     name: '银保监会动态',
     scraper: cbircScraper,
     schedule: '0 9 * * *', // 每天上午9点
+    enabled: true
+  },
+  {
+    name: '中保协动态',
+    scraper: iachinaScraper,
+    schedule: '0 9 * * *', // 每天上午9点
+    enabled: true
+  },
+  {
+    name: '微信公众号产品分析',
+    scraper: wechatScraper,
+    schedule: '0 10 * * *', // 每天上午10点
+    enabled: true
+  },
+  {
+    name: '保险公司官网动态',
+    scraper: productNewsScraper,
+    schedule: '0 10 * * *', // 每天上午10点
     enabled: true
   },
   {

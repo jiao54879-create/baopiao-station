@@ -15,6 +15,8 @@ import teamRoutes from './routes/teams.js';
 import statsRoutes from './routes/stats.js';
 import templatesRoutes from './routes/templates.js';
 import titleOptimizationRoutes from './routes/titleOptimization.js';
+import productsRoutes from './routes/products.js';
+import triggerRoutes from './routes/trigger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authLimiter } from './middleware/rateLimiter.js';
 
@@ -46,9 +48,10 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// 公共路由
+// 公共路由（无需登录）
 app.use('/api/auth', authRoutes);
 app.use('/api/teams/invite/:token', teamRoutes); // 邀请链接无需认证
+app.use('/api/trigger', triggerRoutes);          // 采集触发（用 TRIGGER_SECRET 验证，无需 JWT）
 
 // 认证中间件
 import { authenticate } from './middleware/auth.js';
@@ -63,6 +66,7 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/title-optimization', titleOptimizationRoutes);  // AI标题优化（方案二）
+  app.use('/api/products', productsRoutes);  // 保险产品管理
 
 // 健康检查
 app.get('/health', (req, res) => {
