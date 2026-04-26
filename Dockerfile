@@ -13,7 +13,7 @@ RUN npm install
 # 复制全部代码
 COPY backend/ .
 
-# 预生成 Prisma Client
+# 生成 Prisma Client
 RUN npx prisma generate
 
 EXPOSE 3001
