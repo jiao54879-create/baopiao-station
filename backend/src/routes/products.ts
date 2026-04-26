@@ -124,14 +124,14 @@ router.post('/', async (req, res) => {
         launchDate: data.launchDate ? new Date(data.launchDate) : undefined,
         offlineDate: data.offlineDate ? new Date(data.offlineDate) : undefined,
         estimatedOffline: data.estimatedOffline ? new Date(data.estimatedOffline) : undefined,
-        highlights重症: JSON.stringify(data.highlights重症 || []),
-        highlights轻症: JSON.stringify(data.highlights轻症 || []),
-        highlights豁免: JSON.stringify(data.highlights豁免 || []),
-        highlights特色: JSON.stringify(data.highlights特色 || []),
-        highlights增值: JSON.stringify(data.highlights增值 || []),
+        highlightsSevere: JSON.stringify(data.highlights重症 || []),
+        highlightsMild: JSON.stringify(data.highlights轻症 || []),
+        highlightsWaiver: JSON.stringify(data.highlights豁免 || []),
+        highlightsSpecial: JSON.stringify(data.highlights特色 || []),
+        highlightsValue: JSON.stringify(data.highlights增值 || []),
         advantagesPrice: JSON.stringify(data.advantagesPrice || []),
         advantagesCoverage: JSON.stringify(data.advantagesCoverage || []),
-        advantages核保: JSON.stringify(data.advantages核保 || []),
+        advantagesUW: JSON.stringify(data.advantages核保 || []),
         advantagesService: JSON.stringify(data.advantagesService || []),
         competitors: JSON.stringify(data.competitors || []),
         drawbacks: JSON.stringify(data.drawbacks || [])
@@ -160,8 +160,8 @@ router.put('/:id', async (req, res) => {
     
     // JSON字段需要序列化
     const jsonFields = [
-      'highlights重症', 'highlights轻症', 'highlights豁免', 'highlights特色', 'highlights增值',
-      'advantagesPrice', 'advantagesCoverage', 'advantages核保', 'advantagesService',
+      'highlightsSevere', 'highlightsMild', 'highlightsWaiver', 'highlightsSpecial', 'highlightsValue',
+      'advantagesPrice', 'advantagesCoverage', 'advantagesUW', 'advantagesService',
       'competitors', 'drawbacks'
     ];
     

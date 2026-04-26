@@ -159,16 +159,16 @@ model InsuranceProduct {
   // ====== 深度分析字段 ======
   
   // 产品亮点（JSON数组）
-  highlights重症     String @default("[]") // 重症保障亮点
-  highlights轻症     String @default("[]") // 轻症保障亮点  
-  highlights豁免     String @default("[]") // 豁免功能亮点
-  highlights特色     String @default("[]") // 特色保障亮点（癌症多次赔等）
-  highlights增值     String @default("[]") // 增值服务亮点
+  highlightsSevere    String @default("[]") // 重症保障亮点
+  highlightsMild       String @default("[]") // 轻症保障亮点
+  highlightsWaiver     String @default("[]") // 豁免功能亮点
+  highlightsSpecial    String @default("[]") // 特色保障亮点（癌症多次赔等）
+  highlightsValue      String @default("[]") // 增值服务亮点
   
   // 核心优势（JSON数组）
   advantagesPrice      String @default("[]") // 价格优势
   advantagesCoverage   String @default("[]") // 保障优势
-  advantages核保      String @default("[]") // 核保优势
+  advantagesUW         String @default("[]") // 核保优势
   advantagesService    String @default("[]") // 服务优势
   
   // 竞品对比
