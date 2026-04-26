@@ -18,5 +18,5 @@ RUN npx prisma generate
 
 EXPOSE 3001
 
-# 启动时同步数据库 schema
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npx tsx src/index.ts"]
+# 启动时强制同步数据库（重建所有表）
+CMD ["sh", "-c", "npx prisma db push --force-reset --skip-generate && npx tsx src/index.ts"]
