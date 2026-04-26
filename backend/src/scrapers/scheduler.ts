@@ -212,14 +212,15 @@ class ScraperScheduler {
   private async syncTasksToDB() {
     for (const job of scrapeJobs) {
       try {
+        console.log(`📝 同步任务 ${job.name}, scraper.name=${job.scraper?.name}, scraper.category=${job.scraper?.category}`);
         await prisma.scrapeTask.upsert({
           where: { id: scrapeJobs.indexOf(job) + 1 },
           create: {
             id: scrapeJobs.indexOf(job) + 1,
             name: job.name,
-            source: job.scraper.name,
+            source: job.scraper?.name || 'unknown',
             sourceUrl: '',
-            category: job.scraper.category,
+            category: job.scraper?.category || 'INSURANCE',
             schedule: job.schedule,
             status: job.enabled ? 'ACTIVE' : 'PAUSED'
           },
@@ -229,8 +230,8 @@ class ScraperScheduler {
             status: job.enabled ? 'ACTIVE' : 'PAUSED'
           }
         });
-      } catch (e) {
-        // 忽略错误
+      } catch (e: any) {
+        console.error(`❌ 同步任务 ${job.name} 失败:`, e.message);
       }
     }
   }
