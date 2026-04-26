@@ -157,7 +157,7 @@ export default router;
 // POST /api/trigger/clear-and-collect - 清空旧数据并重新采集（用于测试）
 router.post('/clear-and-collect', async (req, res) => {
   try {
-    const { prisma } = await import('../../index.js');
+    const { prisma } = await import('../index.js');
     
     // 清空情报、爆款案例
     await prisma.intelligence.deleteMany({});
