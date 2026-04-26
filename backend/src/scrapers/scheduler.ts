@@ -17,6 +17,22 @@ import productNewsScraper from './product_news.js';
 import iachinaScraper from './iachina.js';
 import wechatScraper from './wechat_public.js';
 
+// 调试：打印导入状态
+console.log('🔍 Scraper 导入状态:');
+console.log('  cbirc:', !!cbircScraper, 'name:', cbircScraper?.name);
+console.log('  jinribao:', !!jinribaoScraper, 'name:', jinribaoScraper?.name);
+console.log('  social:', !!socialScraper, 'name:', socialScraper?.name);
+console.log('  tech:', !!techScraper, 'name:', techScraper?.name);
+console.log('  xhs:', !!xhsScraper, 'name:', xhsScraper?.name);
+console.log('  finance:', !!financeScraper, 'name:', financeScraper?.name);
+console.log('  education:', !!educationScraper, 'name:', educationScraper?.name);
+console.log('  insurance:', !!insuranceScraper, 'name:', insuranceScraper?.name);
+console.log('  policy:', !!policyScraper, 'name:', policyScraper?.name);
+console.log('  product:', !!productScraper, 'name:', productScraper?.name);
+console.log('  productNews:', !!productNewsScraper, 'name:', productNewsScraper?.name);
+console.log('  iachina:', !!iachinaScraper, 'name:', iachinaScraper?.name);
+console.log('  wechat:', !!wechatScraper, 'name:', wechatScraper?.name);
+
 interface ScrapeJob {
   name: string;
   scraper: any;
@@ -120,6 +136,13 @@ class ScraperScheduler {
     }
 
     console.log('🚀 数据采集调度器启动');
+    console.log('📋 总任务数:', scrapeJobs.length);
+    
+    // 调试：打印所有 scraper
+    scrapeJobs.forEach((job, i) => {
+      console.log(`  [${i}] ${job.name}: scraper=${!!job.scraper}, name=${job.scraper?.name}, category=${job.scraper?.category}`);
+    });
+    
     this.isRunning = true;
 
     scrapeJobs.forEach((job, index) => {
