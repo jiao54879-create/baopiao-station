@@ -1,6 +1,5 @@
 // 政策法规爬虫 - 银保监会、政府官网政策采集
 import { BaseScraper, ScrapeResult } from './base.js';
-import got from 'got';
 
 interface PolicyItem {
   title: string;

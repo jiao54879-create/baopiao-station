@@ -1,7 +1,6 @@
 // 保险产品信息采集爬虫
 // 专门采集产品上架、下架、新品发布等信息
 import { BaseScraper, ScrapeResult } from './base.js';
-import got from 'got';
 
 interface ProductNews {
   title: string;

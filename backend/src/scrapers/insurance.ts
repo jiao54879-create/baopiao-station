@@ -1,6 +1,6 @@
 // 保险行业资讯爬虫 - 覆盖保险公司官网、第三方平台、政策法规
 import { BaseScraper, ScrapeResult } from './base.js';
-import got from 'got';
+import axios from 'axios';
 
 interface InsuranceNews {
   title: string;
@@ -264,7 +264,7 @@ class InsuranceNewsScraper extends BaseScraper {
     const news: InsuranceNews[] = [];
 
     try {
-      const response = await got(url, {
+      const response = await axios.get(url, {
         timeout: 10000,
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; InsuranceStationBot/1.0)'
@@ -272,7 +272,7 @@ class InsuranceNewsScraper extends BaseScraper {
       });
 
       // 简单的 XML 解析
-      const xml = response.body;
+      const xml = response.data;
       const itemMatches = xml.match(/<item[^>]*>([\s\S]*?)<\/item>/gi) || [];
 
       for (const item of itemMatches.slice(0, 20)) {
