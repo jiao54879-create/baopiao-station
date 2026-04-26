@@ -146,8 +146,9 @@ export class XiaohongshuScraper extends BaseScraper {
         }
       }
     } catch (e) {
-      // 如果 API 失败，使用模拟数据（演示用）
-      return this.generateMockNotes(keyword, category);
+      // API 失败时返回空数组，不使用模拟数据
+      console.log(`小红书 API 失败（"${keyword}"）: ${e.message}，跳过返回空`);
+      return [];
     }
 
     return items;

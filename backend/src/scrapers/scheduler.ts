@@ -47,31 +47,31 @@ const scrapeJobs: ScrapeJob[] = [
   {
     name: '保险行业资讯',
     scraper: insuranceScraper,
-    schedule: '0 9 * * *', // 每天上午9点
+    schedule: '0 10 * * *', // 每天上午10点
     enabled: true
   },
   {
     name: '政策法规动态',
     scraper: policyScraper,
-    schedule: '0 9 * * *', // 每天上午9点
+    schedule: '0 10 * * *', // 每天上午10点
     enabled: true
   },
   {
     name: '保险产品资讯',
     scraper: productScraper,
-    schedule: '0 9 * * *', // 每天上午9点
+    schedule: '0 10 * * *', // 每天上午10点
     enabled: true
   },
   {
     name: '银保监会动态',
     scraper: cbircScraper,
-    schedule: '0 9 * * *', // 每天上午9点
+    schedule: '0 10 * * *', // 每天上午10点
     enabled: true
   },
   {
     name: '中保协动态',
     scraper: iachinaScraper,
-    schedule: '0 9 * * *', // 每天上午9点
+    schedule: '0 10 * * *', // 每天上午10点
     enabled: true
   },
   {
@@ -87,39 +87,39 @@ const scrapeJobs: ScrapeJob[] = [
     enabled: true
   },
   {
-    name: '保险行业资讯',
+    name: '保险行业资讯-今日报',
     scraper: jinribaoScraper,
-    schedule: '0 9 * * *', // 每天上午9点
+    schedule: '0 10 * * *', // 每天上午10点
     enabled: true
   },
   {
     name: '社会热点',
     scraper: socialScraper,
-    schedule: '0 9 * * *', // 每天上午9点
+    schedule: '0 10 * * *', // 每天上午10点
     enabled: true
   },
   {
     name: '科技热点',
     scraper: techScraper,
-    schedule: '0 9 * * *', // 每天上午9点
+    schedule: '0 10 * * *', // 每天上午10点
     enabled: true
   },
   {
     name: '小红书爆款',
     scraper: xhsScraper,
-    schedule: '0 9 * * *', // 每天上午9点
+    schedule: '0 10 * * *', // 每天上午10点
     enabled: true
   },
   {
     name: '金融行业动态',
     scraper: financeScraper,
-    schedule: '0 9 * * *', // 每天上午9点
+    schedule: '0 10 * * *', // 每天上午10点
     enabled: true
   },
   {
     name: '教育行业动态',
     scraper: educationScraper,
-    schedule: '0 9 * * *', // 每天上午9点
+    schedule: '0 10 * * *', // 每天上午10点
     enabled: true
   }
 ];

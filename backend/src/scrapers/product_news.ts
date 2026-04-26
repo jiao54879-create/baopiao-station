@@ -1,6 +1,7 @@
 // 保险产品信息采集爬虫
 // 专门采集产品上架、下架、新品发布等信息
 import { BaseScraper, ScrapeResult } from './base.js';
+import { checkProductVersionAccuracy } from '../services/productAccuracy.js';
 
 interface ProductNews {
   title: string;
@@ -102,6 +103,7 @@ export class ProductNewsScraper extends BaseScraper {
 
   async scrape(): Promise<ScrapeResult> {
     const allNews: ProductNews[] = [];
+    const accuracyWarnings: string[] = [];
 
     try {
       // 抓取各数据源
@@ -114,10 +116,18 @@ export class ProductNewsScraper extends BaseScraper {
         }
       }
 
-      // 如果没有数据，生成模拟产品新闻
+      // 如果没有数据，不使用mock，直接返回
       if (allNews.length === 0) {
-        const mockNews = this.generateMockProductNews();
-        allNews.push(...mockNews);
+        console.log('[产品新闻] 所有来源均无数据返回');
+      }
+
+      // 信息准确率自检：检查产品版本
+      for (const news of allNews) {
+        const check = checkProductVersionAccuracy(news.title, news.content);
+        if (check && !check.isValid) {
+          accuracyWarnings.push(check.suggestion);
+          console.log(`[准确率自检] ${check.suggestion}`);
+        }
       }
 
       // 保存到数据库
@@ -133,7 +143,7 @@ export class ProductNewsScraper extends BaseScraper {
 
       return {
         success: true,
-        data: allNews,
+        data: { news: allNews, accuracyWarnings },
         count: saved
       };
     } catch (error: any) {

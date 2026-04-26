@@ -14,7 +14,8 @@ import {
   BellOutlined,
   TeamOutlined,
   ThunderboltOutlined,
-  ShoppingOutlined
+  ShoppingOutlined,
+  UploadOutlined
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import { useAuthStore } from '../store/auth'
@@ -31,6 +32,7 @@ const menuItems = [
   { key: '/title-optimizer', icon: <ThunderboltOutlined />, label: '标题优化 ✨' },
   { key: '/templates', icon: <BarChartOutlined />, label: '模板库' },
   { key: '/saved', icon: <StarOutlined />, label: '我的收藏' },
+  { key: '/materials', icon: <UploadOutlined />, label: '素材上传 🆕' },
   { key: '/dashboard', icon: <BarChartOutlined />, label: '数据看板' },
   { key: '/settings', icon: <SettingOutlined />, label: '设置' },
 ]

@@ -5,6 +5,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
@@ -17,6 +18,7 @@ import templatesRoutes from './routes/templates.js';
 import titleOptimizationRoutes from './routes/titleOptimization.js';
 import productsRoutes from './routes/products.js';
 import triggerRoutes from './routes/trigger.js';
+import materialsRoutes from './routes/materials.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authLimiter } from './middleware/rateLimiter.js';
 
@@ -48,6 +50,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// 静态文件服务（上传的素材）
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 // 公共路由（无需登录）
 app.use('/api/auth', authRoutes);
 app.use('/api/teams/invite/:token', teamRoutes); // 邀请链接无需认证
@@ -67,6 +72,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/title-optimization', titleOptimizationRoutes);  // AI标题优化（方案二）
   app.use('/api/products', productsRoutes);  // 保险产品管理
+  app.use('/api/materials', materialsRoutes);  // 素材上传管理
 
 // 健康检查
 app.get('/health', (req, res) => {

@@ -16,6 +16,7 @@ import TeamInvite from './pages/TeamInvite'
 import Templates from './pages/Templates'
 import TitleOptimizer from './pages/TitleOptimizer'
 import Products from './pages/Products'
+import Materials from './pages/Materials'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore()
@@ -65,6 +66,7 @@ function App() {
         <Route path="settings" element={<Settings />} />
         <Route path="title-optimizer" element={<TitleOptimizer />} />
         <Route path="products" element={<Products />} />
+        <Route path="materials" element={<Materials />} />
       </Route>
     </Routes>
   )
