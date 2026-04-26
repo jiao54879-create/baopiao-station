@@ -153,3 +153,38 @@ router.get('/stats', async (req, res) => {
 });
 
 export default router;
+
+// POST /api/trigger/clear-and-collect - 清空旧数据并重新采集（用于测试）
+router.post('/clear-and-collect', async (req, res) => {
+  try {
+    const { prisma } = await import('../../index.js');
+    
+    // 清空情报、爆款案例
+    await prisma.intelligence.deleteMany({});
+    await prisma.viralCase.deleteMany({});
+    
+    console.log('🗑️ 已清空旧数据');
+    res.json({ success: true, message: '已清空数据，开始重新采集...' });
+    
+    // 异步执行采集（不阻塞响应）
+    setTimeout(async () => {
+      try {
+        const { default: scheduler } = await import('../scrapers/scheduler.js');
+        const jobs = scheduler.getStatus().filter((j: any) => j.enabled);
+        for (const job of jobs) {
+          try {
+            await scheduler.runOne(job.name);
+          } catch (e: any) {
+            console.log(`[${job.name}] 采集失败:`, e.message);
+          }
+        }
+        console.log('✅ 重新采集完成');
+      } catch (e: any) {
+        console.error('采集失败:', e.message);
+      }
+    }, 100);
+    
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
