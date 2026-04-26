@@ -18,5 +18,5 @@ RUN npx prisma generate
 
 EXPOSE 3001
 
-# 启动应用
+# 直接运行 TypeScript
 CMD ["npx", "tsx", "src/index.ts"]
