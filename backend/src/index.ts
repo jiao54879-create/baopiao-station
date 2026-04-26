@@ -80,20 +80,33 @@ app.use(errorHandler);
 const HOST = process.env.HOST || '0.0.0.0';
 
 // 启动服务
-app.listen(+PORT, HOST, () => {
-  console.log(`🚀 爆款情报站 API 服务运行在 http://${HOST}:${PORT}`);
-
-  // 启动数据采集调度器
+async function startServer() {
   try {
-    import('./scrapers/scheduler.js').then(({ default: scheduler }) => {
-      scheduler.start();
-    }).catch(e => {
-      console.log('调度器启动失败（继续运行）:', e.message);
-    });
-  } catch (e) {
-    console.log('调度器导入失败（继续运行）');
+    // 尝试连接数据库
+    await prisma.$connect();
+    console.log('✅ 数据库连接成功');
+  } catch (error) {
+    console.error('❌ 数据库连接失败:', error);
+    process.exit(1);
   }
-});
+
+  app.listen(+PORT, HOST, () => {
+    console.log(`🚀 爆款情报站 API 服务运行在 http://${HOST}:${PORT}`);
+
+    // 启动数据采集调度器
+    try {
+      import('./scrapers/scheduler.js').then(({ default: scheduler }) => {
+        scheduler.start();
+      }).catch(e => {
+        console.log('调度器启动失败（继续运行）:', e.message);
+      });
+    } catch (e) {
+      console.log('调度器导入失败（继续运行）');
+    }
+  });
+}
+
+startServer();
 
 // 优雅关闭
 process.on('SIGTERM', async () => {
