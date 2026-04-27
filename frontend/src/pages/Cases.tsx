@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Card, Row, Col, Tag, Select, Input, Spin, Empty, Button, Modal } from 'antd'
-import { StarOutlined, SaveOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined } from '@ant-design/icons'
 import api from '../utils/api'
 import { message } from 'antd'
 
@@ -32,6 +32,7 @@ export default function Cases() {
   const [keyword, setKeyword] = useState('')
   const [selectedCase, setSelectedCase] = useState<any>(null)
   const [analyzing, setAnalyzing] = useState(false)
+  const [collecting, setCollecting] = useState(false)
 
   const fetchData = async (page = 1) => {
     setLoading(true)
@@ -82,10 +83,35 @@ export default function Cases() {
     }
   }
 
+  // 采集爆款数据
+  const handleCollect = async () => {
+    setCollecting(true)
+    try {
+      const { data: res } = await api.post('/collect/viral')
+      message.success(res.message || '采集完成')
+      fetchData() // 刷新数据
+    } catch (error: any) {
+      message.error(error.response?.data?.error || '采集失败')
+    } finally {
+      setCollecting(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">🔥 爆款案例库</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold">🔥 爆款案例库</h2>
+          <Button 
+            type="primary" 
+            icon={<DownloadOutlined />} 
+            loading={collecting}
+            onClick={handleCollect}
+            size="small"
+          >
+            采集数据
+          </Button>
+        </div>
         <div className="flex gap-2 flex-wrap">
           <Select
             placeholder="选择平台"
