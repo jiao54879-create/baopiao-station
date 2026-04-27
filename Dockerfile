@@ -18,6 +18,12 @@ COPY backend/ .
 # 生成 Prisma Client
 RUN npx prisma generate
 
+# 运行数据库迁移
+RUN npx prisma migrate deploy || echo "Migration skipped (may already be applied)"
+
+# 运行种子数据（创建管理员）
+RUN npx tsx prisma/seed-admin.ts || echo "Seed skipped"
+
 EXPOSE 3001
 
 # 直接运行 TypeScript
