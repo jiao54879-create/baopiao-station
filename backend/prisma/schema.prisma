@@ -3,10 +3,9 @@ generator client {
 }
 
 datasource db {
-  // 生产环境使用 PostgreSQL (Neon)
-  provider     = "postgresql"
-  url          = env("DATABASE_URL")
-  relationMode = "prisma" // Neon 不支持外键，用 Prisma 关系模式
+  // 开发环境使用 SQLite
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // ==================== 用户与权限 ====================
@@ -149,8 +148,8 @@ model InsuranceProduct {
   status          String    @default("NEW")  // NEW(新上架)/HOT(热门)/NORMAL(在售)/OFFLINE(已下架)
   
   // 价格计算（标准化：成人30岁/30万/30年交/保终身；儿童0岁/50万/30年交/保终身）
-  priceAdult30    Decimal?  @db.Decimal(10,2)  // 成人年缴保费
-  priceChild0     Decimal?  @db.Decimal(10,2)  // 儿童年缴保费
+  priceAdult30    Float?    // 成人年缴保费
+  priceChild0     Float?    // 儿童年缴保费
   
   // 时间管理
   launchDate      DateTime? // 上架时间

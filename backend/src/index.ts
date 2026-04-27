@@ -19,6 +19,7 @@ import titleOptimizationRoutes from './routes/titleOptimization.js';
 import productsRoutes from './routes/products.js';
 import triggerRoutes from './routes/trigger.js';
 import materialsRoutes from './routes/materials.js';
+import collectRoutes from './routes/collect.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authLimiter } from './middleware/rateLimiter.js';
 
@@ -72,7 +73,8 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/title-optimization', titleOptimizationRoutes);  // AI标题优化（方案二）
   app.use('/api/products', productsRoutes);  // 保险产品管理
-  app.use('/api/materials', materialsRoutes);  // 素材上传管理
+app.use('/api/materials', materialsRoutes);  // 素材上传管理
+app.use('/api', collectRoutes);  // 爆款数据采集
 
 // 健康检查
 app.get('/health', (req, res) => {
