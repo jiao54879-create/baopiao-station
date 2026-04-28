@@ -1,12 +1,12 @@
 // 保险产品中心页面
 import { useState, useEffect } from 'react';
-import { 
-  Card, Table, Tag, Button, Space, Input, Select, Modal, Form, 
+import {
+  Card, Table, Tag, Button, Space, Input, Select, Modal, Form,
   InputNumber, DatePicker, message, Statistic, Row, Col,
   Descriptions, Collapse, Empty, Alert
 } from 'antd';
-import { 
-  PlusOutlined, FireOutlined, 
+import {
+  PlusOutlined, FireOutlined,
   ClockCircleOutlined, CheckCircleOutlined,
   UpCircleOutlined, DownCircleOutlined,
   SafetyOutlined
@@ -42,12 +42,12 @@ export default function Products() {
   const [products, setProducts] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0 });
-  
+
   // 筛选条件
   const [status, setStatus] = useState<string>('');
   const [insuranceType, setInsuranceType] = useState<string>('');
   const [keyword, setKeyword] = useState('');
-  
+
   // 弹窗状态
   const [modalVisible, setModalVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
@@ -160,7 +160,7 @@ export default function Products() {
       title: '产品名称',
       dataIndex: 'name',
       key: 'name',
-      width: 220,
+      width: 200,
       render: (name: string, record: any) => (
         <div>
           <div className="font-medium text-sm">{name}</div>
@@ -189,15 +189,23 @@ export default function Products() {
       )
     },
     {
-      title: '价格（成人30岁/30万）',
+      title: '价格',
       key: 'price',
-      width: 130,
+      width: 160,
       render: (_: any, record: any) => (
-        record.priceAdult30 ? (
-          <span className="text-orange-500 font-medium text-sm">
-            ¥{Number(record.priceAdult30).toLocaleString()}/年
-          </span>
-        ) : '-'
+        <div className="text-sm">
+          {record.priceAdult30 > 0 && (
+            <div className="text-gray-600">
+              成人：<span className="text-orange-500 font-medium">¥{Number(record.priceAdult30).toLocaleString()}/年</span>
+            </div>
+          )}
+          {record.priceChild0 > 0 && (
+            <div className="text-gray-600">
+              儿童：<span className="text-green-500 font-medium">¥{Number(record.priceChild0).toLocaleString()}/年</span>
+            </div>
+          )}
+          {!record.priceAdult30 && !record.priceChild0 && <span className="text-gray-400">-</span>}
+        </div>
       )
     },
     {
@@ -237,12 +245,6 @@ export default function Products() {
           ) : (
             <Button type="link" onClick={() => handleUpdateStatus(record.id, 'NORMAL')}>上架</Button>
           )}
-          <Button type="link" danger onClick={() => {
-            Modal.confirm({
-              title: '确认删除？',
-              onOk: () => handleDelete(record.id)
-            });
-          }}>删除</Button>
         </Space>
       )
     }
@@ -259,30 +261,30 @@ export default function Products() {
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic 
-              title="新上架" 
-              value={stats?.newProducts || 0} 
-              prefix={<UpCircleOutlined />} 
+            <Statistic
+              title="新上架"
+              value={stats?.newProducts || 0}
+              prefix={<UpCircleOutlined />}
               valueStyle={{ color: '#52c41a' }}
             />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic 
-              title="热门产品" 
-              value={stats?.hotProducts || 0} 
-              prefix={<FireOutlined />} 
+            <Statistic
+              title="热门产品"
+              value={stats?.hotProducts || 0}
+              prefix={<FireOutlined />}
               valueStyle={{ color: '#ff4d4f' }}
             />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic 
-              title="已下架" 
-              value={stats?.offlineProducts || 0} 
-              prefix={<DownCircleOutlined />} 
+            <Statistic
+              title="已下架"
+              value={stats?.offlineProducts || 0}
+              prefix={<DownCircleOutlined />}
             />
           </Card>
         </Col>
@@ -542,7 +544,7 @@ export default function Products() {
                   <Empty description="暂无亮点数据" />
                 )}
               </Panel>
-              
+
               <Panel header="⭐ 核心优势" key="advantages">
                 {selectedProduct.advantagesPrice && JSON.parse(selectedProduct.advantagesPrice).length > 0 ? (
                   <ul className="list-disc ml-6">
@@ -575,7 +577,7 @@ export default function Products() {
                           { title: '维度', dataIndex: 'name' },
                           { title: '本产品', dataIndex: 'thisProduct', render: (v: string) => <span className="text-blue-600">{v}</span> },
                           { title: c.productName, dataIndex: 'competitor' },
-                          { title: '优势', dataIndex: 'winner', 
+                          { title: '优势', dataIndex: 'winner',
                             render: (w: string) => w === 'this' ? <Tag color="green">本产品胜</Tag> : w === 'competitor' ? <Tag color="red">竞品胜</Tag> : <Tag>持平</Tag>
                           }
                         ]}

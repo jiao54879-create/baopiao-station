@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Card, Row, Col, Tag, Select, Input, Spin, Empty, Button, Modal, List, Tooltip } from 'antd'
+import { Card, Row, Col, Tag, Select, Input, Spin, Empty, Button, Modal, List, Tooltip, Alert, message } from 'antd'
 import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined } from '@ant-design/icons'
 import api from '../utils/api'
-import { message } from 'antd'
 
 const { Search } = Input
 
@@ -24,14 +23,14 @@ const insuranceTypeMap: Record<string, string> = {
   pension: '养老险'
 }
 
-// 公众号订阅配置
-const wechatAccounts = [
-  { id: 1, name: '深蓝保', bizId: 'gh_8b9c0d7a8f5c', url: 'https://rsshub.app/wechat/mp/gh_8b9c0d7a8f5c' },
-  { id: 2, name: '多保鱼', bizId: 'gh_7d5c9b3f6e4a', url: 'https://rsshub.app/wechat/mp/gh_7d5c9b3f6e4a' },
-  { id: 3, name: '小骆驼教你保', bizId: 'gh_6a8b2c4e5d9f', url: 'https://rsshub.app/wechat/mp/gh_6a8b2c4e5d9f' },
-  { id: 4, name: '学霸说保险', bizId: 'gh_5f9a1b3c7e2d', url: 'https://rsshub.app/wechat/mp/gh_5f9a1b3c7e2d' },
-  { id: 5, name: '奶爸保选险', bizId: 'gh_4e8a0c5f6b1d', url: 'https://rsshub.app/wechat/mp/gh_4e8a0c5f6b1d' },
-  { id: 6, name: '小雨伞', bizId: 'gh_3d7f9a2c5e8b', url: 'https://rsshub.app/wechat/mp/gh_3d7f9a2c5e8b' },
+// 推荐订阅的公众号列表（说明如何获取真实RSS）
+const recommendedAccounts = [
+  { name: '深蓝保', description: '搜索：深蓝保 + site:mp.weixin.qq.com 获取文章链接' },
+  { name: '多保鱼', description: '搜索：多保鱼 + site:mp.weixin.qq.com 获取文章链接' },
+  { name: '小骆驼教你保', description: '搜索：小骆驼教你保 + site:mp.weixin.qq.com 获取文章链接' },
+  { name: '学霸说保险', description: '搜索：学霸说保险 + site:mp.weixin.qq.com 获取文章链接' },
+  { name: '奶爸保选险', description: '搜索：奶爸保 + site:mp.weixin.qq.com 获取文章链接' },
+  { name: '小雨伞', description: '搜索：小雨伞保险 + site:mp.weixin.qq.com 获取文章链接' },
 ]
 
 export default function Cases() {
@@ -90,7 +89,7 @@ export default function Cases() {
       })
       setSelectedCase({ ...caseItem, analysis: data })
     } catch (error) {
-      message.error('分析失败，请重试')
+      message.error('AI分析功能暂不可用，请稍后重试')
     } finally {
       setAnalyzing(false)
     }
@@ -128,7 +127,7 @@ export default function Cases() {
       const { data: res } = await api.post('/subscribe/wechat', {
         articleUrl: subscribeUrl
       })
-      message.success(res.message || '订阅成功')
+      message.success('订阅成功！系统将自动采集该公众号的最新文章')
       setSubscribeUrl('')
       setSubscribeModalOpen(false)
     } catch (error: any) {
@@ -187,6 +186,19 @@ export default function Cases() {
           />
         </div>
       </div>
+
+      {/* 数据说明 */}
+      <Alert
+        message="数据来源说明"
+        description={
+          <div className="text-sm">
+            当前数据为示例数据。如需真实数据，点击「订阅公众号」按钮，粘贴公众号文章链接即可订阅。
+            小红书数据需要安装 AutoCLI Chrome 扩展。
+          </div>
+        }
+        type="info"
+        showIcon
+      />
 
       <Spin spinning={loading}>
         <Row gutter={[16, 16]}>
@@ -299,7 +311,14 @@ export default function Cases() {
                   </ul>
                 </div>
               </>
-            ) : null}
+            ) : (
+              <Alert
+                message="AI分析功能说明"
+                description="当前案例为示例数据，无法进行真实的AI分析。请订阅真实的公众号后，采集真实数据即可使用AI分析功能。"
+                type="warning"
+                showIcon
+              />
+            )}
           </div>
         )}
       </Modal>
@@ -309,53 +328,54 @@ export default function Cases() {
         title={<><WechatOutlined /> 订阅公众号</>}
         open={subscribeModalOpen}
         onCancel={() => { setSubscribeModalOpen(false); setSubscribeUrl(''); }}
-        footer={[
-          <Button key="cancel" onClick={() => { setSubscribeModalOpen(false); setSubscribeUrl(''); }}>
-            取消
-          </Button>,
-          <Button key="subscribe" type="primary" loading={subscribing} onClick={handleSubscribe}>
-            确认订阅
-          </Button>
-        ]}
+        footer={null}
         width={600}
       >
         <div className="space-y-4">
+          <Alert
+            message="如何获取公众号文章链接？"
+            description={
+              <div className="text-sm space-y-1">
+                <p>1. 在微信中打开任意保险公众号文章</p>
+                <p>2. 点击右上角「...」- 「复制链接」</p>
+                <p>3. 粘贴到下方输入框</p>
+              </div>
+            }
+            type="info"
+            showIcon
+          />
+
           <div>
-            <h4 className="font-medium mb-2">输入公众号文章链接</h4>
+            <h4 className="font-medium mb-2">粘贴公众号文章链接</h4>
             <Input
-              placeholder="粘贴任意公众号文章链接，如：https://mp.weixin.qq.com/s/xxxx"
+              placeholder="https://mp.weixin.qq.com/s/xxxx"
               value={subscribeUrl}
               onChange={(e) => setSubscribeUrl(e.target.value)}
               status={subscribeUrl && !subscribeUrl.includes('mp.weixin.qq.com') ? 'error' : undefined}
             />
-            <p className="text-gray-500 text-sm mt-1">
-              系统将从文章中提取公众号信息并订阅
-            </p>
           </div>
 
+          <Button 
+            type="primary" 
+            block 
+            loading={subscribing} 
+            onClick={handleSubscribe}
+            disabled={!subscribeUrl.includes('mp.weixin.qq.com')}
+          >
+            确认订阅
+          </Button>
+
           <div className="border-t pt-4">
-            <h4 className="font-medium mb-2">已订阅的保险公众号</h4>
+            <h4 className="font-medium mb-2">推荐订阅的保险公众号</h4>
             <List
               size="small"
-              dataSource={wechatAccounts}
+              dataSource={recommendedAccounts}
               renderItem={(item) => (
-                <List.Item
-                  actions={[
-                    <Button 
-                      key="collect" 
-                      type="link" 
-                      size="small"
-                      icon={<DownloadOutlined />}
-                      onClick={() => window.open(item.url, '_blank')}
-                    >
-                      采集
-                    </Button>
-                  ]}
-                >
+                <List.Item>
                   <List.Item.Meta
                     avatar={<WechatOutlined style={{ fontSize: 20, color: '#07C160' }} />}
                     title={item.name}
-                    description={`ID: ${item.bizId}`}
+                    description={item.description}
                   />
                 </List.Item>
               )}
