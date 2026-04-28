@@ -51,6 +51,7 @@ router.get('/', async (req, res, next) => {
           title: true,
           summary: true,
           source: true,
+          sourceUrl: true,
           category: true,
           tags: true,
           hotScore: true,
