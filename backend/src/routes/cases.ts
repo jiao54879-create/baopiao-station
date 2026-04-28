@@ -44,13 +44,14 @@ router.post('/analyze', async (req, res, next) => {
     const { title, content, metrics } = AnalyzeCaseSchema.parse(req.body);
 
     if (!process.env.DEEPSEEK_API_KEY) {
-      throw new AppError('AI 服务未配置', 500);
+      return res.status(500).json({ error: 'AI 服务未配置，请联系管理员配置 DeepSeek API Key' });
     }
 
     const result = await analyzeViralCase(title, content, metrics);
     res.json(result);
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    console.error('AI 分析失败:', error.message);
+    return res.status(500).json({ error: 'AI 分析失败: ' + error.message });
   }
 });
 
