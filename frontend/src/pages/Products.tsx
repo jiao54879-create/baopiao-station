@@ -482,28 +482,58 @@ export default function Products() {
             {/* 产品亮点折叠 */}
             <Collapse defaultActiveKey={['highlights', 'advantages']}>
               <Panel header="📌 产品亮点" key="highlights">
-                {selectedProduct.highlights重症 && JSON.parse(selectedProduct.highlights重症).length > 0 && (
+                {selectedProduct.highlightsSevere && JSON.parse(selectedProduct.highlightsSevere).length > 0 && (
                   <div className="mb-4">
                     <Tag color="red">重症保障</Tag>
                     <ul className="list-disc ml-6">
-                      {JSON.parse(selectedProduct.highlights重症).map((h: any, i: number) => (
+                      {JSON.parse(selectedProduct.highlightsSevere).map((h: any, i: number) => (
                         <li key={i}>{h.title}：{h.value}</li>
                       ))}
                     </ul>
                   </div>
                 )}
-                {selectedProduct.highlights轻症 && JSON.parse(selectedProduct.highlights轻症).length > 0 && (
+                {selectedProduct.highlightsMild && JSON.parse(selectedProduct.highlightsMild).length > 0 && (
                   <div className="mb-4">
                     <Tag color="blue">轻症保障</Tag>
                     <ul className="list-disc ml-6">
-                      {JSON.parse(selectedProduct.highlights轻症).map((h: any, i: number) => (
+                      {JSON.parse(selectedProduct.highlightsMild).map((h: any, i: number) => (
                         <li key={i}>{h.title}：{h.value}</li>
                       ))}
                     </ul>
                   </div>
                 )}
-                {(!selectedProduct.highlights重症 || JSON.parse(selectedProduct.highlights重症).length === 0) && (
-                  <Empty description="暂无亮点数据，请编辑添加" />
+                {selectedProduct.highlightsWaiver && JSON.parse(selectedProduct.highlightsWaiver).length > 0 && (
+                  <div className="mb-4">
+                    <Tag color="purple">豁免保障</Tag>
+                    <ul className="list-disc ml-6">
+                      {JSON.parse(selectedProduct.highlightsWaiver).map((h: any, i: number) => (
+                        <li key={i}>{h.title}：{h.value}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {selectedProduct.highlightsSpecial && JSON.parse(selectedProduct.highlightsSpecial).length > 0 && (
+                  <div className="mb-4">
+                    <Tag color="orange">特色保障</Tag>
+                    <ul className="list-disc ml-6">
+                      {JSON.parse(selectedProduct.highlightsSpecial).map((h: any, i: number) => (
+                        <li key={i}>{h.title}：{h.value}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {selectedProduct.highlightsValue && JSON.parse(selectedProduct.highlightsValue).length > 0 && (
+                  <div className="mb-4">
+                    <Tag color="cyan">增值服务</Tag>
+                    <ul className="list-disc ml-6">
+                      {JSON.parse(selectedProduct.highlightsValue).map((h: any, i: number) => (
+                        <li key={i}>{h.title}：{h.value}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {(!selectedProduct.highlightsSevere || JSON.parse(selectedProduct.highlightsSevere).length === 0) && (
+                  <Empty description="暂无亮点数据" />
                 )}
               </Panel>
               
