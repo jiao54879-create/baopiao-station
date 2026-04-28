@@ -18,6 +18,7 @@ import templatesRoutes from './routes/templates.js';
 import titleOptimizationRoutes from './routes/titleOptimization.js';
 import productsRoutes from './routes/products.js';
 import triggerRoutes from './routes/trigger.js';
+import subscribeRoutes from './routes/subscribe.js';
 import materialsRoutes from './routes/materials.js';
 import collectRoutes from './routes/collect.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -58,6 +59,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/teams/invite/:token', teamRoutes); // 邀请链接无需认证
 app.use('/api/trigger', triggerRoutes);          // 采集触发（用 TRIGGER_SECRET 验证，无需 JWT）
+app.use('/api/subscribe', subscribeRoutes);       // 公众号订阅
 
 // 认证中间件
 import { authenticate } from './middleware/auth.js';
@@ -72,7 +74,7 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/title-optimization', titleOptimizationRoutes);  // AI标题优化（方案二）
-  app.use('/api/products', productsRoutes);  // 保险产品管理
+app.use('/api/products', productsRoutes);  // 保险产品管理
 app.use('/api/materials', materialsRoutes);  // 素材上传管理
 app.use('/api', collectRoutes);  // 爆款数据采集
 
