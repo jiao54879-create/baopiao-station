@@ -80,6 +80,8 @@ router.get('/', async (req, res, next) => {
           platform: true,
           title: true,
           author: true,
+          url: true,
+          content: true,
           likesCount: true,
           favoritesCount: true,
           commentsCount: true,
