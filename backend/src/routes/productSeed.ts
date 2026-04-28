@@ -618,6 +618,9 @@ const products: ProductSeed[] = [
   }
 ];
 
+// 导出 products 数组供 API 使用
+export { products };
+
 async function main() {
   console.log('🌱 开始初始化产品种子数据（2026年4月在售版本）...');
 

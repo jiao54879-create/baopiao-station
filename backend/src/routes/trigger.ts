@@ -152,6 +152,86 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// POST /api/trigger/seed-products - 初始化产品种子数据（需要在 Railway 生产环境调用）
+router.post('/seed-products', async (req, res) => {
+  try {
+    const { prisma } = await import('../index.js');
+    
+    // 动态导入产品种子数据
+    const productSeedModule = await import('./productSeed.js');
+    const products = productSeedModule.products;
+    
+    if (!products || !Array.isArray(products)) {
+      return res.status(500).json({ success: false, error: '无法加载产品种子数据' });
+    }
+    
+    console.log(`🌱 开始初始化产品种子数据，共 ${products.length} 个产品...`);
+    
+    let created = 0;
+    let updated = 0;
+    
+    for (const product of products) {
+      try {
+        const existing = await prisma.insuranceProduct.findFirst({
+          where: { name: product.name }
+        });
+
+        const productData = {
+          name: product.name,
+          company: product.company,
+          insuranceType: product.insuranceType,
+          status: product.status,
+          priceAdult30: product.priceAdult30 > 0 ? product.priceAdult30 : null,
+          priceChild0: product.priceChild0 > 0 ? product.priceChild0 : null,
+          launchDate: product.launchDate ? new Date(product.launchDate) : null,
+          estimatedOffline: product.estimatedOffline ? new Date(product.estimatedOffline) : null,
+          highlightsSevere: JSON.stringify(product.highlightsSevere || []),
+          highlightsMild: JSON.stringify(product.highlightsMild || []),
+          highlightsWaiver: JSON.stringify(product.highlightsWaiver || []),
+          highlightsSpecial: JSON.stringify(product.highlightsSpecial || []),
+          highlightsValue: JSON.stringify(product.highlightsValue || []),
+          advantagesPrice: JSON.stringify(product.advantages || []),
+          competitors: JSON.stringify(product.competitors || []),
+          drawbacks: JSON.stringify(product.drawbacks || []),
+          sourceUrl: product.sourceUrl,
+          notes: product.notes
+        };
+
+        if (existing) {
+          await prisma.insuranceProduct.update({
+            where: { id: existing.id },
+            data: productData
+          });
+          updated++;
+        } else {
+          await prisma.insuranceProduct.create({
+            data: productData
+          });
+          created++;
+        }
+      } catch (e: any) {
+        console.error(`[错误] ${product.name}:`, e.message);
+      }
+    }
+
+    const total = await prisma.insuranceProduct.count();
+    
+    res.json({
+      success: true,
+      message: `产品种子数据初始化完成！`,
+      stats: { created, updated, total },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error: any) {
+    console.error('Seed 失败:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 export default router;
 
 // POST /api/trigger/clear-and-collect - 清空旧数据并重新采集（用于测试）
