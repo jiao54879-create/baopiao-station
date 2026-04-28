@@ -61,22 +61,29 @@ app.use('/api/teams/invite/:token', teamRoutes); // 邀请链接无需认证
 app.use('/api/trigger', triggerRoutes);          // 采集触发（用 TRIGGER_SECRET 验证，无需 JWT）
 app.use('/api/subscribe', subscribeRoutes);       // 公众号订阅
 
-// 认证中间件
-import { authenticate } from './middleware/auth.js';
-app.use('/api', authenticate);
+// 公开 API（无需登录即可查看）
+app.use('/api/cases', casesRoutes);  // 爆款案例列表
+app.use('/api/products', productsRoutes);  // 产品数据
 
-// 受保护的 API 路由
-app.use('/api/users', userRoutes);
-app.use('/api/intelligence', intelligenceRoutes);
-app.use('/api/cases', casesRoutes);
-app.use('/api/generator', generatorRoutes);
-app.use('/api/teams', teamRoutes);
-app.use('/api/stats', statsRoutes);
-app.use('/api/templates', templatesRoutes);
-app.use('/api/title-optimization', titleOptimizationRoutes);  // AI标题优化（方案二）
-app.use('/api/products', productsRoutes);  // 保险产品管理
-app.use('/api/materials', materialsRoutes);  // 素材上传管理
-app.use('/api', collectRoutes);  // 爆款数据采集
+// 认证中间件
+import { authenticate, requireRole } from './middleware/auth.js';
+
+// 需要登录的 API
+const protectedRoutes = [
+  { path: '/api/users', router: userRoutes },
+  { path: '/api/intelligence', router: intelligenceRoutes },
+  { path: '/api/generator', router: generatorRoutes },
+  { path: '/api/teams', router: teamRoutes },
+  { path: '/api/stats', router: statsRoutes },
+  { path: '/api/templates', router: templatesRoutes },
+  { path: '/api/title-optimization', router: titleOptimizationRoutes },
+  { path: '/api/materials', router: materialsRoutes },
+  { path: '/api/collect', router: collectRoutes },
+];
+
+protectedRoutes.forEach(({ path, router }) => {
+  app.use(path, authenticate, router);
+});
 
 // 健康检查
 app.get('/health', (req, res) => {
