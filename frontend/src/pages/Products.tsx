@@ -160,9 +160,10 @@ export default function Products() {
       title: '产品名称',
       dataIndex: 'name',
       key: 'name',
+      width: 220,
       render: (name: string, record: any) => (
         <div>
-          <div className="font-medium">{name}</div>
+          <div className="font-medium text-sm">{name}</div>
           <div className="text-xs text-gray-400">{record.company}</div>
         </div>
       )
@@ -171,6 +172,7 @@ export default function Products() {
       title: '险种',
       dataIndex: 'insuranceType',
       key: 'insuranceType',
+      width: 90,
       render: (type: string) => (
         <Tag color={typeMap[type]?.color}>{typeMap[type]?.label || type}</Tag>
       )
@@ -179,6 +181,7 @@ export default function Products() {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
+      width: 80,
       render: (status: string) => (
         <Tag color={statusMap[status]?.color} icon={statusMap[status]?.icon}>
           {statusMap[status]?.label || status}
@@ -188,9 +191,10 @@ export default function Products() {
     {
       title: '价格（成人30岁/30万）',
       key: 'price',
+      width: 130,
       render: (_: any, record: any) => (
         record.priceAdult30 ? (
-          <span className="text-orange-500 font-medium">
+          <span className="text-orange-500 font-medium text-sm">
             ¥{Number(record.priceAdult30).toLocaleString()}/年
           </span>
         ) : '-'
@@ -200,12 +204,14 @@ export default function Products() {
       title: '上架时间',
       dataIndex: 'launchDate',
       key: 'launchDate',
+      width: 100,
       render: (date: string) => date ? dayjs(date).format('YYYY-MM-DD') : '-'
     },
     {
       title: '预估下架',
       dataIndex: 'estimatedOffline',
       key: 'estimatedOffline',
+      width: 120,
       render: (date: string) => {
         if (!date) return '-';
         const daysUntil = dayjs(date).diff(dayjs(), 'day');
