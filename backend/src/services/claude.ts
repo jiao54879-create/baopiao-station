@@ -113,23 +113,26 @@ export async function analyzeViralCase(
   content: string,
   metrics: { likes: number; favorites: number; comments: number }
 ): Promise<z.infer<typeof CaseAnalysisSchema>> {
-  const prompt = '请分析以下小红书爆款笔记的爆款原因：\n\n标题：' + title + '\n内容：' + content + '\n数据表现：点赞 ' + metrics.likes + ' | 收藏 ' + metrics.favorites + ' | 评论 ' + metrics.comments + '\n\n分析维度：\n1. 标题吸引力（钩子、情绪、数字等）\n2. 内容结构（开头/中间/结尾）\n3. 选题角度（为什么能引发讨论）\n4. 可复用的元素\n\n请输出：\n- 爆款因素总结（3-5条）\n- 内容结构分析\n- 选题角度解读\n- 可模仿的写作公式\n- 生成类似标题的建议（3条）\n\n请以 JSON 格式输出结果。';
+  const prompt = '请分析以下小红书爆款笔记的爆款原因：\n\n标题：' + title + '\n内容：' + content + '\n数据表现：点赞 ' + metrics.likes + ' | 收藏 ' + metrics.favorites + ' | 评论 ' + metrics.comments + '\n\n请以 JSON 格式输出，必须包含以下字段：\n{\n  "viralFactors": ["因素1", "因素2", "因素3"],\n  "contentStructure": {"opening": "开头分析", "middle": "中间分析", "ending": "结尾分析"},\n  "topicAngle": "选题角度解读",\n  "reusableFormula": "可复用的写作公式",\n  "suggestions": ["建议1", "建议2", "建议3"]\n}';
 
   const response = await deepseek.chat.completions.create({
     model: 'deepseek-chat',
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
-    max_tokens: 1024,
+    max_tokens: 2048,  // 增加 token 数量
   });
 
   const responseText = response.choices[0]?.message?.content || '';
+  console.log('DeepSeek 返回:', responseText);
 
+  // 提取 JSON
   const jsonMatch = responseText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    throw new Error('AI 返回格式错误');
+    throw new Error('AI 返回格式错误，无法解析 JSON');
   }
 
-  return CaseAnalysisSchema.parse(JSON.parse(jsonMatch[0]));
+  const parsed = JSON.parse(jsonMatch[0]);
+  return CaseAnalysisSchema.parse(parsed);
 }
 
 export async function summarizeIntelligence(
