@@ -254,7 +254,13 @@ export default function Cases() {
                   <Button key="analyze" type="text" icon={<ThunderboltOutlined />} onClick={() => analyzeCase(item)}>
                     AI分析
                   </Button>,
-                  <Button key="link" type="text" onClick={() => window.open(item.url, '_blank')}>
+                  <Button key="link" type="text" onClick={() => {
+                    if (item.url && item.url.includes('example')) {
+                      message.info('示例数据暂无原文链接，请订阅真实公众号文章');
+                    } else {
+                      window.open(item.url, '_blank')
+                    }
+                  }}>
                     查看原文
                   </Button>
                 ]}
