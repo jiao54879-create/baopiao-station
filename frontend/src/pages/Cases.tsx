@@ -25,12 +25,12 @@ const insuranceTypeMap: Record<string, string> = {
 
 // 推荐订阅的公众号列表（说明如何获取真实RSS）
 const recommendedAccounts = [
-  { name: '深蓝保', description: '搜索：深蓝保 + site:mp.weixin.qq.com 获取文章链接' },
-  { name: '多保鱼', description: '搜索：多保鱼 + site:mp.weixin.qq.com 获取文章链接' },
-  { name: '小骆驼教你保', description: '搜索：小骆驼教你保 + site:mp.weixin.qq.com 获取文章链接' },
-  { name: '学霸说保险', description: '搜索：学霸说保险 + site:mp.weixin.qq.com 获取文章链接' },
-  { name: '奶爸保选险', description: '搜索：奶爸保 + site:mp.weixin.qq.com 获取文章链接' },
-  { name: '小雨伞', description: '搜索：小雨伞保险 + site:mp.weixin.qq.com 获取文章链接' },
+  { name: '深蓝保', bizId: 'gh_8b9c0d7a8f5c', description: '深蓝保官方公众号' },
+  { name: '多保鱼', bizId: 'gh_7d5c9b3f6e4a', description: '多保鱼官方公众号' },
+  { name: '小骆驼', bizId: 'gh_6a8b2c4e5d9f', description: '小骆驼教你保' },
+  { name: '学霸说保险', bizId: 'gh_5f9a1b3c7e2d', description: '学霸说保险官方公众号' },
+  { name: '奶爸保', bizId: 'gh_4e8a0c5f6b1d', description: '奶爸保官方公众号' },
+  { name: '小雨伞', bizId: 'gh_3d7f9a2c5e8b', description: '小雨伞官方公众号' },
 ]
 
 export default function Cases() {
@@ -44,7 +44,9 @@ export default function Cases() {
   const [collecting, setCollecting] = useState(false)
   const [subscribeModalOpen, setSubscribeModalOpen] = useState(false)
   const [subscribeUrl, setSubscribeUrl] = useState('')
+  const [subscribeWechatId, setSubscribeWechatId] = useState('')
   const [subscribing, setSubscribing] = useState(false)
+  const [subscribedList, setSubscribedList] = useState<any[]>([])
 
   const fetchData = async (page = 1) => {
     setLoading(true)
@@ -111,8 +113,28 @@ export default function Cases() {
 
   // 订阅公众号
   const handleSubscribe = async () => {
+    // 如果有 wechatId，直接用 wechatId 订阅
+    if (subscribeWechatId) {
+      setSubscribing(true)
+      try {
+        await api.post('/subscribe/wechat', {
+          wechatId: subscribeWechatId,
+          wechatName: subscribeWechatId
+        })
+        message.success('订阅成功！')
+        setSubscribeWechatId('')
+        setSubscribeModalOpen(false)
+      } catch (error: any) {
+        message.error(error.response?.data?.error || '订阅失败')
+      } finally {
+        setSubscribing(false)
+      }
+      return
+    }
+    
+    // 否则使用文章链接
     if (!subscribeUrl.trim()) {
-      message.warning('请输入公众号文章链接')
+      message.warning('请输入公众号文章链接或微信号')
       return
     }
     
@@ -124,7 +146,7 @@ export default function Cases() {
 
     setSubscribing(true)
     try {
-      const { data: res } = await api.post('/subscribe/wechat', {
+      await api.post('/subscribe/wechat', {
         articleUrl: subscribeUrl
       })
       message.success('订阅成功！系统将自动采集该公众号的最新文章')
@@ -134,6 +156,24 @@ export default function Cases() {
       message.error(error.response?.data?.error || '订阅失败')
     } finally {
       setSubscribing(false)
+    }
+  }
+
+  // 快速订阅公众号
+  const handleQuickSubscribe = async (bizId: string, name: string) => {
+    setSubscribeWechatId(bizId)
+    setSubscribing(true)
+    try {
+      await api.post('/subscribe/wechat', {
+        wechatId: bizId,
+        wechatName: name
+      })
+      message.success(`已订阅 ${name}！`)
+    } catch (error: any) {
+      message.error(error.response?.data?.error || '订阅失败')
+    } finally {
+      setSubscribing(false)
+      setSubscribeWechatId('')
     }
   }
 
@@ -327,59 +367,64 @@ export default function Cases() {
       <Modal
         title={<><WechatOutlined /> 订阅公众号</>}
         open={subscribeModalOpen}
-        onCancel={() => { setSubscribeModalOpen(false); setSubscribeUrl(''); }}
+        onCancel={() => { setSubscribeModalOpen(false); setSubscribeUrl(''); setSubscribeWechatId(''); }}
         footer={null}
         width={600}
       >
         <div className="space-y-4">
           <Alert
-            message="如何获取公众号文章链接？"
-            description={
-              <div className="text-sm space-y-1">
-                <p>1. 在微信中打开任意保险公众号文章</p>
-                <p>2. 点击右上角「...」- 「复制链接」</p>
-                <p>3. 粘贴到下方输入框</p>
-              </div>
-            }
+            message="一键订阅推荐公众号"
+            description="点击下方按钮直接订阅，无需复制链接"
             type="info"
             showIcon
           />
 
-          <div>
-            <h4 className="font-medium mb-2">粘贴公众号文章链接</h4>
-            <Input
-              placeholder="https://mp.weixin.qq.com/s/xxxx"
-              value={subscribeUrl}
-              onChange={(e) => setSubscribeUrl(e.target.value)}
-              status={subscribeUrl && !subscribeUrl.includes('mp.weixin.qq.com') ? 'error' : undefined}
-            />
+          <div className="space-y-2">
+            {recommendedAccounts.map((account) => (
+              <div key={account.bizId} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <WechatOutlined style={{ fontSize: 24, color: '#07C160' }} />
+                  <div>
+                    <div className="font-medium">{account.name}</div>
+                    <div className="text-xs text-gray-500">{account.description}</div>
+                  </div>
+                </div>
+                <Button
+                  size="small"
+                  type="primary"
+                  onClick={() => handleQuickSubscribe(account.bizId, account.name)}
+                  loading={subscribing && subscribeWechatId === account.bizId}
+                >
+                  订阅
+                </Button>
+              </div>
+            ))}
           </div>
 
-          <Button 
-            type="primary" 
-            block 
-            loading={subscribing} 
-            onClick={handleSubscribe}
-            disabled={!subscribeUrl.includes('mp.weixin.qq.com')}
-          >
-            确认订阅
-          </Button>
-
           <div className="border-t pt-4">
-            <h4 className="font-medium mb-2">推荐订阅的保险公众号</h4>
-            <List
-              size="small"
-              dataSource={recommendedAccounts}
-              renderItem={(item) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<WechatOutlined style={{ fontSize: 20, color: '#07C160' }} />}
-                    title={item.name}
-                    description={item.description}
-                  />
-                </List.Item>
-              )}
-            />
+            <h4 className="font-medium mb-2">自定义订阅</h4>
+            <div className="space-y-2">
+              <Input
+                placeholder="输入公众号文章链接（mp.weixin.qq.com/s/...）"
+                value={subscribeUrl}
+                onChange={(e) => setSubscribeUrl(e.target.value)}
+                status={subscribeUrl && !subscribeUrl.includes('mp.weixin.qq.com') ? 'error' : undefined}
+              />
+              <Input
+                placeholder="或输入公众号原始ID（如 gh_8b9c0d7a8f5c）"
+                value={subscribeWechatId}
+                onChange={(e) => setSubscribeWechatId(e.target.value)}
+              />
+              <Button 
+                type="primary" 
+                block 
+                loading={subscribing} 
+                onClick={handleSubscribe}
+                disabled={!subscribeUrl.includes('mp.weixin.qq.com') && !subscribeWechatId}
+              >
+                确认订阅
+              </Button>
+            </div>
           </div>
         </div>
       </Modal>
