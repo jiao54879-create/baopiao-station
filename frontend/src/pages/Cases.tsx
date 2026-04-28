@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Card, Row, Col, Tag, Select, Input, Spin, Empty, Button, Modal, List, Space, InputRef, Tooltip } from 'antd'
-import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, PlusOutlined, WechatOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Card, Row, Col, Tag, Select, Input, Spin, Empty, Button, Modal, List, Tooltip } from 'antd'
+import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined } from '@ant-design/icons'
 import api from '../utils/api'
 import { message } from 'antd'
 
@@ -308,9 +308,9 @@ export default function Cases() {
       <Modal
         title={<><WechatOutlined /> 订阅公众号</>}
         open={subscribeModalOpen}
-        onCancel={() => { setSubscribeModalOpen(false); setSubscribeUrl('') }}
+        onCancel={() => { setSubscribeModalOpen(false); setSubscribeUrl(''); }}
         footer={[
-          <Button key="cancel" onClick={() => { setSubscribeModalOpen(false); setSubscribeUrl('') }}>
+          <Button key="cancel" onClick={() => { setSubscribeModalOpen(false); setSubscribeUrl(''); }}>
             取消
           </Button>,
           <Button key="subscribe" type="primary" loading={subscribing} onClick={handleSubscribe}>
