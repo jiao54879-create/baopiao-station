@@ -221,7 +221,13 @@ export default function Intelligence() {
                   key="view"
                   type="text"
                   icon={<EyeOutlined />}
-                  onClick={() => window.open(item.sourceUrl, '_blank')}
+                  onClick={() => {
+                    if (!item.sourceUrl) {
+                      message.warning('该情报暂无原文链接');
+                    } else {
+                      window.open(item.sourceUrl, '_blank');
+                    }
+                  }}
                 >
                   查看原文
                 </Button>
