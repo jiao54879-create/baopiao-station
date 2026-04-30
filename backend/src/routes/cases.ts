@@ -22,6 +22,25 @@ const AnalyzeCaseSchema = z.object({
   })
 });
 
+const CreateCaseSchema = z.object({
+  platform: z.enum(['XHS', 'WX', 'DOUYIN', 'VIDEO', 'WEIBO', 'ZHIHU']),
+  title: z.string(),
+  content: z.string().optional(),
+  author: z.string().optional(),
+  authorUrl: z.string().optional(),
+  url: z.string(),
+  coverImage: z.string().optional(),
+  likesCount: z.number().optional(),
+  favoritesCount: z.number().optional(),
+  commentsCount: z.number().optional(),
+  sharesCount: z.number().optional(),
+  tags: z.array(z.string()).optional(),
+  insuranceType: z.string().optional(),
+  viralScore: z.number().optional(),
+  analysis: z.string().optional(),
+  publishedAt: z.string().datetime().optional()
+});
+
 // AI 生成标题
 router.post('/generate', async (req, res, next) => {
   try {
@@ -52,6 +71,38 @@ router.post('/analyze', async (req, res, next) => {
   } catch (error: any) {
     console.error('AI 分析失败:', error.message);
     return res.status(500).json({ error: 'AI 分析失败: ' + error.message });
+  }
+});
+
+// 创建爆款案例
+router.post('/', async (req, res, next) => {
+  try {
+    const data = CreateCaseSchema.parse(req.body);
+
+    const viralCase = await prisma.viralCase.create({
+      data: {
+        platform: data.platform,
+        title: data.title,
+        content: data.content,
+        author: data.author,
+        authorUrl: data.authorUrl,
+        url: data.url,
+        coverImage: data.coverImage,
+        likesCount: data.likesCount || 0,
+        favoritesCount: data.favoritesCount || 0,
+        commentsCount: data.commentsCount || 0,
+        sharesCount: data.sharesCount || 0,
+        tags: data.tags ? JSON.stringify(data.tags) : '[]',
+        insuranceType: data.insuranceType,
+        viralScore: data.viralScore,
+        analysis: data.analysis,
+        publishedAt: data.publishedAt ? new Date(data.publishedAt) : undefined
+      }
+    });
+
+    res.status(201).json(viralCase);
+  } catch (error) {
+    next(error);
   }
 });
 

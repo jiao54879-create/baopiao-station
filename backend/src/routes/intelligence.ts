@@ -150,6 +150,7 @@ router.post('/', async (req, res, next) => {
     const intelligence = await prisma.intelligence.create({
       data: {
         ...data,
+        tags: data.tags ? JSON.stringify(data.tags) : '[]',
         summary,
         publishTime: data.publishTime ? new Date(data.publishTime) : undefined
       }
