@@ -1,5 +1,5 @@
 // 数据统计服务
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 
 export interface DashboardStats {
   overview: {

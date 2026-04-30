@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Layout, Menu, Avatar, Dropdown, Badge } from 'antd'
+import { Layout, Menu, Avatar, Dropdown, Badge, Button } from 'antd'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import {
   HomeOutlined,
@@ -37,10 +37,10 @@ const menuItems = [
   { key: '/settings', icon: <SettingOutlined />, label: '设置' },
 ]
 
-export default function LayoutComponent() {
+export default function LayoutComponent({ publicMode = false }: { publicMode?: boolean }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, logout } = useAuthStore()
+  const { user, logout, isAuthenticated } = useAuthStore()
   const [teamName, setTeamName] = useState<string>('')
 
   useEffect(() => {
@@ -78,33 +78,34 @@ export default function LayoutComponent() {
     }
   ]
 
-  return (
-    <Layout className="min-h-screen">
-      <Header className="flex items-center justify-between bg-white shadow-sm px-6">
-        <div className="flex items-center gap-4">
-          <div className="text-xl font-bold text-primary">
-            🔥 爆款情报站
-          </div>
-          {teamName && (
-            <Badge count={teamName} style={{ backgroundColor: '#4ecdc4' }} />
-          )}
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Badge count={5} size="small">
-            <BellOutlined className="text-xl cursor-pointer" />
-          </Badge>
-
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <div className="flex items-center gap-2 cursor-pointer">
-              <Avatar style={{ backgroundColor: '#ff6b6b' }}>
-                {user?.username?.[0]?.toUpperCase()}
-              </Avatar>
-              <span className="font-medium">{user?.username}</span>
+  // 公开模式下的导航栏
+  if (publicMode) {
+    return (
+      <Layout className="min-h-screen">
+        <Header className="flex items-center justify-between bg-white shadow-sm px-6">
+          <div className="flex items-center gap-4">
+            <div className="text-xl font-bold text-primary">
+              🔥 爆款情报站
             </div>
-          </Dropdown>
-        </div>
-      </Header>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {isAuthenticated ? (
+              <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+                <div className="flex items-center gap-2 cursor-pointer">
+                  <Avatar style={{ backgroundColor: '#ff6b6b' }}>
+                    {user?.username?.[0]?.toUpperCase()}
+                  </Avatar>
+                  <span className="font-medium">{user?.username}</span>
+                </div>
+              </Dropdown>
+            ) : (
+              <Button type="primary" onClick={() => navigate('/login')}>
+                登录 / 注册
+              </Button>
+            )}
+          </div>
+        </Header>
 
       <Layout>
         <Sider width={200} className="bg-white">

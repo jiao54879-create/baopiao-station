@@ -1,7 +1,7 @@
 // 保险产品深度分析服务
 // 按标准化条件计算：成人30岁/30万/30年交/保终身；儿童0岁/50万/30年交/保终身
 
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 
 interface ProductAnalysisInput {
   productName: string;

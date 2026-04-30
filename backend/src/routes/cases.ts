@@ -1,7 +1,7 @@
 // 爆款案例路由
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { generateTitles, analyzeViralCase } from '../services/claude.js';
 

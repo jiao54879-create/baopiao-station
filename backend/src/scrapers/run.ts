@@ -1,4 +1,5 @@
 // 爬虫运行脚本 - 可独立执行
+import 'dotenv/config';
 import scheduler from './scheduler.js';
 
 // 解析命令行参数

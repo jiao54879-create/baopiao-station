@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import path from 'path';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './lib/prisma.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import intelligenceRoutes from './routes/intelligence.js';
@@ -25,7 +25,6 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { authLimiter } from './middleware/rateLimiter.js';
 
 const app = express();
-const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
 
 // 中间件
@@ -131,4 +130,4 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-export { prisma };
+// prisma 已在 lib/prisma.ts 中导出

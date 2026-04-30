@@ -2,7 +2,7 @@
 // 功能：自动分析爆款特征、动态更新Prompt、热点自动借势
 
 import axios from 'axios';
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 
 // ==================== 爆款标题特征库 ====================
 

@@ -1,7 +1,7 @@
 // JWT 认证中间件
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 
 export interface AuthUser {
   id: number;

@@ -1,6 +1,6 @@
 // 定时任务调度器
 import cron from 'node-cron';
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 
 // 导入所有爬虫
 import cbircScraper from './cbirc.js';

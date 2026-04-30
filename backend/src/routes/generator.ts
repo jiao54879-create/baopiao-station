@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { generateTitles } from '../services/claude.js';
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 const router = Router();

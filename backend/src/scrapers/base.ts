@@ -1,7 +1,7 @@
 // 爬虫基类和工具函数
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 
 export interface ScrapeResult {
   success: boolean;

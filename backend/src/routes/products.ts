@@ -1,6 +1,6 @@
 // 保险产品管理 API
 import { Router } from 'express';
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 import { z } from 'zod';
 
 const router = Router();

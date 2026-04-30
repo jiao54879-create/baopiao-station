@@ -1,7 +1,7 @@
 // 通知服务 - 支持飞书、邮件等多种渠道
 import axios from 'axios';
 import nodemailer from 'nodemailer';
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 
 export interface NotificationPayload {
   title: string;

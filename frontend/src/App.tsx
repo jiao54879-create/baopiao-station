@@ -45,29 +45,29 @@ function App() {
 
   return (
     <Routes>
-      {/* 公开路由 */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/teams/invite/:token" element={<TeamInvite />} />
-
-      {/* 受保护的路由 */}
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Layout />
-        </ProtectedRoute>
-      }>
+      {/* 公开路由 - 无需登录即可浏览 */}
+      <Route path="/" element={<Layout publicMode={true} />}>
         <Route index element={<Home />} />
         <Route path="intelligence" element={<Intelligence />} />
         <Route path="cases" element={<Cases />} />
         <Route path="generator" element={<Generator />} />
-        <Route path="saved" element={<Saved />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="templates" element={<Templates />} />
-        <Route path="settings" element={<Settings />} />
         <Route path="title-optimizer" element={<TitleOptimizer />} />
+        <Route path="templates" element={<Templates />} />
         <Route path="products" element={<Products />} />
-        <Route path="materials" element={<Materials />} />
       </Route>
+
+      {/* 需登录的路由 - 个性化功能 */}
+      <Route path="/" element={<Layout publicMode={false} />}>
+        <Route path="saved" element={<Saved />} />
+        <Route path="materials" element={<Materials />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="settings" element={<Settings />} />
+      </Route>
+
+      {/* 认证路由 */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/teams/invite/:token" element={<TeamInvite />} />
     </Routes>
   )
 }

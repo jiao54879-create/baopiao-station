@@ -11,7 +11,7 @@ import {
   isHotTopic,
   HOT_TOPIC_CATEGORIES
 } from '../services/titleOptimizer.js';
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 const router = Router();

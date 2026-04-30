@@ -1,6 +1,6 @@
 // 保险产品准确率自检服务
 // 功能：验证产品版本是否最新，检测产品下架/升级情况
-import { prisma } from '../index.js';
+import { prisma } from '../lib/prisma.js';
 
 // 已知产品版本库（来源：保险公司官网、银保监会备案）
 const KNOWN_PRODUCT_VERSIONS: Record<string, {
