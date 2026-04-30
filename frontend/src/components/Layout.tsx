@@ -107,6 +107,56 @@ export default function LayoutComponent({ publicMode = false }: { publicMode?: b
           </div>
         </Header>
 
+        <Layout>
+          <Sider width={200} className="bg-white">
+            <Menu
+              mode="inline"
+              selectedKeys={[location.pathname]}
+              items={menuItems}
+              onClick={({ key }) => navigate(key)}
+              className="border-r-0"
+            />
+          </Sider>
+
+          <Content className="p-6 bg-gray-50">
+            <div className="bg-white rounded-lg p-6 min-h-full">
+              <Outlet />
+            </div>
+          </Content>
+        </Layout>
+      </Layout>
+    )
+  }
+
+  // 登录模式（原布局）
+  return (
+    <Layout className="min-h-screen">
+      <Header className="flex items-center justify-between bg-white shadow-sm px-6">
+        <div className="flex items-center gap-4">
+          <div className="text-xl font-bold text-primary">
+            🔥 爆款情报站
+          </div>
+          {teamName && (
+            <Badge count={teamName} style={{ backgroundColor: '#4ecdc4' }} />
+          )}
+        </div>
+
+        <div className="flex items-center gap-4">
+          <Badge count={5} size="small">
+            <BellOutlined className="text-xl cursor-pointer" />
+          </Badge>
+
+          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+            <div className="flex items-center gap-2 cursor-pointer">
+              <Avatar style={{ backgroundColor: '#ff6b6b' }}>
+                {user?.username?.[0]?.toUpperCase()}
+              </Avatar>
+              <span className="font-medium">{user?.username}</span>
+            </div>
+          </Dropdown>
+        </div>
+      </Header>
+
       <Layout>
         <Sider width={200} className="bg-white">
           <Menu
