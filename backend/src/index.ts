@@ -63,19 +63,19 @@ app.use('/api/subscribe', subscribeRoutes);       // 公众号订阅
 // 公开 API（无需登录即可查看）
 app.use('/api/cases', casesRoutes);  // 爆款案例列表
 app.use('/api/products', productsRoutes);  // 产品数据
+app.use('/api/intelligence', intelligenceRoutes);  // 情报中心
+app.use('/api/templates', templatesRoutes);  // 模板库
+app.use('/api/title-optimization', titleOptimizationRoutes);  // 标题优化
+app.use('/api/generator', generatorRoutes);  // 标题生成
 
 // 认证中间件
 import { authenticate, requireRole } from './middleware/auth.js';
 
-// 需要登录的 API
+// 需要登录的 API（个性化/管理功能）
 const protectedRoutes = [
   { path: '/api/users', router: userRoutes },
-  { path: '/api/intelligence', router: intelligenceRoutes },
-  { path: '/api/generator', router: generatorRoutes },
   { path: '/api/teams', router: teamRoutes },
   { path: '/api/stats', router: statsRoutes },
-  { path: '/api/templates', router: templatesRoutes },
-  { path: '/api/title-optimization', router: titleOptimizationRoutes },
   { path: '/api/materials', router: materialsRoutes },
   { path: '/api/collect', router: collectRoutes },
 ];
