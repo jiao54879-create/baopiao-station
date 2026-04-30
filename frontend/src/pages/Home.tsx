@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { Card, Row, Col, Statistic, List, Tag, Badge, Input, Button, Spin } from 'antd'
 import { FireOutlined, ThunderboltOutlined, EditOutlined, StarOutlined, RightOutlined } from '@ant-design/icons'
 import api from '../utils/api'
+import { useAuthStore } from '../store/auth'
 
 const { Search } = Input
 
 export default function Home() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuthStore()
   const [hotWords, setHotWords] = useState<any[]>([])
   const [recentIntelligences, setRecentIntelligences] = useState<any[]>([])
   const [topCases, setTopCases] = useState<any[]>([])
@@ -15,18 +17,26 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // 并行获取公开数据
     Promise.all([
       api.get('/intelligence/hot?limit=10'),
       api.get('/intelligence?limit=5'),
-      api.get('/cases?limit=5'),
-      api.get('/users/stats')
-    ]).then(([hotRes, recentRes, casesRes, statsRes]) => {
+      api.get('/cases?limit=5')
+    ]).then(([hotRes, recentRes, casesRes]) => {
       setHotWords(hotRes.data.data)
       setRecentIntelligences(recentRes.data.data)
       setTopCases(casesRes.data.data)
-      setStats(statsRes.data)
     }).finally(() => setLoading(false))
-  }, [])
+
+    // 只有登录用户才获取个人统计
+    if (isAuthenticated) {
+      api.get('/users/stats').then(res => {
+        setStats(res.data)
+      }).catch(() => {
+        // 忽略错误，未登录用户不需要统计
+      })
+    }
+  }, [isAuthenticated])
 
   const onSearch = (value: string) => {
     if (value.trim()) {
