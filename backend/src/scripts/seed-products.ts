@@ -13,7 +13,7 @@ const products = [
     company: '复星联合健康保险',
     insuranceType: 'CRITICAL_ILLNESS',
     status: 'HOT',
-    priceAdult30: 6710,
+    priceAdult30: 4026,
     priceChild0: null,
     launchDate: new Date('2025-09-01'),
     highlightsSevere: JSON.stringify([
@@ -40,7 +40,7 @@ const products = [
       '疾病关爱金轻症也能多赔'
     ]),
     advantagesPrice: JSON.stringify([
-      '50万保额年缴6710元（30岁男性）',
+      '30万保额年缴4026元（30岁男性）',
       '终身多次赔价格最优'
     ]),
     advantagesCoverage: JSON.stringify([
@@ -71,7 +71,7 @@ const products = [
     company: '君龙人寿',
     insuranceType: 'CRITICAL_ILLNESS',
     status: 'HOT',
-    priceAdult30: 6850,
+    priceAdult30: 5211,
     priceChild0: null,
     launchDate: new Date('2026-04-01'),
     highlightsSevere: JSON.stringify([
@@ -98,7 +98,7 @@ const products = [
       '45岁前保额翻倍（可选）'
     ]),
     advantagesPrice: JSON.stringify([
-      '40万保额年缴6868元',
+      '30万保额年缴5211元',
       '综合性价比高（考虑医疗金后）'
     ]),
     advantagesCoverage: JSON.stringify([
@@ -130,7 +130,7 @@ const products = [
     company: '君龙人寿',
     insuranceType: 'CRITICAL_ILLNESS',
     status: 'NORMAL',
-    priceAdult30: 6650,
+    priceAdult30: 4800,
     priceChild0: null,
     launchDate: new Date('2025-06-01'),
     highlightsSevere: JSON.stringify([
@@ -157,7 +157,7 @@ const products = [
       '可选保至70岁或终身'
     ]),
     advantagesPrice: JSON.stringify([
-      '性价比高，30岁男性年缴6650元起',
+      '性价比高，30岁男性年缴4800元起',
       '可选保至70岁降低保费'
     ]),
     advantagesCoverage: JSON.stringify([
@@ -189,7 +189,7 @@ const products = [
     company: '海保人寿',
     insuranceType: 'CRITICAL_ILLNESS',
     status: 'HOT',
-    priceAdult30: 6380,
+    priceAdult30: 3828,
     priceChild0: null,
     launchDate: new Date('2025-10-01'),
     highlightsSevere: JSON.stringify([
@@ -216,7 +216,7 @@ const products = [
       '接近40岁人群首选'
     ]),
     advantagesPrice: JSON.stringify([
-      '30岁男性年缴6380元（最低）',
+      '30岁男性年缴3828元（最低）',
       '保至70岁性价比最高',
       '高危职业无加费'
     ]),
@@ -250,7 +250,7 @@ const products = [
     company: '复星联合健康保险',
     insuranceType: 'CRITICAL_ILLNESS',
     status: 'HOT',
-    priceAdult30: 6770,
+    priceAdult30: 4062,
     priceChild0: null,
     launchDate: new Date('2025-12-01'),
     highlightsSevere: JSON.stringify([
@@ -277,8 +277,8 @@ const products = [
       '女性专属费率优势'
     ]),
     advantagesPrice: JSON.stringify([
-      '30岁女性年缴6330元（女性最低）',
-      '30岁男性年缴6770元',
+      '30岁女性年缴3792元（女性最低）',
+      '30岁男性年缴4062元',
       '女性保费优惠显著'
     ]),
     advantagesCoverage: JSON.stringify([

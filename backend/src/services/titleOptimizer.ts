@@ -11,49 +11,49 @@ export const TITLE_PATTERNS = {
   // 震惊体
   SHOCK: {
     pattern: /震惊|突发|重磅|紧急|刚刚|终于|内幕|曝光|揭秘|真相|必看|紧急通知/,
-    weight: 3,
+    weight: 2,
     description: '引发好奇心和紧迫感'
   },
   // 数字体
   NUMBER: {
     pattern: /\d+%|\d+万|\d+元|\d+岁|\d+种|\d+个|\d+招|\d+步|\d+条|\d+大/,
-    weight: 4,
+    weight: 2,
     description: '具体数字增强可信度和可操作性'
   },
   // 疑问体
   QUESTION: {
     pattern: /[？\?]|[是否|能不能|要不要|为什么|如何|怎么|怎样]/,
-    weight: 3,
+    weight: 1,
     description: '引发思考，促使用户点击寻找答案'
   },
   // 对比体
   CONTRAST: {
     pattern: /vs|对比|区别|差异|不同|其实|但是|然而|没想到|万万没想到/,
-    weight: 3,
+    weight: 2,
     description: '制造冲突感和认知反差'
   },
   // 情绪体
   EMOTION: {
     pattern: /哭了|笑死|太难了|崩溃|后悔|庆幸|终于|终于等到|感动|扎心|破防/,
-    weight: 4,
+    weight: 2,
     description: '引发情感共鸣'
   },
   // 实用体
   PRACTICAL: {
     pattern: /指南|攻略|教程|方法|技巧|秘诀|干货|建议|收藏|必备|清单|清单/,
-    weight: 4,
+    weight: 2,
     description: '提供实际价值'
   },
   // 故事体
   STORY: {
     pattern: /经历|故事|案例|真实|亲身|朋友|同事|邻居|客户|读者/,
-    weight: 3,
+    weight: 2,
     description: '真实案例增强说服力'
   },
   // 身份标签体
   IDENTITY: {
     pattern: /宝妈|奶爸|90后|80后|00后|上班族|打工人|家庭|一家|三口|三口之家/,
-    weight: 2,
+    weight: 1,
     description: '精准定位目标人群'
   }
 };
@@ -99,7 +99,7 @@ export interface OptimizationResult {
  * 分析标题的爆款潜力
  */
 export async function analyzeTitle(title: string): Promise<TitleAnalysis> {
-  let score = 50;  // 基础分
+  let score = 30;  // 基础分改为30
   const patterns: string[] = [];
   let keyword = '';
   let category = 'GENERAL';
@@ -115,7 +115,7 @@ export async function analyzeTitle(title: string): Promise<TitleAnalysis> {
   // 检查关键词
   for (const kw of VIRAL_KEYWORDS.HIGH) {
     if (title.includes(kw)) {
-      score += 10;
+      score += 5;
       keyword = kw;
       category = 'HIGH_RELEVANCE';
       break;
@@ -125,7 +125,7 @@ export async function analyzeTitle(title: string): Promise<TitleAnalysis> {
   if (!keyword) {
     for (const kw of VIRAL_KEYWORDS.MEDIUM) {
       if (title.includes(kw)) {
-        score += 6;
+        score += 3;
         keyword = kw;
         category = 'MEDIUM_RELEVANCE';
         break;
@@ -136,7 +136,7 @@ export async function analyzeTitle(title: string): Promise<TitleAnalysis> {
   if (!keyword) {
     for (const kw of VIRAL_KEYWORDS.LOW) {
       if (title.includes(kw)) {
-        score += 3;
+        score += 1;
         keyword = kw;
         category = 'LOW_RELEVANCE';
         break;
@@ -144,18 +144,25 @@ export async function analyzeTitle(title: string): Promise<TitleAnalysis> {
     }
   }
 
-  // 计算爆款潜力
-  let viralPotential: 'HIGH' | 'MEDIUM' | 'LOW' = 'LOW';
-  if (score >= 70) viralPotential = 'HIGH';
-  else if (score >= 55) viralPotential = 'MEDIUM';
+  // 扣分项
+  const boringOpenings = ['今天分享', '一起来了解', '给大家介绍', '给大家推荐', '今天来聊'];
+  if (boringOpenings.some(op => title.includes(op))) score -= 10;
+  
+  const manualStyle = ['保险产品说明书', '保险条款解读', '保险科普'];
+  if (manualStyle.some(m => title.includes(m))) score -= 8;
 
-  // 生成优化建议
+  // 计算爆款潜力 - 阈值修改
+  let viralPotential: 'HIGH' | 'MEDIUM' | 'LOW' = 'LOW';
+  if (score >= 65) viralPotential = 'HIGH';
+  else if (score >= 50) viralPotential = 'MEDIUM';
+
+  // 生成优化建议 - 更激进的措辞
   const suggestions: string[] = [];
-  if (patterns.length === 0) suggestions.push('建议添加震惊/数字/疑问等元素增强吸引力');
-  if (!keyword) suggestions.push('标题缺少核心关键词，建议添加"保险"、"重疾险"等词');
-  if (!TITLE_PATTERNS.NUMBER.pattern.test(title)) suggestions.push('建议添加具体数字，如"3步"、"5个技巧"等');
-  if (!TITLE_PATTERNS.QUESTION.pattern.test(title)) suggestions.push('可以考虑用疑问句引发好奇');
-  if (!TITLE_PATTERNS.IDENTITY.pattern.test(title)) suggestions.push('建议添加目标人群标签，如"宝妈"、"90后"等');
+  if (patterns.length === 0) suggestions.push('这个标题太无聊了，必须加数字+痛点+情绪钩子');
+  if (!keyword) suggestions.push('标题像说明书，没人会点的');
+  if (!TITLE_PATTERNS.NUMBER.pattern.test(title)) suggestions.push('没有数字就没有可信度，必须加');
+  if (!TITLE_PATTERNS.QUESTION.pattern.test(title)) suggestions.push('改成问句！陈述句没人看');
+  if (!TITLE_PATTERNS.IDENTITY.pattern.test(title)) suggestions.push('必须精准定位人群，宝妈/90后/打工人选一个');
 
   return {
     title,
@@ -175,7 +182,8 @@ export async function learnFromDatabase(): Promise<{
   topKeywords: string[];
   topPatterns: string[];
   avgScore: number;
-}> {
+}
+> {
   try {
     // 获取高评分爆款案例
     const viralCases = await prisma.viralCase.findMany({
@@ -227,20 +235,20 @@ export async function learnFromDatabase(): Promise<{
     return {
       topKeywords,
       topPatterns,
-      avgScore: viralCases.length > 0 ? Math.round(totalScore / viralCases.length) : 50
+      avgScore: viralCases.length > 0 ? Math.round(totalScore / viralCases.length) : 30
     };
   } catch (e) {
     console.log('学习爆款标题失败:', e);
     return {
       topKeywords: VIRAL_KEYWORDS.HIGH,
       topPatterns: ['NUMBER', 'PRACTICAL', 'QUESTION'],
-      avgScore: 60
+      avgScore: 30
     };
   }
 }
 
 /**
- * 生成动态Prompt
+ * 生成动态Prompt - 更严格的版本
  */
 export async function generateDynamicPrompt(context?: {
   hotTopics?: string[];
@@ -254,32 +262,45 @@ export async function generateDynamicPrompt(context?: {
   const topKeywords = context?.topKeywords || learned.topKeywords;
   const targetAudience = context?.targetAudience || '保险消费者';
 
-  return `你是一个专业的保险内容标题创作专家。请根据以下要求生成标题：
+  return `你是一个深谙小红书流量密码的保险赛道标题黑客。你的标题必须让人在信息流中停下拇指，不点进来就睡不着觉。
 
-## 要求
-1. 标题长度：15-30字，避免过长或过短
-2. 必须包含核心关键词：${topKeywords.slice(0, 5).join('、')}
-3. 可以借势的热点：${hotTopics.slice(0, 3).join('、')}
-4. 目标人群：${targetAudience}
+用户输入的关键词：${topKeywords.slice(0, 5).join(', ')}
+目标人群：${targetAudience}
+可借势热点：${hotTopics.slice(0, 3).join(', ')}
 
-## 爆款标题特征（学习自${learned.avgScore}分高评标题）
-- 数字体：使用具体数字增加可信度（如"3步"、"5个技巧"）
-- 疑问体：用问句引发好奇（如"要不要"、"怎么选"）
-- 震惊体：使用"震惊"、"必看"、"揭秘"等词
-- 情绪体：引发情感共鸣（如"后悔没早买"、"终于等到"）
-- 实用体：提供具体价值（如"攻略"、"指南"、"清单"）
-- 故事体：使用真实案例（如"客户真实经历"）
+## 强制三要素（缺一不可）
+1. 具体数字：必须包含至少一个具体数字（金额、年龄、百分比、人数等）
+2. 痛点/恐惧/利益：必须触及用户的恐惧、焦虑或贪念
+3. 反常识/情绪钩子：必须有让人"咦？"的反转或强烈的情绪触发词
 
-## 禁止
-- 标题党：与内容严重不符
-- 虚假夸大：使用"最好"、"第一"等绝对词
-- 低俗用语
+## 6种强制覆盖套路（每种至少生成1个）
+1. 避坑恐吓类：用恐惧驱动点击，如"XX前不看必亏X万"、"买错XX=白扔X万"
+2. 对比反差类：制造认知冲突，如"月薪3K和3W买保险，差距不是钱是命"
+3. 逆袭翻盘类：从失败到成功，如"被拒赔3次后靠这招拿50万"
+4. 权威背书类：借权威增强可信度，如"保险精算师自己的3个秘密"
+5. 数字冲击类：用震撼数字冲击，如"年缴XXX撬动XX万，这笔账必须算"
+6. 情绪共鸣类：戳中焦虑/后悔/庆幸，如"后悔没早买！30岁查出XX还好有它"
+
+## 禁止清单
+- 禁止"今天分享"、"一起来了解"、"给大家介绍"式开头
+- 禁止纯"科普"、"攻略"、"指南"等说明书式用词（除非搭配情绪钩子）
+- 禁止没有情绪张力的陈述句
+- 禁止标题像产品说明书
+- 禁止标题党但内容不符
+
+## 严格评分标准（1-10分）
+- 9-10分：信息流杀手，看到就忍不住点，情绪极强
+- 7-8分：有强烈吸引力，但情绪冲击还不够极致
+- 5-6分：有亮点但平庸，放到信息流里大概率被划过
+- 3-4分：无聊、像说明书、没有点击欲望
+- 1-2分：完全不想点
+
+⚠️ 自我批判规则：生成后必须诚实自评。如果一个标题放到小红书信息流中你会划过，那它最多5分。大部分标题应在5-7分，8分以上极难获得。
 
 ## 输出格式
 请生成5个标题，每个标题格式：
-[Nums|Que|Shock|Emot|Pract|Story] 标题内容
-例如：[Nums] 重疾险怎么买？3步教你选对不选贵
-[Nums|Que] 保费多少钱一年？算完这笔账，后悔买晚了！`;
+[Nums|Que|Shock|Emot|Pract|Story] 标题内容 | 评分 | 自我批评
+例如：[Nums|Que] 重疾险怎么买？3步教你选对不选贵 | 6 | 太平淡，缺少情绪冲击`;
 }
 
 /**

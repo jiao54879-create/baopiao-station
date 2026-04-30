@@ -1,5 +1,5 @@
 // 产品种子数据 - 主流保险产品信息（2026年4月最新在售版本）
-// 价格标准：成人30岁男性/30万保额/30年交/保终身；儿童0岁男宝/50万保额/30年交/保终身
+// 价格标准：成人30岁男性/30万保额/30年交/保终身；儿童0岁男宝/30万保额/30年交/保终身
 // 运行命令: cd backend && npx tsx prisma/seed-init.ts
 // ⚠️ 价格来源说明：
 //   ✅ 已确认：超级玛丽16号¥5211/达尔文12号¥4026/青云卫6号¥3510(50万)/小蜜蜂6号¥156(典藏版50万)/蓝医保¥234
@@ -166,7 +166,7 @@ const products: ProductSeed[] = [
     insuranceType: 'CHILDREN_CRITICAL',
     status: 'HOT',
     priceAdult30: 0,
-    priceChild0: 3510,   // 0岁男宝/50万保额/30年交/保终身（✅新浪2026-03-17金榜验证：3510元）
+    priceChild0: 2106,   // 0岁男宝/30万保额/30年交/保终身（✅新浪2026-03-17金榜验证：3510元）
     launchDate: '2025-09-01',
     estimatedOffline: '2027-06-30',
     highlightsSevere: [
@@ -202,7 +202,7 @@ const products: ProductSeed[] = [
       {
         productName: '大黄蜂16号旗舰版',
         dimensions: [
-          { name: '0岁男宝50万30年保终身年缴', thisProduct: '¥3,510', competitor: '¥3,025', winner: 'competitor' },
+          { name: '0岁男宝30万30年保终身年缴', thisProduct: '¥2,106', competitor: '¥1,815', winner: 'competitor' },
           { name: '保额增长设计', thisProduct: '有（首次重疾增长金）', competitor: '有（特疾递增）', winner: 'tie' },
           { name: '白血病骨髓移植医疗金', thisProduct: '有（最高48%）', competitor: '有', winner: 'this' },
           { name: '公司背景', thisProduct: '央企招商仁和', competitor: '复星保德信', winner: 'this' }
@@ -211,7 +211,7 @@ const products: ProductSeed[] = [
       {
         productName: '大黄蜂17号全能版',
         dimensions: [
-          { name: '0岁男宝50万30年保终身年缴', thisProduct: '¥3,510', competitor: '¥3,145', winner: 'competitor' },
+          { name: '0岁男宝30万30年保终身年缴', thisProduct: '¥2,106', competitor: '¥1,887', winner: 'competitor' },
           { name: '心理健康保障', thisProduct: '无', competitor: '有（自闭症/抑郁症）', winner: 'competitor' },
           { name: '公司背景', thisProduct: '央企招商仁和', competitor: '北京人寿', winner: 'this' }
         ]
@@ -233,7 +233,7 @@ const products: ProductSeed[] = [
     insuranceType: 'CHILDREN_CRITICAL',
     status: 'HOT',
     priceAdult30: 0,
-    priceChild0: 3025,   // 0岁男宝/50万保额/30年交/保终身（小雨伞官方数据）
+    priceChild0: 1815,   // 0岁男宝/30万保额/30年交/保终身（小雨伞官方数据）
     launchDate: '2025-09-01',
     estimatedOffline: '2026-08-31',
     highlightsSevere: [
@@ -260,7 +260,7 @@ const products: ProductSeed[] = [
       { category: '缴费灵活', title: '最长35年交', value: '有效降低年缴压力' }
     ],
     advantages: [
-      { dimension: '价格性价比', content: '0岁男宝50万终身年缴3025元，少儿重疾险中价格最低梯队，性价比突出', weight: 'high' },
+      { dimension: '价格性价比', content: '0岁男宝30万终身年缴1815元，少儿重疾险中价格最低梯队，性价比突出', weight: 'high' },
       { dimension: '递增型赔付', content: '特疾/罕见病赔付随时间递增，长期持有后期赔付高达130%-210%', weight: 'high' },
       { dimension: '先天性疾病', content: '覆盖先天性疾病，低龄宝宝专属优势', weight: 'high' },
       { dimension: '保费补偿', content: '约+10元可附加保费补偿，患病不亏钱', weight: 'medium' }
@@ -269,7 +269,7 @@ const products: ProductSeed[] = [
       {
         productName: '青云卫6号',
         dimensions: [
-          { name: '0岁男宝50万30年保终身年缴', thisProduct: '¥3,025', competitor: '¥3,510', winner: 'this' },
+          { name: '0岁男宝30万30年保终身年缴', thisProduct: '¥1,815', competitor: '¥2,106', winner: 'this' },
           { name: '央企背景', thisProduct: '无（复星保德信）', competitor: '有（招商仁和央企）', winner: 'competitor' },
           { name: '特疾赔付方式', thisProduct: '递增型（第2年+130%）', competitor: '增长型（6%×年度）', winner: 'tie' },
           { name: '心理健康保障', thisProduct: '无', competitor: '无', winner: 'tie' }
@@ -278,10 +278,10 @@ const products: ProductSeed[] = [
       {
         productName: '大黄蜂17号全能版',
         dimensions: [
-          { name: '0岁男宝50万30年保终身年缴', thisProduct: '¥3,025', competitor: '¥3,145', winner: 'this' },
+          { name: '0岁男宝30万30年保终身年缴', thisProduct: '¥1,815', competitor: '¥1,887', winner: 'this' },
           { name: '重疾持续增长金', thisProduct: '无', competitor: '有（6%×保单年度，最高108%）', winner: 'competitor' },
           { name: '心理健康/自闭症', thisProduct: '无', competitor: '有', winner: 'competitor' },
-          { name: '价格', thisProduct: '¥3,025（更便宜）', competitor: '¥3,145', winner: 'this' }
+          { name: '价格', thisProduct: '¥1,815（更便宜）', competitor: '¥1,887', winner: 'this' }
         ]
       }
     ],
@@ -301,7 +301,7 @@ const products: ProductSeed[] = [
     insuranceType: 'CHILDREN_CRITICAL',
     status: 'NEW',
     priceAdult30: 0,
-    priceChild0: 3145,   // 0岁男宝/50万保额/30年交/保终身（奶爸保2026-04-17数据）
+    priceChild0: 1887,   // 0岁男宝/30万保额/30年交/保终身（奶爸保2026-04-17数据）
     launchDate: '2026-04-22',
     estimatedOffline: '2027-06-30',
     highlightsSevere: [
@@ -337,7 +337,7 @@ const products: ProductSeed[] = [
       {
         productName: '大黄蜂16号旗舰版',
         dimensions: [
-          { name: '0岁男宝50万30年保终身年缴', thisProduct: '¥3,145', competitor: '¥3,025', winner: 'competitor' },
+          { name: '0岁男宝30万30年保终身年缴', thisProduct: '¥1,887', competitor: '¥1,815', winner: 'competitor' },
           { name: '重疾持续增长金', thisProduct: '有（最高108%）', competitor: '无', winner: 'this' },
           { name: '心理健康/自闭症', thisProduct: '有', competitor: '无', winner: 'this' },
           { name: '意外重疾额外赔', thisProduct: '有（+20%）', competitor: '无', winner: 'this' }
@@ -346,7 +346,7 @@ const products: ProductSeed[] = [
       {
         productName: '青云卫6号',
         dimensions: [
-          { name: '0岁男宝50万30年保终身年缴', thisProduct: '¥3,145', competitor: '¥3,510', winner: 'this' },
+          { name: '0岁男宝30万30年保终身年缴', thisProduct: '¥1,887', competitor: '¥2,106', winner: 'this' },
           { name: '央企品牌', thisProduct: '北京人寿', competitor: '招商仁和（央企）', winner: 'competitor' },
           { name: '心理健康保障', thisProduct: '有', competitor: '无', winner: 'this' },
           { name: '白血病骨髓移植医疗金', thisProduct: '有', competitor: '有（最高48%）', winner: 'competitor' }
@@ -419,7 +419,7 @@ const products: ProductSeed[] = [
     insuranceType: 'MEDICAL',
     status: 'NORMAL',
     priceAdult30: 262,
-    priceChild0: 385,
+    priceChild0: 849,
     launchDate: '2024-03-01',
     estimatedOffline: '2030-06-30',
     highlightsSevere: [

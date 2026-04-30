@@ -147,7 +147,7 @@ model InsuranceProduct {
   // 产品状态
   status          String    @default("NEW")  // NEW(新上架)/HOT(热门)/NORMAL(在售)/OFFLINE(已下架)
   
-  // 价格计算（标准化：成人30岁/30万/30年交/保终身；儿童0岁/50万/30年交/保终身）
+  // 价格计算（标准化：成人30岁/30万/30年交/保终身；儿童0岁/30万/30年交/保终身）
   priceAdult30    Float?    // 成人年缴保费
   priceChild0     Float?    // 儿童年缴保费
   

@@ -13,7 +13,8 @@ const TitleOutputSchema = z.object({
     type: z.string(), // 放宽类型验证
     score: z.number().min(1).max(10),
     explanation: z.string(),
-    hashtags: z.array(z.string())
+    hashtags: z.array(z.string()),
+    selfCriticism: z.string()
   }))
 });
 
@@ -23,7 +24,8 @@ const TitleArraySchema = z.array(z.object({
   type: z.string(),
   score: z.number().min(1).max(10),
   explanation: z.string(),
-  hashtags: z.array(z.string())
+  hashtags: z.array(z.string()),
+  selfCriticism: z.string()
 }));
 
 const tripleBacktick = '\x60\x60\x60';
@@ -34,7 +36,7 @@ export async function generateTitles(keywords: string[], context?: string): Prom
     background = '\n当前背景：' + context + '\n';
   }
 
-  const prompt = '你是一个专注于小红书保险内容创作的专业标题专家。\n\n用户输入的关键词：' + keywords.join(', ') + background + '\n请根据以下原则生成 12 个爆款标题：\n\n1. 情感共鸣：触及用户痛点（健康焦虑、养老焦虑、家庭责任）\n2. 数字钩子：使用具体数字增加可信度\n3. 对比反差：制造认知冲突\n4. 疑问引导：引发好奇心\n5. 情绪刺激：惊讶、恐惧、期待等情绪\n\n每个标题需要包含：\n- 标题内容（简洁有力，控制在20字以内）\n- 类型\n- 爆款概率评分（1-10分）\n- 适用场景说明\n- 推荐的小红书标签（3-5个）\n\n请只输出 JSON，不要任何解释文字。格式如下：\n' + tripleBacktick + 'json\n{\n  "titles": [\n    {"title": "标题1", "type": "震惊体", "score": 9, "explanation": "说明", "hashtags": ["标签1"]}\n  ]\n}\n' + tripleBacktick;
+  const prompt = '你是一个深谙小红书流量密码的保险赛道标题黑客。你的标题必须让人在信息流中停下拇指，不点进来就睡不着觉。\n\n用户输入的关键词：' + keywords.join(', ') + background + '\n请根据以下原则生成 12 个爆款标题：\n\n## 强制三要素（缺一不可）\n1. 具体数字：必须包含至少一个具体数字（金额、年龄、百分比、人数等）\n2. 痛点/恐惧/利益：必须触及用户的恐惧、焦虑或贪念\n3. 反常识/情绪钩子：必须有让人"咦？"的反转或强烈的情绪触发词\n\n## 6种强制覆盖套路（每种至少生成2个）\n1. 避坑恐吓类：用恐惧驱动点击，如"XX前不看必亏X万"、"买错XX=白扔X万"\n2. 对比反差类：制造认知冲突，如"月薪3K和3W买保险，差距不是钱是命"\n3. 逆袭翻盘类：从失败到成功，如"被拒赔3次后靠这招拿50万"\n4. 权威背书类：借权威增强可信度，如"保险精算师自己的3个秘密"\n5. 数字冲击类：用震撼数字冲击，如"年缴XXX撬动XX万，这笔账必须算"\n6. 情绪共鸣类：戳中焦虑/后悔/庆幸，如"后悔没早买！30岁查出XX还好有它"\n\n## 禁止清单\n- 禁止"今天分享"、"一起来了解"、"给大家介绍"式开头\n- 禁止纯"科普"、"攻略"、"指南"等说明书式用词（除非搭配情绪钩子）\n- 禁止没有情绪张力的陈述句\n- 禁止标题像产品说明书\n- 禁止标题党但内容不符\n\n## 严格打分标准（1-10分）\n- 9-10分：信息流杀手，看到就忍不住点，情绪极强\n- 7-8分：有强烈吸引力，但情绪冲击还不够极致\n- 5-6分：有亮点但平庸，放到信息流里大概率被划过\n- 3-4分：无聊、像说明书、没有点击欲望\n- 1-2分：完全不想点\n\n⚠️ 自我批判规则：生成后必须诚实自评。如果一个标题放到小红书信息流中你会划过，那它最多5分。大部分标题应在5-7分，8分以上极难获得。不要为了讨好用户而给高分。\n\n每个标题需要包含：\n- 标题内容（15-25字，简洁有力）\n- 类型（避坑恐吓类/对比反差类/逆袭翻盘类/权威背书类/数字冲击类/情绪共鸣类）\n- 爆款概率评分（1-10分，严格自评）\n- 适用场景说明\n- 推荐的小红书标签（3-5个）\n- 自我批评（这个标题可能不够好的地方）\n\n请只输出 JSON，不要任何解释文字。格式如下：\n' + tripleBacktick + 'json\n{\n  "titles": [\n    {"title": "标题1", "type": "避坑恐吓类", "score": 6, "explanation": "说明", "hashtags": ["标签1"], "selfCriticism": "自我批评"}\n  ]\n}\n' + tripleBacktick;
 
   let response;
   try {
