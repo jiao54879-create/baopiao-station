@@ -146,7 +146,7 @@ const products: ProductSeed[] = [
     insuranceType: 'CHILDREN_CRITICAL',
     status: 'HOT',
     priceAdult30: 0,
-    priceChild0: 3510,
+    priceChild0: 2106,
     launchDate: '2025-09-01',
     estimatedOffline: '2027-06-30',
     highlightsSevere: [
@@ -178,7 +178,7 @@ const products: ProductSeed[] = [
       {
         productName: '大黄蜂16号旗舰版',
         dimensions: [
-          { name: '0岁男宝50万30年保终身年缴', thisProduct: '¥3,510', competitor: '¥3,025', winner: 'competitor' },
+          { name: '0岁男宝30万30年保终身年缴', thisProduct: '¥3,510', competitor: '¥3,025', winner: 'competitor' },
           { name: '白血病骨髓移植医疗金', thisProduct: '有（最高48%）', competitor: '有', winner: 'this' },
           { name: '公司背景', thisProduct: '央企招商仁和', competitor: '复星保德信', winner: 'this' }
         ]
@@ -199,7 +199,7 @@ const products: ProductSeed[] = [
     insuranceType: 'CHILDREN_CRITICAL',
     status: 'HOT',
     priceAdult30: 0,
-    priceChild0: 3025,
+    priceChild0: 1815,
     launchDate: '2025-09-01',
     estimatedOffline: '2026-08-31',
     highlightsSevere: [
@@ -230,7 +230,7 @@ const products: ProductSeed[] = [
       {
         productName: '大黄蜂17号全能版',
         dimensions: [
-          { name: '0岁男宝50万30年保终身年缴', thisProduct: '¥3,025', competitor: '¥3,145', winner: 'this' },
+          { name: '0岁男宝30万30年保终身年缴', thisProduct: '¥3,025', competitor: '¥3,145', winner: 'this' },
           { name: '重疾持续增长金', thisProduct: '无', competitor: '有（最高108%）', winner: 'competitor' },
           { name: '心理健康/自闭症', thisProduct: '无', competitor: '有', winner: 'competitor' }
         ]
@@ -251,7 +251,7 @@ const products: ProductSeed[] = [
     insuranceType: 'CHILDREN_CRITICAL',
     status: 'NEW',
     priceAdult30: 0,
-    priceChild0: 3145,
+    priceChild0: 1887,
     launchDate: '2026-04-22',
     estimatedOffline: '2027-06-30',
     highlightsSevere: [
@@ -284,7 +284,7 @@ const products: ProductSeed[] = [
       {
         productName: '大黄蜂16号旗舰版',
         dimensions: [
-          { name: '0岁男宝50万30年保终身年缴', thisProduct: '¥3,145', competitor: '¥3,025', winner: 'competitor' },
+          { name: '0岁男宝30万30年保终身年缴', thisProduct: '¥3,145', competitor: '¥3,025', winner: 'competitor' },
           { name: '重疾持续增长金', thisProduct: '有（最高108%）', competitor: '无', winner: 'this' },
           { name: '心理健康/自闭症', thisProduct: '有', competitor: '无', winner: 'this' }
         ]
@@ -352,7 +352,7 @@ const products: ProductSeed[] = [
     insuranceType: 'MEDICAL',
     status: 'NORMAL',
     priceAdult30: 262,
-    priceChild0: 385,
+    priceChild0: 849,
     launchDate: '2024-03-01',
     estimatedOffline: '2030-06-30',
     highlightsSevere: [
