@@ -15,7 +15,8 @@ import {
   TeamOutlined,
   ThunderboltOutlined,
   ShoppingOutlined,
-  UploadOutlined
+  UploadOutlined,
+  FileTextOutlined
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import { useAuthStore } from '../store/auth'
@@ -29,6 +30,7 @@ const menuItems = [
   { key: '/products', icon: <ShoppingOutlined />, label: '产品中心 🆕' },
   { key: '/cases', icon: <BookOutlined />, label: '爆款案例' },
   { key: '/generator', icon: <EditOutlined />, label: '标题生成' },
+  { key: '/rewrite', icon: <FileTextOutlined />, label: '一键仿写 ✨' },
   { key: '/title-optimizer', icon: <ThunderboltOutlined />, label: '标题优化 ✨' },
   { key: '/templates', icon: <BarChartOutlined />, label: '模板库' },
   { key: '/saved', icon: <StarOutlined />, label: '我的收藏' },

@@ -152,3 +152,114 @@ export async function summarizeIntelligence(
 
   return response.choices[0]?.message?.content?.trim() || '';
 }
+
+// ========== 一键仿写 ==========
+
+export interface RewriteResult {
+  style: 'xhs' | 'wechat';
+  // 仿写分析
+  originalAnalysis: {
+    topic: string;          // 选题方向
+    coreIdea: string;       // 核心思路
+    structure: string;      // 内容结构
+    styleFeatures: string;  // 风格特点
+    hooks: string[];        // 吸睛钩子
+  };
+  // 仿写成品
+  rewrittenContent: {
+    title: string;
+    content: string;
+    hashtags: string[];
+    callToAction: string;
+  };
+  // 创作说明
+  writingNotes: string;
+}
+
+export async function rewriteContent(
+  originalTitle: string,
+  originalContent: string,
+  style: 'xhs' | 'wechat',
+  sourceUrl?: string
+): Promise<RewriteResult> {
+  const styleGuide = style === 'xhs'
+    ? `【小红书风格要求】
+- 标题：带emoji，20字以内，制造悬念或引发共鸣，使用数字/对比/疑问
+- 开头：直接切入痛点或金句，前3行留悬念（折叠前可见）
+- 正文：分点排列，每点带emoji，口语化、亲切感强
+- 结尾：互动引导（"你怎么看？""评论区聊聊"）+ 行动号召
+- 标签：5-10个保险相关话题标签
+- 字数：500-800字
+- 语气：像朋友分享，有温度，不像广告`
+    : `【微信公众号风格要求】
+- 标题：20字以内，权威感+情感共鸣，可带副标题
+- 开头：故事/数据/提问 三选一，引发读者代入感
+- 正文：有深度分析，小标题分段，逻辑严密，有数据支撑
+- 结尾：总结+升华主题+引导关注/转发
+- 字数：1000-1500字
+- 语气：专业但不生硬，有温度，适合转发朋友圈`;
+
+  const prompt = `你是保险内容创作专家，请对以下原文进行仿写分析和创作。
+
+【原文信息】
+标题：${originalTitle}
+${sourceUrl ? '来源：' + sourceUrl + '\n' : ''}内容：
+${originalContent.substring(0, 3000)}
+
+${styleGuide}
+
+【任务】
+1. 先深度解析原文的选题、思路、结构、风格、钩子
+2. 基于分析，用上述风格要求重新创作一篇保险内容（同类选题但内容全新）
+3. 仿写要"学其神不抄其形"——借鉴选题思路和爆款结构，内容完全原创
+
+请严格按照以下 JSON 格式输出：
+${tripleBacktick}json
+{
+  "originalAnalysis": {
+    "topic": "原文选题方向（20字以内）",
+    "coreIdea": "核心思路（50字以内）",
+    "structure": "内容结构分析（80字以内）",
+    "styleFeatures": "风格特点（50字以内）",
+    "hooks": ["钩子1", "钩子2", "钩子3"]
+  },
+  "rewrittenContent": {
+    "title": "仿写标题",
+    "content": "仿写正文（换行用\\n）",
+    "hashtags": ["标签1", "标签2", "标签3", "标签4", "标签5"],
+    "callToAction": "结尾互动引导语"
+  },
+  "writingNotes": "创作说明：本文如何借鉴原文精华并创新（100字以内）"
+}
+${tripleBacktick}`;
+
+  let response;
+  try {
+    response = await deepseek.chat.completions.create({
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.85,
+      max_tokens: 3000,
+    });
+  } catch (error: any) {
+    throw new Error('AI 服务调用失败: ' + (error?.message || '未知错误'));
+  }
+
+  const responseText = response.choices[0]?.message?.content || '';
+
+  // 提取 JSON
+  let cleanText = responseText.trim();
+  if (cleanText.startsWith(tripleBacktick)) {
+    cleanText = cleanText.replace(tripleBacktick + 'json', '').replace(new RegExp(tripleBacktick, 'g'), '').trim();
+  }
+
+  const braceStart = cleanText.indexOf('{');
+  const braceEnd = cleanText.lastIndexOf('}');
+  if (braceStart === -1 || braceEnd === -1) {
+    throw new Error('AI 返回格式错误');
+  }
+  const jsonStr = cleanText.substring(braceStart, braceEnd + 1);
+
+  const parsed = JSON.parse(jsonStr);
+  return { style, ...parsed } as RewriteResult;
+}

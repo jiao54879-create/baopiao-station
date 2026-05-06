@@ -21,6 +21,7 @@ import triggerRoutes from './routes/trigger.js';
 import subscribeRoutes from './routes/subscribe.js';
 import materialsRoutes from './routes/materials.js';
 import collectRoutes from './routes/collect.js';
+import rewriteRoutes from './routes/rewrite.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authLimiter } from './middleware/rateLimiter.js';
 
@@ -67,6 +68,7 @@ app.use('/api/intelligence', intelligenceRoutes);  // 情报中心
 app.use('/api/templates', templatesRoutes);  // 模板库
 app.use('/api/title-optimization', titleOptimizationRoutes);  // 标题优化
 app.use('/api/generator', generatorRoutes);  // 标题生成
+app.use('/api/rewrite', rewriteRoutes);      // 一键仿写
 
 // 认证中间件
 import { authenticate, requireRole } from './middleware/auth.js';
