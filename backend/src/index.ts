@@ -55,6 +55,10 @@ app.use(express.json());
 // 静态文件服务（上传的素材）
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+// 前端静态文件（用于后端同时 serve 前端）
+const frontendDistPath = path.join(process.cwd(), '../frontend/dist');
+app.use(express.static(frontendDistPath));
+
 // 公共路由（无需登录）
 app.use('/api/auth', authRoutes);
 app.use('/api/teams/invite/:token', teamRoutes); // 邀请链接无需认证
@@ -89,6 +93,21 @@ protectedRoutes.forEach(({ path, router }) => {
 // 健康检查
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// 前端 SPA 路由（必须在 API 路由之后）
+app.get('*', (req, res) => {
+  const indexPath = path.join(frontendDistPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      // 前端构建产物不存在时，返回 API 运行信息
+      res.status(200).json({ 
+        message: 'API 服务运行中',
+        endpoints: ['/health', '/api/*'],
+        version: '1.0.0'
+      });
+    }
+  });
 });
 
 // 错误处理
