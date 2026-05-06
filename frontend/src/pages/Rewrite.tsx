@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import {
   Card, Input, Button, Radio, Tag, Divider,
-  message, Spin, Steps, Tooltip, Alert, Row, Col, Typography, Space
+  message, Spin, Steps, Tooltip, Alert, Row, Col, Typography, Space, Switch
 } from 'antd'
 import {
   LinkOutlined, EditOutlined, CopyOutlined,
   BulbOutlined, ThunderboltOutlined,
-  RedditOutlined, WechatOutlined, CheckCircleOutlined
+  RedditOutlined, WechatOutlined, CheckCircleOutlined, SwapOutlined
 } from '@ant-design/icons'
 import api from '../utils/api'
 
@@ -30,6 +30,7 @@ interface RewrittenContent {
 
 interface RewriteResult {
   style: 'xhs' | 'wechat'
+  targetTopic?: string  // 跨领域仿写目标选题
   originalAnalysis: OriginalAnalysis
   rewrittenContent: RewrittenContent
   writingNotes: string
@@ -39,6 +40,7 @@ interface ApiResponse {
   success: boolean
   sourceUrl: string | null
   originalTitle: string
+  targetTopic: string | null
   result: RewriteResult
   generatedAt: string
 }
@@ -52,6 +54,10 @@ export default function Rewrite() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<ApiResponse | null>(null)
   const [currentStep, setCurrentStep] = useState(0)
+  
+  // 跨领域仿写相关
+  const [crossDomainEnabled, setCrossDomainEnabled] = useState(false)
+  const [targetTopic, setTargetTopic] = useState('')
 
   const handleRewrite = async () => {
     if (inputMode === 'url' && !url.trim()) {
@@ -60,6 +66,10 @@ export default function Rewrite() {
     }
     if (inputMode === 'manual' && !manualContent.trim()) {
       message.warning('请粘贴文章内容')
+      return
+    }
+    if (crossDomainEnabled && !targetTopic.trim()) {
+      message.warning('请填写目标保险选题方向')
       return
     }
 
@@ -74,6 +84,11 @@ export default function Rewrite() {
       } else {
         payload.title = manualTitle.trim()
         payload.content = manualContent.trim()
+      }
+      
+      // 跨领域仿写：传递目标选题
+      if (crossDomainEnabled && targetTopic.trim()) {
+        payload.targetTopic = targetTopic.trim()
       }
 
       setCurrentStep(2)
@@ -185,6 +200,37 @@ export default function Rewrite() {
                 />
               </div>
             )}
+
+            <Divider style={{ margin: '16px 0' }} />
+
+            {/* 跨领域仿写开关 */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <Text strong>
+                  <SwapOutlined className="mr-1" />
+                  跨领域仿写
+                </Text>
+                <Switch 
+                  size="small" 
+                  checked={crossDomainEnabled}
+                  onChange={setCrossDomainEnabled}
+                />
+              </div>
+              {crossDomainEnabled && (
+                <Input
+                  placeholder="例如：宝宝保险怎么买、成人保险方案、父母保险攻略"
+                  value={targetTopic}
+                  onChange={e => setTargetTopic(e.target.value)}
+                  size="middle"
+                  status={!targetTopic.trim() && crossDomainEnabled ? 'warning' : undefined}
+                />
+              )}
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {crossDomainEnabled 
+                  ? '💡 将非保险内容的爆款结构/钩子移植到保险领域'
+                  : '开启后可将其他领域内容的爆款技巧应用到保险内容创作'}
+              </Text>
+            </div>
 
             <Divider style={{ margin: '16px 0' }} />
 
@@ -359,6 +405,18 @@ export default function Rewrite() {
                   </Button>
                 }
               >
+                {/* 跨领域标识 */}
+                {result.targetTopic && (
+                  <Alert
+                    message={<span>跨领域仿写 → <strong>{result.targetTopic}</strong></span>}
+                    type="info"
+                    showIcon
+                    icon={<SwapOutlined />}
+                    className="mb-3"
+                    style={{ fontSize: 12 }}
+                  />
+                )}
+
                 {/* 标题 */}
                 <div className="mb-4 p-3 rounded-lg" style={{ background: style === 'xhs' ? '#fff5f6' : '#f0fff4', border: `1px solid ${styleColor}30` }}>
                   <div className="flex items-start justify-between gap-2">

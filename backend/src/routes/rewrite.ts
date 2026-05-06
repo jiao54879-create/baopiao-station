@@ -12,6 +12,8 @@ const RewriteSchema = z.object({
   title: z.string().optional(),
   content: z.string().optional(),
   style: z.enum(['xhs', 'wechat'], { errorMap: () => ({ message: '风格必须是 xhs 或 wechat' }) }),
+  // 跨领域仿写：目标保险选题方向
+  targetTopic: z.string().optional(),
 });
 
 // 从 URL 抓取文章内容
@@ -97,7 +99,7 @@ async function fetchArticle(url: string): Promise<{ title: string; content: stri
 // POST /api/rewrite - 执行仿写
 router.post('/', async (req, res, next) => {
   try {
-    const { url, title: manualTitle, content: manualContent, style } = RewriteSchema.parse(req.body);
+    const { url, title: manualTitle, content: manualContent, style, targetTopic } = RewriteSchema.parse(req.body);
 
     if (!process.env.DEEPSEEK_API_KEY) {
       throw new AppError('AI 服务未配置，请联系管理员', 500);
@@ -119,13 +121,14 @@ router.post('/', async (req, res, next) => {
       throw new AppError('请提供文章链接或直接粘贴文章内容', 400);
     }
 
-    // 调用 AI 仿写
-    const result = await rewriteContent(title, content, style, url);
+    // 调用 AI 仿写（支持跨领域仿写）
+    const result = await rewriteContent(title, content, style, url, targetTopic);
 
     res.json({
       success: true,
       sourceUrl: url || null,
       originalTitle: title,
+      targetTopic: targetTopic || null,  // 返回目标选题（如果有）
       result,
       generatedAt: new Date().toISOString()
     });
