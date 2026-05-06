@@ -55,10 +55,6 @@ app.use(express.json());
 // 静态文件服务（上传的素材）
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-// 前端静态文件（用于后端同时 serve 前端）
-const frontendDistPath = path.join(process.cwd(), '../frontend/dist');
-app.use(express.static(frontendDistPath));
-
 // 公共路由（无需登录）
 app.use('/api/auth', authRoutes);
 app.use('/api/teams/invite/:token', teamRoutes); // 邀请链接无需认证
@@ -95,16 +91,6 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// 前端 SPA 路由（必须在 API 路由之后）
-app.get('*', (req, res) => {
-  const indexPath = path.join(frontendDistPath, 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      res.status(200).send('API 服务运行中，前端构建产物未找到');
-    }
-  });
-});
-
 // 错误处理
 app.use(errorHandler);
 
@@ -113,17 +99,18 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 // 启动服务
 async function startServer() {
+  let dbConnected = false;
   try {
     // 尝试连接数据库
     await prisma.$connect();
     console.log('✅ 数据库连接成功');
+    dbConnected = true;
   } catch (error) {
-    console.error('❌ 数据库连接失败:', error);
-    process.exit(1);
+    console.error('❌ 数据库连接失败，将以有限功能模式运行:', error);
   }
 
   app.listen(+PORT, HOST, () => {
-    console.log(`🚀 爆款情报站 API 服务运行在 http://${HOST}:${PORT}`);
+    console.log(`🚀 爆款情报站 API 服务运行在 http://${HOST}:${PORT}${dbConnected ? '' : '（数据库未连接，部分功能不可用）'}`);
 
     // 启动数据采集调度器
     try {
