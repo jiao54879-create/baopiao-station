@@ -1,18 +1,26 @@
-FROM node:20-slim
+FROM node:20-slim AS builder
 
-# 安装 OpenSSL (Prisma 需要)
+# 安装系统依赖
 RUN apt-get update && apt-get install -y openssl libssl-dev && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# 复制后端代码
+# ===== 构建前端 =====
+COPY frontend/package*.json ./frontend/
+WORKDIR /app/frontend
+RUN npm ci
+
+COPY frontend/ .
+# 设置 API 地址为相对路径（后端 serve 前端时使用同源）
+ENV VITE_API_URL=""
+RUN npm run build
+
+# ===== 构建后端 =====
+WORKDIR /app
 COPY backend/package*.json ./backend/
 WORKDIR /app/backend
-
-# 强制重新安装依赖
 RUN npm cache clean --force && npm install
 
-# 复制全部代码
 COPY backend/ .
 
 # 生成 Prisma Client
