@@ -47,6 +47,7 @@ export default function Products() {
   const [status, setStatus] = useState<string>('');
   const [insuranceType, setInsuranceType] = useState<string>('');
   const [keyword, setKeyword] = useState('');
+  const [sortBy, setSortBy] = useState('hot');
 
   // 弹窗状态
   const [modalVisible, setModalVisible] = useState(false);
@@ -64,7 +65,17 @@ export default function Products() {
       if (keyword) params.keyword = keyword;
 
       const { data: res } = await api.get('/products', { params });
-      setProducts(res.data);
+      // 前端排序
+      let sorted = [...res.data];
+      const statusOrder: Record<string, number> = { HOT: 0, NEW: 1, NORMAL: 2 };
+      if (sortBy === 'hot') {
+        sorted.sort((a, b) => (statusOrder[a.status] || 9) - (statusOrder[b.status] || 9));
+      } else if (sortBy === 'new') {
+        sorted.sort((a, b) => new Date(b.launchDate || 0).getTime() - new Date(a.launchDate || 0).getTime());
+      } else if (sortBy === 'price') {
+        sorted.sort((a, b) => Number(a.priceAdult30 || 99999) - Number(b.priceAdult30 || 99999));
+      }
+      setProducts(sorted);
       setPagination(prev => ({ ...prev, total: res.pagination.total }));
     } catch (error) {
       message.error('获取产品列表失败');
@@ -86,7 +97,7 @@ export default function Products() {
   useEffect(() => {
     fetchProducts();
     fetchStats();
-  }, [pagination.page, status, insuranceType]);
+  }, [pagination.page, status, insuranceType, sortBy]);
 
   // 搜索
   const handleSearch = (value: string) => {
