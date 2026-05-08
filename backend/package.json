@@ -35,7 +35,8 @@
     "nodemailer": "^8.0.5",
     "openai": "^4.28.0",
     "redis": "^4.6.10",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "playwright": "^1.40.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
