@@ -501,15 +501,65 @@ export default function Products() {
             {/* 产品亮点折叠 */}
             <Collapse defaultActiveKey={['highlights', 'advantages']}>
               <Panel header="📌 产品亮点" key="highlights">
-                {selectedProduct.highlights && JSON.parse(selectedProduct.highlights).length > 0 ? (
-                  <ul className="list-disc ml-6">
-                    {JSON.parse(selectedProduct.highlights).map((h: string, i: number) => (
-                      <li key={i}>{h}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <Empty description="暂无亮点数据" />
-                )}
+                <div className="space-y-4">
+                  {selectedProduct.highlightsSevere && JSON.parse(selectedProduct.highlightsSevere).length > 0 && (
+                    <div>
+                      <Tag color="red" className="mb-2">🩸 重疾亮点</Tag>
+                      <ul className="list-disc ml-6">
+                        {JSON.parse(selectedProduct.highlightsSevere).map((h: string, i: number) => (
+                          <li key={i}>{h}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {selectedProduct.highlightsMild && JSON.parse(selectedProduct.highlightsMild).length > 0 && (
+                    <div>
+                      <Tag color="blue" className="mb-2">💧 轻中症亮点</Tag>
+                      <ul className="list-disc ml-6">
+                        {JSON.parse(selectedProduct.highlightsMild).map((h: string, i: number) => (
+                          <li key={i}>{h}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {selectedProduct.highlightsWaiver && JSON.parse(selectedProduct.highlightsWaiver).length > 0 && (
+                    <div>
+                      <Tag color="green" className="mb-2">🛡️ 豁免亮点</Tag>
+                      <ul className="list-disc ml-6">
+                        {JSON.parse(selectedProduct.highlightsWaiver).map((h: string, i: number) => (
+                          <li key={i}>{h}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {selectedProduct.highlightsSpecial && JSON.parse(selectedProduct.highlightsSpecial).length > 0 && (
+                    <div>
+                      <Tag color="purple" className="mb-2">✨ 特色亮点</Tag>
+                      <ul className="list-disc ml-6">
+                        {JSON.parse(selectedProduct.highlightsSpecial).map((h: string, i: number) => (
+                          <li key={i}>{h}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {selectedProduct.highlightsValue && JSON.parse(selectedProduct.highlightsValue).length > 0 && (
+                    <div>
+                      <Tag color="orange" className="mb-2">💰 增值亮点</Tag>
+                      <ul className="list-disc ml-6">
+                        {JSON.parse(selectedProduct.highlightsValue).map((h: string, i: number) => (
+                          <li key={i}>{h}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {(!selectedProduct.highlightsSevere || JSON.parse(selectedProduct.highlightsSevere).length === 0) &&
+                   (!selectedProduct.highlightsMild || JSON.parse(selectedProduct.highlightsMild).length === 0) &&
+                   (!selectedProduct.highlightsWaiver || JSON.parse(selectedProduct.highlightsWaiver).length === 0) &&
+                   (!selectedProduct.highlightsSpecial || JSON.parse(selectedProduct.highlightsSpecial).length === 0) &&
+                   (!selectedProduct.highlightsValue || JSON.parse(selectedProduct.highlightsValue).length === 0) && (
+                    <Empty description="暂无亮点数据" />
+                  )}
+                </div>
               </Panel>
 
               <Panel header="⭐ 核心优势" key="advantages">
