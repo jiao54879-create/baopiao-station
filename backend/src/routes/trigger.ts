@@ -176,6 +176,35 @@ router.post('/seed-products', async (req, res) => {
           where: { name: product.name }
         });
 
+        // 分类处理 advantages 字段
+        const allAdvantages = product.advantages || [];
+        
+        // 按 dimension 分类
+        const priceAdvantages = allAdvantages
+          .filter((a: any) => a.dimension?.includes('价格') || a.dimension?.includes('性价比'))
+          .map((a: any) => a.content);
+        
+        const coverageAdvantages = allAdvantages
+          .filter((a: any) => 
+            a.dimension?.includes('保障') || 
+            a.dimension?.includes('中症') || 
+            a.dimension?.includes('轻症') ||
+            a.dimension?.includes('重疾') ||
+            a.dimension?.includes('赔付')
+          )
+          .map((a: any) => a.content);
+        
+        const uwAdvantages = allAdvantages
+          .filter((a: any) => a.dimension?.includes('核保') || a.dimension?.includes('健康告知'))
+          .map((a: any) => a.content);
+        
+        const serviceAdvantages = allAdvantages
+          .filter((a: any) => a.dimension?.includes('服务') || a.dimension?.includes('理赔'))
+          .map((a: any) => a.content);
+
+        // 如果分类后某个字段为空，使用全部数据兜底
+        const priceAdvantagesFinal = priceAdvantages.length > 0 ? priceAdvantages : allAdvantages.map((a: any) => a.content);
+
         const productData = {
           name: product.name,
           company: product.company,
@@ -190,7 +219,10 @@ router.post('/seed-products', async (req, res) => {
           highlightsWaiver: JSON.stringify(product.highlightsWaiver || []),
           highlightsSpecial: JSON.stringify(product.highlightsSpecial || []),
           highlightsValue: JSON.stringify(product.highlightsValue || []),
-          advantagesPrice: JSON.stringify(product.advantages || []),
+          advantagesPrice: JSON.stringify(priceAdvantagesFinal),
+          advantagesCoverage: JSON.stringify(coverageAdvantages),
+          advantagesUW: JSON.stringify(uwAdvantages),
+          advantagesService: JSON.stringify(serviceAdvantages),
           competitors: JSON.stringify(product.competitors || []),
           drawbacks: JSON.stringify(product.drawbacks || []),
           sourceUrl: product.sourceUrl,
