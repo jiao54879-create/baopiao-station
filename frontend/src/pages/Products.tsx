@@ -501,57 +501,13 @@ export default function Products() {
             {/* 产品亮点折叠 */}
             <Collapse defaultActiveKey={['highlights', 'advantages']}>
               <Panel header="📌 产品亮点" key="highlights">
-                {selectedProduct.highlightsSevere && JSON.parse(selectedProduct.highlightsSevere).length > 0 && (
-                  <div className="mb-4">
-                    <Tag color="red">重症保障</Tag>
-                    <ul className="list-disc ml-6">
-                      {JSON.parse(selectedProduct.highlightsSevere).map((h: any, i: number) => (
-                        <li key={i}>{h.title}：{h.value}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {selectedProduct.highlightsMild && JSON.parse(selectedProduct.highlightsMild).length > 0 && (
-                  <div className="mb-4">
-                    <Tag color="blue">轻症保障</Tag>
-                    <ul className="list-disc ml-6">
-                      {JSON.parse(selectedProduct.highlightsMild).map((h: any, i: number) => (
-                        <li key={i}>{h.title}：{h.value}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {selectedProduct.highlightsWaiver && JSON.parse(selectedProduct.highlightsWaiver).length > 0 && (
-                  <div className="mb-4">
-                    <Tag color="purple">豁免保障</Tag>
-                    <ul className="list-disc ml-6">
-                      {JSON.parse(selectedProduct.highlightsWaiver).map((h: any, i: number) => (
-                        <li key={i}>{h.title}：{h.value}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {selectedProduct.highlightsSpecial && JSON.parse(selectedProduct.highlightsSpecial).length > 0 && (
-                  <div className="mb-4">
-                    <Tag color="orange">特色保障</Tag>
-                    <ul className="list-disc ml-6">
-                      {JSON.parse(selectedProduct.highlightsSpecial).map((h: any, i: number) => (
-                        <li key={i}>{h.title}：{h.value}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {selectedProduct.highlightsValue && JSON.parse(selectedProduct.highlightsValue).length > 0 && (
-                  <div className="mb-4">
-                    <Tag color="cyan">增值服务</Tag>
-                    <ul className="list-disc ml-6">
-                      {JSON.parse(selectedProduct.highlightsValue).map((h: any, i: number) => (
-                        <li key={i}>{h.title}：{h.value}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {(!selectedProduct.highlightsSevere || JSON.parse(selectedProduct.highlightsSevere).length === 0) && (
+                {selectedProduct.highlights && JSON.parse(selectedProduct.highlights).length > 0 ? (
+                  <ul className="list-disc ml-6">
+                    {JSON.parse(selectedProduct.highlights).map((h: string, i: number) => (
+                      <li key={i}>{h}</li>
+                    ))}
+                  </ul>
+                ) : (
                   <Empty description="暂无亮点数据" />
                 )}
               </Panel>
@@ -562,14 +518,8 @@ export default function Products() {
                     <div>
                       <Tag color="green" className="mb-2">💰 价格优势</Tag>
                       <ul className="list-disc ml-6">
-                        {JSON.parse(selectedProduct.advantagesPrice).map((a: any, i: number) => (
-                          <li key={i}>
-                            <span className="font-medium">{a.dimension}：</span>
-                            {a.content}
-                            <Tag color={a.weight === 'high' ? 'green' : a.weight === 'medium' ? 'blue' : 'default'} className="ml-2">
-                              {a.weight === 'high' ? '重要' : a.weight === 'medium' ? '中等' : '一般'}
-                            </Tag>
-                          </li>
+                        {JSON.parse(selectedProduct.advantagesPrice).map((a: string, i: number) => (
+                          <li key={i}>{a}</li>
                         ))}
                       </ul>
                     </div>
@@ -578,14 +528,8 @@ export default function Products() {
                     <div>
                       <Tag color="blue" className="mb-2">🛡️ 保障优势</Tag>
                       <ul className="list-disc ml-6">
-                        {JSON.parse(selectedProduct.advantagesCoverage).map((a: any, i: number) => (
-                          <li key={i}>
-                            <span className="font-medium">{a.dimension}：</span>
-                            {a.content}
-                            <Tag color={a.weight === 'high' ? 'green' : a.weight === 'medium' ? 'blue' : 'default'} className="ml-2">
-                              {a.weight === 'high' ? '重要' : a.weight === 'medium' ? '中等' : '一般'}
-                            </Tag>
-                          </li>
+                        {JSON.parse(selectedProduct.advantagesCoverage).map((a: string, i: number) => (
+                          <li key={i}>{a}</li>
                         ))}
                       </ul>
                     </div>
@@ -594,14 +538,8 @@ export default function Products() {
                     <div>
                       <Tag color="purple" className="mb-2">📋 核保优势</Tag>
                       <ul className="list-disc ml-6">
-                        {JSON.parse(selectedProduct.advantagesUW).map((a: any, i: number) => (
-                          <li key={i}>
-                            <span className="font-medium">{a.dimension}：</span>
-                            {a.content}
-                            <Tag color={a.weight === 'high' ? 'green' : a.weight === 'medium' ? 'blue' : 'default'} className="ml-2">
-                              {a.weight === 'high' ? '重要' : a.weight === 'medium' ? '中等' : '一般'}
-                            </Tag>
-                          </li>
+                        {JSON.parse(selectedProduct.advantagesUW).map((a: string, i: number) => (
+                          <li key={i}>{a}</li>
                         ))}
                       </ul>
                     </div>
@@ -610,14 +548,8 @@ export default function Products() {
                     <div>
                       <Tag color="orange" className="mb-2">🤝 服务优势</Tag>
                       <ul className="list-disc ml-6">
-                        {JSON.parse(selectedProduct.advantagesService).map((a: any, i: number) => (
-                          <li key={i}>
-                            <span className="font-medium">{a.dimension}：</span>
-                            {a.content}
-                            <Tag color={a.weight === 'high' ? 'green' : a.weight === 'medium' ? 'blue' : 'default'} className="ml-2">
-                              {a.weight === 'high' ? '重要' : a.weight === 'medium' ? '中等' : '一般'}
-                            </Tag>
-                          </li>
+                        {JSON.parse(selectedProduct.advantagesService).map((a: string, i: number) => (
+                          <li key={i}>{a}</li>
                         ))}
                       </ul>
                     </div>
@@ -660,14 +592,8 @@ export default function Products() {
               <Panel header="⚠️ 注意事项" key="drawbacks">
                 {selectedProduct.drawbacks && JSON.parse(selectedProduct.drawbacks).length > 0 ? (
                   <ul className="list-disc ml-6">
-                    {JSON.parse(selectedProduct.drawbacks).map((d: any, i: number) => (
-                      <li key={i}>
-                        <span className="font-medium">{d.title}：</span>
-                        {d.description}
-                        <Tag color={d.severity === 'high' ? 'red' : d.severity === 'medium' ? 'orange' : 'default'} className="ml-2">
-                          {d.severity === 'high' ? '重要' : d.severity === 'medium' ? '中等' : '一般'}
-                        </Tag>
-                      </li>
+                    {JSON.parse(selectedProduct.drawbacks).map((d: string, i: number) => (
+                      <li key={i}>{d}</li>
                     ))}
                   </ul>
                 ) : (
