@@ -557,21 +557,78 @@ export default function Products() {
               </Panel>
 
               <Panel header="⭐ 核心优势" key="advantages">
-                {selectedProduct.advantagesPrice && JSON.parse(selectedProduct.advantagesPrice).length > 0 ? (
-                  <ul className="list-disc ml-6">
-                    {JSON.parse(selectedProduct.advantagesPrice).map((a: any, i: number) => (
-                      <li key={i}>
-                        <span className="font-medium">{a.dimension}：</span>
-                        {a.content}
-                        <Tag color={a.weight === 'high' ? 'green' : a.weight === 'medium' ? 'blue' : 'default'} className="ml-2">
-                          {a.weight === 'high' ? '重要' : a.weight === 'medium' ? '中等' : '一般'}
-                        </Tag>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <Empty description="暂无优势数据" />
-                )}
+                <div className="space-y-4">
+                  {selectedProduct.advantagesPrice && JSON.parse(selectedProduct.advantagesPrice).length > 0 && (
+                    <div>
+                      <Tag color="green" className="mb-2">💰 价格优势</Tag>
+                      <ul className="list-disc ml-6">
+                        {JSON.parse(selectedProduct.advantagesPrice).map((a: any, i: number) => (
+                          <li key={i}>
+                            <span className="font-medium">{a.dimension}：</span>
+                            {a.content}
+                            <Tag color={a.weight === 'high' ? 'green' : a.weight === 'medium' ? 'blue' : 'default'} className="ml-2">
+                              {a.weight === 'high' ? '重要' : a.weight === 'medium' ? '中等' : '一般'}
+                            </Tag>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {selectedProduct.advantagesCoverage && JSON.parse(selectedProduct.advantagesCoverage).length > 0 && (
+                    <div>
+                      <Tag color="blue" className="mb-2">🛡️ 保障优势</Tag>
+                      <ul className="list-disc ml-6">
+                        {JSON.parse(selectedProduct.advantagesCoverage).map((a: any, i: number) => (
+                          <li key={i}>
+                            <span className="font-medium">{a.dimension}：</span>
+                            {a.content}
+                            <Tag color={a.weight === 'high' ? 'green' : a.weight === 'medium' ? 'blue' : 'default'} className="ml-2">
+                              {a.weight === 'high' ? '重要' : a.weight === 'medium' ? '中等' : '一般'}
+                            </Tag>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {selectedProduct.advantagesUW && JSON.parse(selectedProduct.advantagesUW).length > 0 && (
+                    <div>
+                      <Tag color="purple" className="mb-2">📋 核保优势</Tag>
+                      <ul className="list-disc ml-6">
+                        {JSON.parse(selectedProduct.advantagesUW).map((a: any, i: number) => (
+                          <li key={i}>
+                            <span className="font-medium">{a.dimension}：</span>
+                            {a.content}
+                            <Tag color={a.weight === 'high' ? 'green' : a.weight === 'medium' ? 'blue' : 'default'} className="ml-2">
+                              {a.weight === 'high' ? '重要' : a.weight === 'medium' ? '中等' : '一般'}
+                            </Tag>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {selectedProduct.advantagesService && JSON.parse(selectedProduct.advantagesService).length > 0 && (
+                    <div>
+                      <Tag color="orange" className="mb-2">🤝 服务优势</Tag>
+                      <ul className="list-disc ml-6">
+                        {JSON.parse(selectedProduct.advantagesService).map((a: any, i: number) => (
+                          <li key={i}>
+                            <span className="font-medium">{a.dimension}：</span>
+                            {a.content}
+                            <Tag color={a.weight === 'high' ? 'green' : a.weight === 'medium' ? 'blue' : 'default'} className="ml-2">
+                              {a.weight === 'high' ? '重要' : a.weight === 'medium' ? '中等' : '一般'}
+                            </Tag>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {(!selectedProduct.advantagesPrice || JSON.parse(selectedProduct.advantagesPrice).length === 0) &&
+                   (!selectedProduct.advantagesCoverage || JSON.parse(selectedProduct.advantagesCoverage).length === 0) &&
+                   (!selectedProduct.advantagesUW || JSON.parse(selectedProduct.advantagesUW).length === 0) &&
+                   (!selectedProduct.advantagesService || JSON.parse(selectedProduct.advantagesService).length === 0) && (
+                    <Empty description="暂无优势数据" />
+                  )}
+                </div>
               </Panel>
 
               <Panel header="⚔️ 竞品对比" key="competitors">
