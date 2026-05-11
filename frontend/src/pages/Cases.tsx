@@ -254,7 +254,8 @@ export default function Cases() {
                   <Button key="analyze" type="text" icon={<ThunderboltOutlined />} onClick={() => analyzeCase(item)}>
                     AI分析
                   </Button>,
-                  <a key="link" href={item.url && !item.url.includes('example') ? item.url : '#'} 
+                  <a key="link" 
+                     href={item.url && !item.url.includes('example') ? item.url : '#'} 
                      target="_blank" 
                      rel="noopener noreferrer"
                      onClick={(e) => {
@@ -266,7 +267,7 @@ export default function Cases() {
                          message.info('示例数据暂无原文链接，请订阅真实公众号文章');
                        }
                      }}
-                     style={{ padding: '0 4px', color: 'rgba(0, 0, 0, 0.45)', lineHeight: '1.5714', height: 'auto' }}>
+                     style={{ padding: '0 4px', color: '#ff4757', lineHeight: '1.5714', height: 'auto', fontWeight: 500, textDecoration: 'underline' }}>
                     查看原文
                   </a>
                 ]}
