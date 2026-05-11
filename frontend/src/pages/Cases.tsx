@@ -254,22 +254,28 @@ export default function Cases() {
                   <Button key="analyze" type="text" icon={<ThunderboltOutlined />} onClick={() => analyzeCase(item)}>
                     AI分析
                   </Button>,
-                  <a key="link" 
-                     href={item.url && !item.url.includes('example') ? item.url : '#'} 
-                     target="_blank" 
-                     rel="noopener noreferrer"
-                     onClick={(e) => {
-                       if (!item.url) {
-                         e.preventDefault();
-                         message.warning('该案例暂无原文链接');
-                       } else if (item.url.includes('example')) {
-                         e.preventDefault();
-                         message.info('示例数据暂无原文链接，请订阅真实公众号文章');
-                       }
-                     }}
-                     style={{ padding: '0 4px', color: '#ff4757', lineHeight: '1.5714', height: 'auto', fontWeight: 500, textDecoration: 'underline' }}>
-                    查看原文
-                  </a>
+                  <Button key="link" type="text" icon={<CopyOutlined />} onClick={() => {
+                    if (!item.url) {
+                      message.warning('该案例暂无原文链接');
+                    } else if (item.url.includes('example')) {
+                      message.info('示例数据暂无原文链接');
+                    } else {
+                      navigator.clipboard.writeText(item.url).then(() => {
+                        message.success('链接已复制，请打开小红书App查看');
+                      }).catch(() => {
+                        // fallback
+                        const textArea = document.createElement('textarea');
+                        textArea.value = item.url;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        message.success('链接已复制，请打开小红书App查看');
+                      });
+                    }
+                  }}>
+                    复制链接
+                  </Button>
                 ]}
               >
                 <Card.Meta
