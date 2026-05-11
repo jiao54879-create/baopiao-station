@@ -35,7 +35,7 @@ export async function generateTitles(keywords: string[], context?: string): Prom
     background = '\n当前背景：' + context + '\n';
   }
 
-  const prompt = '你是一个深谙小红书流量密码的保险赛道标题黑客。你的标题必须让人在信息流中停下拇指，不点进来就睡不着觉。\n\n用户输入的关键词：' + keywords.join(', ') + background + '\n请根据以下原则生成 12 个爆款标题：\n\n## 强制三要素（缺一不可）\n1. 具体数字：必须包含至少一个具体数字（金额、年龄、百分比、人数等）\n2. 痛点/恐惧/利益：必须触及用户的恐惧、焦虑或贪念\n3. 反常识/情绪钩子：必须有让人"咦？"的反转或强烈的情绪触发词\n\n## 6种强制覆盖套路（每种至少生成2个）\n1. 避坑恐吓类：用恐惧驱动点击\n2. 对比反差类：制造认知冲突\n3. 逆袭翻盘类：从失败到成功\n4. 权威背书类：借权威增强可信度\n5. 数字冲击类：用震撼数字冲击\n6. 情绪共鸣类：戳中焦虑/后悔/庆幸\n\n## 禁止清单\n- 禁止"今天分享"、"一起来了解"、"给大家介绍"式开头\n- 禁止纯"科普"、"攻略"、"指南"等说明书式用词\n- 禁止没有情绪张力的陈述句\n- 禁止标题像产品说明书\n- 禁止标题党但内容不符\n\n## 严格打分标准（1-10分）\n- 9-10分：信息流杀手\n- 7-8分：有强烈吸引力\n- 5-6分：有亮点但平庸\n- 3-4分：无聊、像说明书\n- 1-2分：完全不想点\n\n⚠️ 自我批判规则：生成后必须诚实自评。\n\n请只输出 JSON：\n' + tripleBacktick + 'json\n{\n  "titles": [\n    {"title": "标题1", "type": "避坑恐吓类", "score": 6, "explanation": "说明", "hashtags": ["标签1"], "selfCriticism": "自我批评"}\n  ]\n}\n' + tripleBacktick;
+  const prompt = '你是一个深谙小红书流量密码的保险赛道标题黑客。你的标题必须让人在信息流中停下拇指，不点进来就睡不着觉。\n\n用户输入的关键词：' + keywords.join(', ') + background + '\n请根据以下原则生成 12 个爆款标题：\n\n## 强制三要素（缺一不可）\n1. 具体数字：必须包含至少一个具体数字（金额、年龄、百分比、人数等）\n2. 痛点/恐惧/利益：必须触及用户的恐惧、焦虑或贪念\n3. 反常识/情绪钩子：必须有让人"咦？"的反转或强烈的情绪触发词\n\n## 6种强制覆盖套路（每种至少生成2个）\n1. 避坑恐吓类：用恐惧驱动点击\n2. 对比反差类：制造认知冲突\n3. 逆袭翻盘类：从失败到成功\n4. 权威背书类：借权威增强可信度\n5. 数字冲击类：用震撼数字冲击\n6. 情绪共鸣类：戳中焦虑/后悔/庆幸\n\n## 禁止清单\n- 禁止"今天分享"、"一起来了解"、"给大家介绍"式开头\n- 禁止纯"科普"、"攻略"、"指南"等说明书式用词\n- 禁止没有情绪张力的陈述句\n- 禁止标题像产品说明书\n- 禁止标题党但内容不符\n\n## 严格打分标准（1-10分）\n- 9-10分：信息流杀手\n- 7-8分：有强烈吸引力\n- 5-6分：有亮点但平庸\n- 3-4分：无聊、像说明书\n- 1-2分：完全不想点\n\n⚠️ 自我批判规则：生成后必须诚实自评。\n\n【重要】请直接输出纯JSON，不要用markdown代码块包裹，不要加```json或```：\n{\n  "titles": [\n    {"title": "标题1", "type": "避坑恐吓类", "score": 6, "explanation": "说明", "hashtags": ["标签1"], "selfCriticism": "自我批评"}\n  ]\n}';
 
   let response;
   try {
@@ -53,17 +53,14 @@ export async function generateTitles(keywords: string[], context?: string): Prom
   const responseText = response.choices[0]?.message?.content || '';
   // 去掉markdown代码块包裹
   let cleanText = responseText.trim();
-  // 用纯字符串操作避免正则转义问题
-  if (cleanText.startsWith('```json')) {
-    cleanText = cleanText.slice('```json'.length);
-  } else if (cleanText.startsWith('```')) {
-    cleanText = cleanText.slice('```'.length);
+  // 处理 ```json 或 ``` 开头
+  while (cleanText.startsWith('```')) {
+    cleanText = cleanText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').trim();
   }
-  cleanText = cleanText.trim();
-  if (cleanText.endsWith('```')) {
-    cleanText = cleanText.slice(0, -3);
+  // 处理结尾的 ```
+  while (cleanText.endsWith('```')) {
+    cleanText = cleanText.replace(/\n?```$/, '').trim();
   }
-  cleanText = cleanText.trim();
 
   let jsonStr = cleanText;
   try {
@@ -144,18 +141,11 @@ export async function analyzeViralCase(
   const responseText = response.choices[0]?.message?.content || '';
   let cleanText = responseText.trim();
   // 去掉markdown代码块包裹
-  let cleanText = responseText.trim();
-  // 用纯字符串操作避免正则转义问题
-  if (cleanText.startsWith('```json')) {
-    cleanText = cleanText.slice('```json'.length);
-  } else if (cleanText.startsWith('```')) {
-    cleanText = cleanText.slice('```'.length);
+  while (cleanText.startsWith('```')) {
+    cleanText = cleanText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').trim();
   }
-  cleanText = cleanText.trim();
-  if (cleanText.endsWith('```')) {
-    cleanText = cleanText.slice(0, -3);
-  }
-  cleanText = cleanText.trim();
+  while (cleanText.endsWith('```')) {
+    cleanText = cleanText.replace(/\n?```$/, '').trim();
   }
   const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
