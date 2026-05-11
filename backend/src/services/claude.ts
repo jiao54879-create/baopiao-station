@@ -51,9 +51,16 @@ export async function generateTitles(keywords: string[], context?: string): Prom
   }
 
   const responseText = response.choices[0]?.message?.content || '';
+  // 去掉markdown代码块包裹
   let cleanText = responseText.trim();
-  // 去掉markdown代码块包裹（```json ... ``` 或 ``` ... ```）
-  cleanText = cleanText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+  // 处理 ```json 或 ``` 开头
+  while (cleanText.startsWith('```')) {
+    cleanText = cleanText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').trim();
+  }
+  // 处理结尾的 ```
+  while (cleanText.endsWith('```')) {
+    cleanText = cleanText.replace(/\n?```$/, '').trim();
+  }
 
   let jsonStr = cleanText;
   try {
@@ -134,7 +141,12 @@ export async function analyzeViralCase(
   const responseText = response.choices[0]?.message?.content || '';
   let cleanText = responseText.trim();
   // 去掉markdown代码块包裹
-  cleanText = cleanText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+  while (cleanText.startsWith('```')) {
+    cleanText = cleanText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').trim();
+  }
+  while (cleanText.endsWith('```')) {
+    cleanText = cleanText.replace(/\n?```$/, '').trim();
+  }
   const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     throw new Error('AI 返回格式错误，无法解析 JSON');
