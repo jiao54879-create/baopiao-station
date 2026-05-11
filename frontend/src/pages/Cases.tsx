@@ -260,7 +260,8 @@ export default function Cases() {
                     } else if (item.url.includes('example')) {
                       message.info('示例数据暂无原文链接，请订阅真实公众号文章');
                     } else {
-                      window.open(item.url, '_blank');
+                      // 使用 window.location.href 避免被浏览器拦截弹窗
+                      window.location.href = item.url;
                     }
                   }}>
                     查看原文
