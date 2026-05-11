@@ -53,14 +53,17 @@ export async function generateTitles(keywords: string[], context?: string): Prom
   const responseText = response.choices[0]?.message?.content || '';
   // 去掉markdown代码块包裹
   let cleanText = responseText.trim();
-  // 处理 ```json 或 ``` 开头
-  while (cleanText.startsWith('```')) {
-    cleanText = cleanText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').trim();
+  // 用纯字符串操作避免正则转义问题
+  if (cleanText.startsWith('```json')) {
+    cleanText = cleanText.slice('```json'.length);
+  } else if (cleanText.startsWith('```')) {
+    cleanText = cleanText.slice('```'.length);
   }
-  // 处理结尾的 ```
-  while (cleanText.endsWith('```')) {
-    cleanText = cleanText.replace(/\n?```$/, '').trim();
+  cleanText = cleanText.trim();
+  if (cleanText.endsWith('```')) {
+    cleanText = cleanText.slice(0, -3);
   }
+  cleanText = cleanText.trim();
 
   let jsonStr = cleanText;
   try {
@@ -141,11 +144,18 @@ export async function analyzeViralCase(
   const responseText = response.choices[0]?.message?.content || '';
   let cleanText = responseText.trim();
   // 去掉markdown代码块包裹
-  while (cleanText.startsWith('```')) {
-    cleanText = cleanText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').trim();
+  let cleanText = responseText.trim();
+  // 用纯字符串操作避免正则转义问题
+  if (cleanText.startsWith('```json')) {
+    cleanText = cleanText.slice('```json'.length);
+  } else if (cleanText.startsWith('```')) {
+    cleanText = cleanText.slice('```'.length);
   }
-  while (cleanText.endsWith('```')) {
-    cleanText = cleanText.replace(/\n?```$/, '').trim();
+  cleanText = cleanText.trim();
+  if (cleanText.endsWith('```')) {
+    cleanText = cleanText.slice(0, -3);
+  }
+  cleanText = cleanText.trim();
   }
   const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
