@@ -40,12 +40,41 @@ export default function Generator() {
     setSelectedTitle(null)
 
     try {
-      const { data } = await api.post('/generator', {
+      const response = await api.post('/generator', {
         keywords: keywordList,
         context: context || undefined
       })
-      setTitles(data.titles)
-      message.success(`生成了 ${data.titles.length} 个标题`)
+      let data = response.data;
+      
+      // 兼容处理：如果后端返回错误但包含JSON内容，尝试解析
+      if (data.error && data.error.includes('AI 返回格式错误')) {
+        const errorText = data.error.replace('AI 返回格式错误，返回内容: ', '');
+        // 去掉markdown代码块
+        let cleanText = errorText.trim();
+        if (cleanText.startsWith('```')) {
+          cleanText = cleanText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').trim();
+        }
+        if (cleanText.endsWith('```')) {
+          cleanText = cleanText.replace(/\n?```$/, '').trim();
+        }
+        // 提取JSON
+        const braceStart = cleanText.indexOf('{');
+        const braceEnd = cleanText.lastIndexOf('}');
+        if (braceStart !== -1 && braceEnd !== -1) {
+          const jsonStr = cleanText.substring(braceStart, braceEnd + 1);
+          const parsed = JSON.parse(jsonStr);
+          if (parsed.titles) {
+            data = parsed;
+          }
+        }
+      }
+      
+      setTitles(data.titles || [])
+      if (data.titles && data.titles.length > 0) {
+        message.success(`生成了 ${data.titles.length} 个标题`)
+      } else {
+        message.error('生成失败，请稍后重试')
+      }
     } catch (error) {
       message.error('生成失败，请检查 AI 配置或稍后重试')
     } finally {
