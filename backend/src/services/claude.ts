@@ -106,7 +106,24 @@ export async function analyzeViralCase(
   content: string,
   metrics: { likes: number; favorites: number; comments: number }
 ): Promise<z.infer<typeof CaseAnalysisSchema>> {
-  const prompt = '请分析以下小红书爆款笔记的爆款原因：\n\n标题：' + title + '\n内容：' + content + '\n数据表现：点赞 ' + metrics.likes + ' | 收藏 ' + metrics.favorites + ' | 评论 ' + metrics.comments + '\n\n请以 JSON 格式输出。';
+  const prompt = `你是一个深谙小红书流量密码的保险赛道内容分析师。请分析以下爆款笔记的爆款原因。
+
+标题：${title}
+内容：${content}
+数据表现：点赞 ${metrics.likes} | 收藏 ${metrics.favorites} | 评论 ${metrics.comments}
+
+请严格按照以下JSON格式输出分析结果（不要输出其他内容）：
+{
+  "viralFactors": ["爆款因素1", "爆款因素2", "爆款因素3"],
+  "contentStructure": {
+    "opening": "开头部分分析：如何抓住注意力",
+    "middle": "中间部分分析：如何维持阅读兴趣",
+    "ending": "结尾部分分析：如何引导互动"
+  },
+  "topicAngle": "选题角度分析：为什么这个选题能火",
+  "reusableFormula": "可复制的爆款公式：提炼出可以套用的内容模板",
+  "suggestions": ["改进建议1", "改进建议2", "改进建议3"]
+}`;
 
   const response = await deepseek.chat.completions.create({
     model: 'deepseek-chat',
