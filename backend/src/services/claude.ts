@@ -52,9 +52,8 @@ export async function generateTitles(keywords: string[], context?: string): Prom
 
   const responseText = response.choices[0]?.message?.content || '';
   let cleanText = responseText.trim();
-  if (cleanText.startsWith(tripleBacktick)) {
-    cleanText = cleanText.replace(tripleBacktick + 'json', '').replace(tripleBacktick, '').trim();
-  }
+  // 去掉markdown代码块包裹（```json ... ``` 或 ``` ... ```）
+  cleanText = cleanText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
 
   let jsonStr = cleanText;
   try {
@@ -133,7 +132,10 @@ export async function analyzeViralCase(
   });
 
   const responseText = response.choices[0]?.message?.content || '';
-  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+  let cleanText = responseText.trim();
+  // 去掉markdown代码块包裹
+  cleanText = cleanText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+  const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     throw new Error('AI 返回格式错误，无法解析 JSON');
   }
