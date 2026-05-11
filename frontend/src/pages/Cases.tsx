@@ -254,18 +254,21 @@ export default function Cases() {
                   <Button key="analyze" type="text" icon={<ThunderboltOutlined />} onClick={() => analyzeCase(item)}>
                     AI分析
                   </Button>,
-                  <Button key="link" type="text" onClick={() => {
-                    if (!item.url) {
-                      message.warning('该案例暂无原文链接');
-                    } else if (item.url.includes('example')) {
-                      message.info('示例数据暂无原文链接，请订阅真实公众号文章');
-                    } else {
-                      // 使用 window.location.href 避免被浏览器拦截弹窗
-                      window.location.href = item.url;
-                    }
-                  }}>
+                  <a key="link" href={item.url && !item.url.includes('example') ? item.url : '#'} 
+                     target="_blank" 
+                     rel="noopener noreferrer"
+                     onClick={(e) => {
+                       if (!item.url) {
+                         e.preventDefault();
+                         message.warning('该案例暂无原文链接');
+                       } else if (item.url.includes('example')) {
+                         e.preventDefault();
+                         message.info('示例数据暂无原文链接，请订阅真实公众号文章');
+                       }
+                     }}
+                     style={{ padding: '0 4px', color: 'rgba(0, 0, 0, 0.45)', lineHeight: '1.5714', height: 'auto' }}>
                     查看原文
-                  </Button>
+                  </a>
                 ]}
               >
                 <Card.Meta
