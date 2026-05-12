@@ -32,7 +32,7 @@ router.post('/', async (req, res, next) => {
     // 记录到活动日志
     await prisma.activityLog.create({
       data: {
-        userId: req.user!.id,
+        userId: req.user?.id || 1,
         action: 'GENERATE_TITLES',
         resource: 'saved_title',
         details: JSON.stringify({ keywords, count: limitedTitles.length })
@@ -56,7 +56,7 @@ router.post('/save', async (req, res, next) => {
 
     const saved = await prisma.savedTitle.create({
       data: {
-        userId: req.user!.id,
+        userId: req.user?.id || 1,
         keywords,
         generatedTitles: generatedTitles || [],
         finalTitle,
@@ -67,7 +67,7 @@ router.post('/save', async (req, res, next) => {
     // 记录活动
     await prisma.activityLog.create({
       data: {
-        userId: req.user!.id,
+        userId: req.user?.id || 1,
         action: 'SAVE_TITLE',
         resource: 'saved_title',
         resourceId: saved.id
