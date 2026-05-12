@@ -91,6 +91,31 @@ export async function generateTitles(keywords: string[], context?: string): Prom
     console.error('方法3解析失败:', e3.message);
   }
 
+  // 方法4：用正则从混乱文本中逐个提取标题对象（即使JSON被截断/重叠也能工作）
+  try {
+    const titleRegex = /"title"\s*:\s*"([^"]+)"\s*,\s*"type"\s*:\s*"([^"]+)"\s*,\s*"score"\s*:\s*(\d+)\s*,\s*"explanation"\s*:\s*"(.+?)"\s*,\s*"hashtags"\s*:\s*\[([^\]]*)\]\s*,\s*"selfCriticism"\s*:\s*"(.+?)"\s*\}/g;
+    const extractedTitles: Array<{title: string; type: string; score: number; explanation: string; hashtags: string[]; selfCriticism: string}> = [];
+    let match;
+    while ((match = titleRegex.exec(cleanText)) !== null) {
+      const hashtagsStr = match[5];
+      const hashtags = hashtagsStr.split(',').map((h: string) => h.trim().replace(/"/g, '')).filter(Boolean);
+      extractedTitles.push({
+        title: match[1],
+        type: match[2],
+        score: parseInt(match[3]),
+        explanation: match[4],
+        hashtags,
+        selfCriticism: match[6]
+      });
+    }
+    if (extractedTitles.length > 0) {
+      console.log(`正则提取到 ${extractedTitles.length} 个标题`);
+      return TitleOutputSchema.parse({ titles: extractedTitles });
+    }
+  } catch (e4: any) {
+    console.error('方法4正则提取失败:', e4.message);
+  }
+
   console.error('AI 返回内容:', responseText);
   throw new Error('AI 返回格式错误，返回内容: ' + responseText.substring(0, 500));
 }
