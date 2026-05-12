@@ -97,15 +97,47 @@ export default function Cases() {
     }
   }
 
-  // 采集爆款数据
+  // 采集爆款数据（真实小红书笔记，需要 Chrome 已登录 + autocli 扩展）
   const handleCollect = async () => {
     setCollecting(true)
     try {
       const { data: res } = await api.post('/collect/viral')
-      message.success(res.message || '采集完成')
-      fetchData()
+      if (res.success) {
+        message.success(res.message || '采集完成')
+        fetchData()
+      } else {
+        // 采集失败（未连接 Chrome 扩展等）
+        Modal.warning({
+          title: '采集失败',
+          content: (
+            <div>
+              <p style={{ marginBottom: 8 }}>{res.message}</p>
+              <p style={{ color: '#666', fontSize: 13 }}>采集小红书真实笔记需要：</p>
+              <ol style={{ paddingLeft: 18, fontSize: 13, color: '#666' }}>
+                <li>在 Chrome 中打开并登录小红书</li>
+                <li>安装 autocli Chrome 扩展</li>
+                <li>确保 autocli 已正常运行（在终端执行 <code>autocli doctor</code> 检查）</li>
+              </ol>
+            </div>
+          )
+        })
+      }
     } catch (error: any) {
-      message.error(error.response?.data?.error || '采集失败')
+      const errMsg = error.response?.data?.message || error.response?.data?.error || '采集失败，请检查 Chrome 是否已登录小红书并安装 autocli 扩展'
+      Modal.error({
+        title: '采集失败',
+        content: (
+          <div>
+            <p>{errMsg}</p>
+            <p style={{ color: '#666', fontSize: 13, marginTop: 8 }}>采集小红书真实笔记需要：</p>
+            <ol style={{ paddingLeft: 18, fontSize: 13, color: '#666' }}>
+              <li>在 Chrome 中打开并登录小红书</li>
+              <li>安装 autocli Chrome 扩展并保持连接</li>
+              <li>终端执行 <code>autocli doctor</code> 确认状态</li>
+            </ol>
+          </div>
+        )
+      })
     } finally {
       setCollecting(false)
     }
@@ -182,15 +214,17 @@ export default function Cases() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-bold">🔥 爆款案例库</h2>
-          <Button 
-            type="primary" 
-            icon={<DownloadOutlined />} 
-            loading={collecting}
-            onClick={handleCollect}
-            size="small"
-          >
-            采集数据
-          </Button>
+          <Tooltip title="采集小红书近15天点赞50+的保险获客类真实笔记（需Chrome已登录小红书+autocli扩展）">
+            <Button 
+              type="primary" 
+              icon={<DownloadOutlined />} 
+              loading={collecting}
+              onClick={handleCollect}
+              size="small"
+            >
+              采集小红书真实笔记
+            </Button>
+          </Tooltip>
           <Tooltip title="订阅公众号文章">
             <Button 
               icon={<WechatOutlined />} 
