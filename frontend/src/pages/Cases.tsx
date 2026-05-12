@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Card, Row, Col, Tag, Select, Input, Spin, Empty, Button, Modal, List, Tooltip, Alert, message } from 'antd'
-import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined } from '@ant-design/icons'
+import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined, CopyOutlined } from '@ant-design/icons'
 import api from '../utils/api'
 
 const { Search } = Input
