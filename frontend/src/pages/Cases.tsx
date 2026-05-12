@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Card, Row, Col, Tag, Select, Input, Spin, Empty, Button, Modal, List, Tooltip, Alert, message } from 'antd'
-import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined, CopyOutlined } from '@ant-design/icons'
+import { Card, Row, Col, Tag, Select, Input, Spin, Empty, Button, Modal, List, Tooltip, Alert, message, Upload } from 'antd'
+import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined, CopyOutlined, UploadOutlined } from '@ant-design/icons'
+import type { UploadProps } from 'antd'
 import api from '../utils/api'
 
 const { Search } = Input
@@ -42,6 +43,7 @@ export default function Cases() {
   const [selectedCase, setSelectedCase] = useState<any>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [collecting, setCollecting] = useState(false)
+  const [importing, setImporting] = useState(false)
   const [subscribeModalOpen, setSubscribeModalOpen] = useState(false)
   const [subscribeUrl, setSubscribeUrl] = useState('')
   const [subscribeWechatId, setSubscribeWechatId] = useState('')
@@ -209,6 +211,39 @@ export default function Cases() {
     }
   }
 
+  // 导入本地采集的 JSON 文件
+  const handleImportJSON: UploadProps['customRequest'] = async (options) => {
+    const { file, onSuccess, onError } = options;
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file as File);
+
+      // 先读取文件内容
+      const text = await (file as File).text();
+      const cases = JSON.parse(text);
+
+      if (!Array.isArray(cases) || cases.length === 0) {
+        throw new Error('JSON 文件内容为空或格式错误');
+      }
+
+      const { data: res } = await api.post('/import/xhs-json', { cases });
+      if (res.success) {
+        message.success(res.message || `成功导入 ${cases.length} 条数据`);
+        fetchData();
+      } else {
+        throw new Error(res.error || '导入失败');
+      }
+      onSuccess?.(res);
+    } catch (error: any) {
+      const errMsg = error.message || error.response?.data?.error || '导入失败，请检查 JSON 格式是否正确';
+      message.error(errMsg);
+      onError?.(error);
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -234,6 +269,18 @@ export default function Cases() {
               订阅公众号
             </Button>
           </Tooltip>
+          <Upload
+            accept=".json"
+            showUploadList={false}
+            customRequest={handleImportJSON}
+            disabled={importing}
+          >
+            <Tooltip title="导入本地采集的 JSON 文件（需先运行 collect-xhs-local.js 脚本）">
+              <Button icon={<UploadOutlined />} loading={importing} size="small">
+                导入JSON
+              </Button>
+            </Tooltip>
+          </Upload>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Select

@@ -21,6 +21,7 @@ import triggerRoutes from './routes/trigger.js';
 import subscribeRoutes from './routes/subscribe.js';
 import materialsRoutes from './routes/materials.js';
 import collectRoutes from './routes/collect.js';
+import importRoutes from './routes/import.js';
 import imagesRoutes from "./routes/images.js";
 import rewriteRoutes from './routes/rewrite.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -86,6 +87,7 @@ const protectedRoutes = [
   { path: '/api/stats', router: statsRoutes },
   { path: '/api/materials', router: materialsRoutes },
   { path: '/api/collect', router: collectRoutes },
+  { path: '/api/import', router: importRoutes },
 ];
 
 protectedRoutes.forEach(({ path, router }) => {
