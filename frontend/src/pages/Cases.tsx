@@ -257,24 +257,37 @@ export default function Cases() {
                   <Button key="link" type="text" icon={<CopyOutlined />} onClick={() => {
                     if (!item.url) {
                       message.warning('该案例暂无原文链接');
-                    } else if (item.url.includes('example')) {
-                      message.info('示例数据暂无原文链接');
-                    } else {
-                      navigator.clipboard.writeText(item.url).then(() => {
-                        message.success('链接已复制，请打开小红书App查看');
+                      return;
+                    }
+                    // 检查是否是示例/占位数据
+                    const isDemo = item.url.includes('example.com') || item.url === '#' || item.url === '' || item.url.startsWith('https://example');
+                    if (isDemo) {
+                      message.info('示例数据暂无原文链接，请订阅真实公众号文章后采集真实数据');
+                      return;
+                    }
+                    // 小红书链接：复制到剪贴板并提示在App打开
+                    if (item.platform === 'XHS') {
+                      let xhsUrl = item.url;
+                      if (!xhsUrl.startsWith('http')) {
+                        xhsUrl = 'https://www.xiaohongshu.com/explore/' + xhsUrl;
+                      }
+                      navigator.clipboard.writeText(xhsUrl).then(() => {
+                        message.success('链接已复制！请在小红书App中打开查看原文');
                       }).catch(() => {
-                        // fallback
                         const textArea = document.createElement('textarea');
-                        textArea.value = item.url;
+                        textArea.value = xhsUrl;
                         document.body.appendChild(textArea);
                         textArea.select();
                         document.execCommand('copy');
                         document.body.removeChild(textArea);
-                        message.success('链接已复制，请打开小红书App查看');
+                        message.success('链接已复制！请在小红书App中打开查看原文');
                       });
+                      return;
                     }
+                    // 其他平台（公众号、微博等）直接打开
+                    window.open(item.url, '_blank');
                   }}>
-                    复制链接
+                    {item.platform === 'XHS' ? '复制链接' : '查看原文'}
                   </Button>
                 ]}
               >

@@ -18,8 +18,9 @@ router.post('/', async (req, res, next) => {
   try {
     const { keywords, context, count } = GenerateSchema.parse(req.body);
 
-    if (!process.env.DEEPSEEK_API_KEY) {
-      throw new AppError('AI 服务未配置，请联系管理员', 500);
+    // 检查 AI 服务配置（支持 DeepSeek 或 OpenAI）
+    if (!process.env.DEEPSEEK_API_KEY && !process.env.OPENAI_API_KEY) {
+      throw new AppError('AI 服务未配置，请在 Railway 环境变量中设置 DEEPSEEK_API_KEY', 500);
     }
 
     // 调用 Claude 生成标题

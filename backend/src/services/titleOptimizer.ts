@@ -1,8 +1,20 @@
 // AI标题优化服务 - 方案二
 // 功能：自动分析爆款特征、动态更新Prompt、热点自动借势
 
-import axios from 'axios';
+import OpenAI from 'openai';
 import { prisma } from '../lib/prisma.js';
+
+// 使用 DeepSeek（优先）或 OpenAI
+const aiClient = process.env.DEEPSEEK_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      baseURL: 'https://api.deepseek.com',
+    })
+  : new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY || '',
+    });
+
+const AI_MODEL = process.env.DEEPSEEK_API_KEY ? 'deepseek-chat' : 'gpt-3.5-turbo';
 
 // ==================== 爆款标题特征库 ====================
 
@@ -96,47 +108,51 @@ export interface OptimizationResult {
 }
 
 /**
- * 分析标题的爆款潜力
+ * 分析标题的爆款潜力（基于规则打分，满分100分）
+ * 评分标准：
+ *   基础分 50 分
+ *   + 标题模式加分（最多 +30）
+ *   + 关键词加分（最多 +15）
+ *   - 扣分项（最多 -20）
+ * 高潜力：≥75   中潜力：≥55   低潜力：<55
  */
 export async function analyzeTitle(title: string): Promise<TitleAnalysis> {
-  let score = 30;  // 基础分改为30
+  let score = 50;  // 基础分 50，合理起点
   const patterns: string[] = [];
   let keyword = '';
   let category = 'GENERAL';
 
-  // 检查标题模式
+  // 检查标题模式（每个模式 +5，最多叠加 6 个 = +30）
   for (const [name, config] of Object.entries(TITLE_PATTERNS)) {
     if (config.pattern.test(title)) {
-      score += config.weight;
+      score += 5;
       patterns.push(name);
     }
   }
 
-  // 检查关键词
+  // 检查关键词（高热词 +15，中 +8，低 +3）
   for (const kw of VIRAL_KEYWORDS.HIGH) {
     if (title.includes(kw)) {
-      score += 5;
+      score += 15;
       keyword = kw;
       category = 'HIGH_RELEVANCE';
       break;
     }
   }
-
   if (!keyword) {
     for (const kw of VIRAL_KEYWORDS.MEDIUM) {
       if (title.includes(kw)) {
-        score += 3;
+        score += 8;
         keyword = kw;
         category = 'MEDIUM_RELEVANCE';
         break;
       }
     }
   }
-
   if (!keyword) {
     for (const kw of VIRAL_KEYWORDS.LOW) {
       if (title.includes(kw)) {
-        score += 1;
+        score += 3;
         keyword = kw;
         category = 'LOW_RELEVANCE';
         break;
@@ -146,23 +162,25 @@ export async function analyzeTitle(title: string): Promise<TitleAnalysis> {
 
   // 扣分项
   const boringOpenings = ['今天分享', '一起来了解', '给大家介绍', '给大家推荐', '今天来聊'];
-  if (boringOpenings.some(op => title.includes(op))) score -= 10;
-  
-  const manualStyle = ['保险产品说明书', '保险条款解读', '保险科普'];
-  if (manualStyle.some(m => title.includes(m))) score -= 8;
+  if (boringOpenings.some(op => title.includes(op))) score -= 15;
+  const manualStyle = ['保险产品说明书', '保险条款解读'];
+  if (manualStyle.some(m => title.includes(m))) score -= 10;
 
-  // 计算爆款潜力 - 阈值修改
+  // 上限 100 下限 10
+  score = Math.min(100, Math.max(10, score));
+
+  // 计算爆款潜力
   let viralPotential: 'HIGH' | 'MEDIUM' | 'LOW' = 'LOW';
-  if (score >= 65) viralPotential = 'HIGH';
-  else if (score >= 50) viralPotential = 'MEDIUM';
+  if (score >= 75) viralPotential = 'HIGH';
+  else if (score >= 55) viralPotential = 'MEDIUM';
 
-  // 生成优化建议 - 更激进的措辞
+  // 生成优化建议
   const suggestions: string[] = [];
-  if (patterns.length === 0) suggestions.push('这个标题太无聊了，必须加数字+痛点+情绪钩子');
-  if (!keyword) suggestions.push('标题像说明书，没人会点的');
-  if (!TITLE_PATTERNS.NUMBER.pattern.test(title)) suggestions.push('没有数字就没有可信度，必须加');
-  if (!TITLE_PATTERNS.QUESTION.pattern.test(title)) suggestions.push('改成问句！陈述句没人看');
-  if (!TITLE_PATTERNS.IDENTITY.pattern.test(title)) suggestions.push('必须精准定位人群，宝妈/90后/打工人选一个');
+  if (!TITLE_PATTERNS.NUMBER.pattern.test(title)) suggestions.push('加入具体数字（金额/年龄/百分比），增强可信度');
+  if (!TITLE_PATTERNS.QUESTION.pattern.test(title)) suggestions.push('改为疑问句，引发读者主动思考');
+  if (!TITLE_PATTERNS.EMOTION.pattern.test(title) && !TITLE_PATTERNS.SHOCK.pattern.test(title)) suggestions.push('加入情绪触发词，制造心理落差');
+  if (!keyword) suggestions.push('添加保险核心关键词（重疾险/医疗险/保险避坑等）');
+  if (patterns.length < 2) suggestions.push('结合多种标题套路，如数字体+情绪体组合效果更好');
 
   return {
     title,
@@ -304,7 +322,7 @@ export async function generateDynamicPrompt(context?: {
 }
 
 /**
- * AI标题优化
+ * AI标题优化（使用 DeepSeek / OpenAI）
  */
 export async function optimizeTitle(
   title: string,
@@ -316,37 +334,34 @@ export async function optimizeTitle(
   // 分析原始标题
   const originalAnalysis = await analyzeTitle(title);
 
-  // 生成动态Prompt
-  const prompt = await generateDynamicPrompt({
-    hotTopics: context?.hotTopics || [],
-    targetAudience: context?.targetAudience
-  });
+  const targetAudience = context?.targetAudience || '保险消费者';
+  const hotTopicsStr = context?.hotTopics?.join('、') || '';
 
-  // 调用AI生成优化版本（这里使用OpenAI作为示例）
+  const systemPrompt = `你是一个深谙小红书流量密码的保险赛道标题优化专家。
+目标人群：${targetAudience}
+${hotTopicsStr ? `可借势热点：${hotTopicsStr}` : ''}
+
+优化原则：
+1. 保留原标题的核心语义
+2. 加入具体数字（金额/年龄/百分比）增强可信度
+3. 加入痛点/恐惧/利益触发词
+4. 制造情绪落差或认知反转
+5. 长度控制在20字以内
+
+请只返回优化后的标题文字，不要解释，不要加引号。`;
+
   try {
-    const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: prompt },
-          { role: 'user', content: `请优化这个标题，使其更具爆款潜力：\n"${title}"` }
-        ],
-        temperature: 0.8,
-        max_tokens: 500
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000
-      }
-    );
+    const response = await aiClient.chat.completions.create({
+      model: AI_MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `请优化这个标题，使其更具爆款潜力：\n"${title}"` }
+      ],
+      temperature: 0.8,
+      max_tokens: 100
+    });
 
-    const optimizedTitle = response.data.choices[0]?.message?.content?.trim() || '';
-
-    // 分析优化后的标题
+    const optimizedTitle = response.choices[0]?.message?.content?.trim() || title;
     const optimizedAnalysis = await analyzeTitle(optimizedTitle);
 
     return {
@@ -358,7 +373,6 @@ export async function optimizeTitle(
     };
   } catch (e) {
     console.log('AI优化失败:', e);
-    // 如果AI调用失败，返回基础优化版本
     return {
       originalTitle: title,
       optimizedTitle: await generateBasicOptimization(title),
@@ -393,7 +407,7 @@ export async function batchOptimizeTitles(
 }
 
 /**
- * 热点借势标题生成
+ * 热点借势标题生成（使用 DeepSeek / OpenAI）
  */
 export async function generateHotTopicTitles(
   hotTopic: string,
@@ -405,42 +419,30 @@ export async function generateHotTopicTitles(
 ${hotTopic}
 
 ## 要求
-1. 标题必须与保险、保障相关
-2. 标题要有吸引力，符合爆款标题特征
+1. 标题必须与保险、保障相关（关键词：${insuranceKeywords.join('/')}）
+2. 标题要有吸引力，符合爆款标题特征（含数字/情绪/痛点）
 3. 不要恶意蹭热点，保持正向价值观
 4. 标题长度15-30字
 
 ## 输出格式
-生成8个标题，每行一个，格式示例：
-[借势] 标题内容`;
+生成8个标题，每行一个，不要编号，不要括号，直接输出标题内容：`;
 
   try {
-    const response = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: prompt },
-          { role: 'user', content: `请生成与"${hotTopic}"相关的保险借势标题` }
-        ],
-        temperature: 0.8,
-        max_tokens: 800
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 30000
-      }
-    );
+    const response = await aiClient.chat.completions.create({
+      model: AI_MODEL,
+      messages: [
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.8,
+      max_tokens: 800
+    });
 
-    const content = response.data.choices[0]?.message?.content || '';
+    const content = response.choices[0]?.message?.content || '';
     // 解析标题
     const titles = content
       .split('\n')
-      .map(line => line.replace(/^\[.*?\]\s*/, '').trim())
-      .filter(line => line.length >= 10);
+      .map(line => line.replace(/^\[.*?\]\s*/, '').replace(/^\d+[.、]\s*/, '').trim())
+      .filter(line => line.length >= 8 && line.length <= 35);
 
     return titles.slice(0, 8);
   } catch (e) {
