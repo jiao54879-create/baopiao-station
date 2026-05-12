@@ -1,17 +1,15 @@
 /**
  * 爆款数据采集API
- * 通过 autocli 采集小红书真实爆款笔记（近15天，点赞50+，保险获客类）
- * 依赖：用户 Chrome 已登录小红书，且已安装 autocli Chrome 扩展
+ * 直接调用小红书 Web API 采集真实爆款笔记（近15天，点赞50+，保险获客类）
+ * 不依赖本地 autocli，可在 Railway 云端独立运行
  */
 
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import axios from 'axios';
 
 const router = Router();
 const prisma = new PrismaClient();
-const execAsync = promisify(exec);
 
 // 保险获客类关键词（覆盖常见爆款选题方向）
 const XHS_INSURANCE_KEYWORDS = [
@@ -28,22 +26,71 @@ const XHS_INSURANCE_KEYWORDS = [
 ];
 
 /**
- * 解析 autocli 返回的小红书搜索 JSON
- * autocli xiaohongshu search "关键词" --format json
+ * 小红书搜索 API 直接调用
+ * 使用 edith.xiaohongshu.com API，无需登录态即可获取公开数据
  */
-function parseAutocliXhsResult(raw: string): any[] {
+async function searchXhsByKeyword(keyword: string): Promise<any[]> {
   try {
-    let text = raw.trim();
-    // 去掉可能的 markdown 包裹
-    if (text.startsWith('```')) {
-      text = text.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').replace(/\n?```$/, '').trim();
-    }
-    const parsed = JSON.parse(text);
-    if (Array.isArray(parsed)) return parsed;
-    if (parsed.items) return parsed.items;
-    if (parsed.data) return parsed.data;
-    return [];
-  } catch (e) {
+    const response = await axios.get(
+      'https://edith.xiaohongshu.com/api/sns/web/v1/search/notes',
+      {
+        params: {
+          keyword,
+          page: 1,
+          page_size: 20,
+          search_id: Math.random().toString(36).substring(2, 15),
+          sort: 'general',
+          note_type: 0
+        },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Referer': 'https://www.xiaohongshu.com',
+          'Accept': 'application/json'
+        },
+        timeout: 15000
+      }
+    );
+
+    const data = response.data;
+    if (!data?.data?.items) return [];
+
+    return data.data.items
+      .map((item: any) => {
+        const noteCard = item.note_card || item;
+        const interact = noteCard.interact_info || {};
+        const likes = Number(interact.liked_count || 0);
+        const favorites = Number(interact.collected_count || 0);
+        const comments = Number(interact.comment_count || 0);
+        const shares = Number(interact.share_count || 0);
+        const noteId = noteCard.note_id || '';
+        const publishedAt = noteCard.time ? new Date(noteCard.time * 1000) : new Date();
+
+        // 过滤：近15天 + 点赞≥50
+        const daysAgo = (Date.now() - publishedAt.getTime()) / (1000 * 60 * 60 * 24);
+        if (daysAgo > 15 || likes < 50) return null;
+
+        return {
+          platform: 'XHS',
+          title: noteCard.title || noteCard.display_title || '',
+          content: noteCard.desc || noteCard.content || '',
+          author: noteCard.user?.nickname || '',
+          authorUrl: noteCard.user?.user_id ? `https://www.xiaohongshu.com/user/profile/${noteCard.user.user_id}` : '',
+          url: noteId ? `https://www.xiaohongshu.com/explore/${noteId}` : '',
+          coverImage: noteCard.cover?.url || noteCard.image_list?.[0]?.url || '',
+          likesCount: likes,
+          favoritesCount: favorites,
+          commentsCount: comments,
+          sharesCount: shares,
+          tags: JSON.stringify([keyword, '保险', 'XHS']),
+          insuranceType: guessInsuranceType(keyword),
+          viralScore: calcViralScore(likes, favorites, comments, shares),
+          publishedAt
+        };
+      })
+      .filter((item: any) => item !== null && item.title.length > 0);
+
+  } catch (e: any) {
+    console.log(`小红书 API 搜索"${keyword}"失败: ${e.message}`);
     return [];
   }
 }
@@ -65,66 +112,7 @@ function isWithinDays(dateStr: string | number | null, days: number): boolean {
   return now - ts <= days * 24 * 60 * 60 * 1000;
 }
 
-/**
- * 用 autocli 搜索某关键词，返回过滤后的笔记列表
- */
-async function searchXhsByKeyword(keyword: string): Promise<any[]> {
-  try {
-    const { stdout } = await execAsync(
-      `autocli xiaohongshu search "${keyword}" --limit 20 --format json`,
-      { timeout: 30000 }
-    );
-    const items = parseAutocliXhsResult(stdout);
-
-    return items
-      .filter(item => {
-        const likes = Number(item.likes || item.likesCount || item.liked_count || 0);
-        const publishTime = item.publishTime || item.time || item.created_at || null;
-        return likes >= 50 && isWithinDays(publishTime, 15);
-      })
-      .map(item => {
-        const likes = Number(item.likes || item.likesCount || item.liked_count || 0);
-        const favorites = Number(item.favorites || item.favoritesCount || item.collected_count || 0);
-        const comments = Number(item.comments || item.commentsCount || item.comment_count || 0);
-        const shares = Number(item.shares || item.sharesCount || item.share_count || 0);
-        const noteId = item.id || item.note_id || item.noteId || '';
-        const rawUrl = item.url || item.link || '';
-
-        // 构建完整的小红书链接
-        let url = rawUrl;
-        if (!url && noteId) {
-          url = `https://www.xiaohongshu.com/explore/${noteId}`;
-        }
-        if (url && !url.startsWith('http')) {
-          url = `https://www.xiaohongshu.com/explore/${url}`;
-        }
-
-        return {
-          platform: 'XHS',
-          title: item.title || item.name || '',
-          content: item.desc || item.content || item.description || '',
-          author: item.author || item.user?.nickname || item.nickname || '',
-          authorUrl: item.authorUrl || (item.user?.id ? `https://www.xiaohongshu.com/user/profile/${item.user.id}` : ''),
-          url,
-          coverImage: item.cover || item.image || item.thumbnail || '',
-          likesCount: likes,
-          favoritesCount: favorites,
-          commentsCount: comments,
-          sharesCount: shares,
-          tags: JSON.stringify([keyword, '保险', 'XHS']),
-          insuranceType: guessInsuranceType(keyword),
-          viralScore: calcViralScore(likes, favorites, comments, shares),
-          publishedAt: item.publishTime
-            ? new Date(typeof item.publishTime === 'number' ? item.publishTime * 1000 : item.publishTime)
-            : new Date()
-        };
-      })
-      .filter(item => item.title.length > 0); // 必须有标题
-  } catch (e: any) {
-    console.log(`autocli 搜索"${keyword}"失败: ${e.message}`);
-    return [];
-  }
-}
+// searchXhsByKeyword 已在上文定义
 
 /**
  * 根据关键词猜测险种
@@ -198,8 +186,8 @@ router.post('/collect/viral', async (req, res) => {
   if (total === 0) {
     return res.status(503).json({
       success: false,
-      message: '未采集到数据。请确认：① Chrome 已打开并登录小红书 ② autocli Chrome 扩展已安装并连接（运行 autocli doctor 检查）',
-      tip: '运行命令诊断：autocli doctor'
+      message: '未采集到数据。小红书 API 可能暂时不可用，请稍后重试。',
+      tip: '小红书有反爬机制，部分关键词可能无法获取数据'
     });
   }
 

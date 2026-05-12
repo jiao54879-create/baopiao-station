@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   // Railway 生产环境使用 PostgreSQL，本地开发使用 SQLite
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
