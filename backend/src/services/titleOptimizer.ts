@@ -110,30 +110,55 @@ export interface OptimizationResult {
 /**
  * 分析标题的爆款潜力（基于规则打分，满分100分）
  * 评分标准：
- *   基础分 50 分
- *   + 标题模式加分（最多 +30）
- *   + 关键词加分（最多 +15）
- *   - 扣分项（最多 -20）
- * 高潜力：≥75   中潜力：≥55   低潜力：<55
+ *   基础分 30 分
+ *   + 标题模式加分（每个模式 +5，最多 +20）
+ *   + 关键词加分（高 +8，中 +4，低 +2）
+ *   + 字数达标加分（15-20字 +5）
+ *   - 扣分项（超过20字直接扣20分）
+ * 
+ * 评分等级：
+ *   优秀：≥70（真正的爆款潜力）
+ *   良好：≥50（有一定吸引力）
+ *   一般：≥35（勉强及格）
+ *   差：<35（需要大幅改进）
  */
 export async function analyzeTitle(title: string): Promise<TitleAnalysis> {
-  let score = 50;  // 基础分 50，合理起点
+  let score = 30;  // 降低基础分到30，更严格的起点
   const patterns: string[] = [];
   let keyword = '';
   let category = 'GENERAL';
+  const suggestions: string[] = [];
 
-  // 检查标题模式（每个模式 +5，最多叠加 6 个 = +30）
+  // ===== 字数检查（最重要！） =====
+  const charCount = title.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, 'x').length; // 粗略计算
+  const chineseChars = title.match(/[\u4e00-\u9fa5]/g)?.length || 0; // 纯中文计数
+  
+  // 扣分：超过20字直接扣20分
+  if (chineseChars > 20) {
+    score -= 20;
+    suggestions.push(`❌ 字数超标！小红书限20字，当前${chineseChars}字`);
+  } else if (chineseChars >= 15 && chineseChars <= 20) {
+    score += 5; // 字数达标加分
+  } else if (chineseChars > 0) {
+    score += 2; // 有字数但不够理想
+  }
+
+  // ===== 检查标题模式（每个模式 +5，最多 +20） =====
+  let patternCount = 0;
   for (const [name, config] of Object.entries(TITLE_PATTERNS)) {
     if (config.pattern.test(title)) {
       score += 5;
       patterns.push(name);
+      patternCount++;
     }
   }
+  // 封顶：最多计算4个模式 = +20
+  if (patternCount > 4) score -= (patternCount - 4) * 5;
 
-  // 检查关键词（高热词 +15，中 +8，低 +3）
+  // ===== 检查关键词（不叠加，只取最高） =====
   for (const kw of VIRAL_KEYWORDS.HIGH) {
     if (title.includes(kw)) {
-      score += 15;
+      score += 8;
       keyword = kw;
       category = 'HIGH_RELEVANCE';
       break;
@@ -142,7 +167,7 @@ export async function analyzeTitle(title: string): Promise<TitleAnalysis> {
   if (!keyword) {
     for (const kw of VIRAL_KEYWORDS.MEDIUM) {
       if (title.includes(kw)) {
-        score += 8;
+        score += 4;
         keyword = kw;
         category = 'MEDIUM_RELEVANCE';
         break;
@@ -152,7 +177,7 @@ export async function analyzeTitle(title: string): Promise<TitleAnalysis> {
   if (!keyword) {
     for (const kw of VIRAL_KEYWORDS.LOW) {
       if (title.includes(kw)) {
-        score += 3;
+        score += 2;
         keyword = kw;
         category = 'LOW_RELEVANCE';
         break;
@@ -160,27 +185,37 @@ export async function analyzeTitle(title: string): Promise<TitleAnalysis> {
     }
   }
 
-  // 扣分项
+  // ===== 扣分项 =====
   const boringOpenings = ['今天分享', '一起来了解', '给大家介绍', '给大家推荐', '今天来聊'];
-  if (boringOpenings.some(op => title.includes(op))) score -= 15;
-  const manualStyle = ['保险产品说明书', '保险条款解读'];
-  if (manualStyle.some(m => title.includes(m))) score -= 10;
+  if (boringOpenings.some(op => title.includes(op))) score -= 10;
+  
+  const manualStyle = ['保险产品说明书', '保险条款解读', '详解', '一文读懂'];
+  if (manualStyle.some(m => title.includes(m))) score -= 8;
 
-  // 上限 100 下限 10
-  score = Math.min(100, Math.max(10, score));
+  // 太平淡的句式
+  if (/^[这那]个/.test(title)) score -= 5;
 
-  // 计算爆款潜力
+  // ===== 生成优化建议 =====
+  if (chineseChars > 20) {
+    suggestions.push('必须精简到20字以内');
+  } else if (chineseChars < 10) {
+    suggestions.push('标题偏短，建议15-20字效果更好');
+  }
+  if (!TITLE_PATTERNS.NUMBER.pattern.test(title)) suggestions.push('缺少具体数字（金额/年龄/百分比）');
+  if (!TITLE_PATTERNS.QUESTION.pattern.test(title) && !TITLE_PATTERNS.SHOCK.pattern.test(title) && !TITLE_PATTERNS.EMOTION.pattern.test(title)) {
+    suggestions.push('缺少情绪触发词（疑问/震惊/情绪共鸣）');
+  }
+  if (!keyword) suggestions.push('缺少保险核心关键词');
+  if (patterns.length < 2) suggestions.push('建议组合多种标题套路');
+
+  // ===== 最终评分 =====
+  // 上限100，下限15（不能低于15分，太差的不给机会）
+  score = Math.min(100, Math.max(15, score));
+
+  // 计算爆款潜力（更严格的阈值）
   let viralPotential: 'HIGH' | 'MEDIUM' | 'LOW' = 'LOW';
-  if (score >= 75) viralPotential = 'HIGH';
-  else if (score >= 55) viralPotential = 'MEDIUM';
-
-  // 生成优化建议
-  const suggestions: string[] = [];
-  if (!TITLE_PATTERNS.NUMBER.pattern.test(title)) suggestions.push('加入具体数字（金额/年龄/百分比），增强可信度');
-  if (!TITLE_PATTERNS.QUESTION.pattern.test(title)) suggestions.push('改为疑问句，引发读者主动思考');
-  if (!TITLE_PATTERNS.EMOTION.pattern.test(title) && !TITLE_PATTERNS.SHOCK.pattern.test(title)) suggestions.push('加入情绪触发词，制造心理落差');
-  if (!keyword) suggestions.push('添加保险核心关键词（重疾险/医疗险/保险避坑等）');
-  if (patterns.length < 2) suggestions.push('结合多种标题套路，如数字体+情绪体组合效果更好');
+  if (score >= 70) viralPotential = 'HIGH';  // 70分以上才是高潜力
+  else if (score >= 50) viralPotential = 'MEDIUM';  // 50-69是中等
 
   return {
     title,
@@ -280,45 +315,47 @@ export async function generateDynamicPrompt(context?: {
   const topKeywords = context?.topKeywords || learned.topKeywords;
   const targetAudience = context?.targetAudience || '保险消费者';
 
-  return `你是一个深谙小红书流量密码的保险赛道标题黑客。你的标题必须让人在信息流中停下拇指，不点进来就睡不着觉。
+  return `你是一个深谙小红书流量密码的保险赛道标题黑客。
 
 用户输入的关键词：${topKeywords.slice(0, 5).join(', ')}
 目标人群：${targetAudience}
-可借势热点：${hotTopics.slice(0, 3).join(', ')}
 
-## 强制三要素（缺一不可）
-1. 具体数字：必须包含至少一个具体数字（金额、年龄、百分比、人数等）
-2. 痛点/恐惧/利益：必须触及用户的恐惧、焦虑或贪念
-3. 反常识/情绪钩子：必须有让人"咦？"的反转或强烈的情绪触发词
+## ⭐ 最核心要求：字数限制（违反直接不及格）
+- 小红书标题上限20个中文字符
+- 超过20字系统会自动截断，严重影响效果
+- 每生成一个标题，必须标注字数：例如 [12字]、[18字]
+- 字数超标直接淘汰，不予采纳
 
-## 6种强制覆盖套路（每种至少生成1个）
-1. 避坑恐吓类：用恐惧驱动点击，如"XX前不看必亏X万"、"买错XX=白扔X万"
-2. 对比反差类：制造认知冲突，如"月薪3K和3W买保险，差距不是钱是命"
-3. 逆袭翻盘类：从失败到成功，如"被拒赔3次后靠这招拿50万"
-4. 权威背书类：借权威增强可信度，如"保险精算师自己的3个秘密"
-5. 数字冲击类：用震撼数字冲击，如"年缴XXX撬动XX万，这笔账必须算"
-6. 情绪共鸣类：戳中焦虑/后悔/庆幸，如"后悔没早买！30岁查出XX还好有它"
+## 爆款标题公式（必须组合使用）
+痛点/恐惧 + 具体数字 + 情绪钩子
+例如："后悔买晚！30岁查出甲状腺癌，买它才花了X千"
 
-## 禁止清单
-- 禁止"今天分享"、"一起来了解"、"给大家介绍"式开头
-- 禁止纯"科普"、"攻略"、"指南"等说明书式用词（除非搭配情绪钩子）
-- 禁止没有情绪张力的陈述句
-- 禁止标题像产品说明书
-- 禁止标题党但内容不符
+## 6种标题套路（每种至少1个，共生成6-8个）
+1. 避坑恐吓类：[X字] XX前不看亏X万/买错XX=白扔X万
+2. 对比反差类：[X字] 月薪3K和3W买保险，差距不是钱是命
+3. 逆袭翻盘类：[X字] 被拒赔3次后靠这招拿50万
+4. 数字冲击类：[X字] 年缴XXX撬动XX万，这笔账算清楚再买
+5. 情绪共鸣类：[X字] 后悔没早买！30岁还好有它
+6. 身份代入类：[X字] 90后/宝妈/打工人的保险避坑指南
 
-## 严格评分标准（1-10分）
-- 9-10分：信息流杀手，看到就忍不住点，情绪极强
-- 7-8分：有强烈吸引力，但情绪冲击还不够极致
-- 5-6分：有亮点但平庸，放到信息流里大概率被划过
-- 3-4分：无聊、像说明书、没有点击欲望
-- 1-2分：完全不想点
+## 禁止清单（违反直接淘汰）
+- ❌ 字数超过20字
+- ❌ "今天分享"、"给大家介绍"式开头
+- ❌ 纯"科普"、"攻略"说明书式用词（除非有情绪）
+- ❌ 没有情绪张力的平淡陈述句
+- ❌ 像产品说明书（如"XX保险产品详细介绍"）
 
-⚠️ 自我批判规则：生成后必须诚实自评。如果一个标题放到小红书信息流中你会划过，那它最多5分。大部分标题应在5-7分，8分以上极难获得。
+## 评分标准（诚实评分，8分以上极少）
+- 8-10分：信息流杀手，强烈点击欲望，极少标题能达到
+- 6-7分：有吸引力，值得点击
+- 4-5分：平平无奇，大概率被划过
+- 1-3分：完全不想点
 
-## 输出格式
-请生成5个标题，每个标题格式：
-[Nums|Que|Shock|Emot|Pract|Story] 标题内容 | 评分 | 自我批评
-例如：[Nums|Que] 重疾险怎么买？3步教你选对不选贵 | 6 | 太平淡，缺少情绪冲击`;
+⚠️ 诚实评分规则：大部分标题应该在4-6分，7分已经很好，8分以上需要真正打动人。严禁随意给8-10分！
+
+## 输出格式（每行一个标题）
+[字数|套路标签] 标题内容 | 评分 | 1句话自我批评
+例如：[18字|数字+情绪] 重疾险怎么买？3步教你省下2万冤枉钱 | 6 | 有数字但情绪还不够强烈`;
 }
 
 /**
@@ -338,17 +375,25 @@ export async function optimizeTitle(
   const hotTopicsStr = context?.hotTopics?.join('、') || '';
 
   const systemPrompt = `你是一个深谙小红书流量密码的保险赛道标题优化专家。
+
 目标人群：${targetAudience}
 ${hotTopicsStr ? `可借势热点：${hotTopicsStr}` : ''}
 
-优化原则：
+## ⭐ 核心要求：必须控制在20字以内
+- 小红书标题上限20个中文字符
+- 生成后必须检查字数，超过20字直接缩短
+- 字数达标才有资格获得高分
+
+## 优化技巧
 1. 保留原标题的核心语义
 2. 加入具体数字（金额/年龄/百分比）增强可信度
 3. 加入痛点/恐惧/利益触发词
 4. 制造情绪落差或认知反转
-5. 长度控制在20字以内
+5. 避免"今天分享"、"给大家介绍"等平淡开头
 
-请只返回优化后的标题文字，不要解释，不要加引号。`;
+## 输出格式
+只返回优化后的标题文字，不要任何解释、不要加引号、不要标注字数。
+如果字数超限，宁可删减内容也要控制在20字内。`;
 
   try {
     const response = await aiClient.chat.completions.create({
@@ -361,7 +406,22 @@ ${hotTopicsStr ? `可借势热点：${hotTopicsStr}` : ''}
       max_tokens: 100
     });
 
-    const optimizedTitle = response.choices[0]?.message?.content?.trim() || title;
+    let optimizedTitle = response.choices[0]?.message?.content?.trim() || title;
+    
+    // 强制截断到20字
+    const chineseChars = optimizedTitle.match(/[\u4e00-\u9fa5]/g)?.length || 0;
+    if (chineseChars > 20) {
+      // 简单截断到20字
+      let count = 0;
+      let truncated = '';
+      for (const char of optimizedTitle) {
+        if (/[\u4e00-\u9fa5]/.test(char)) count++;
+        if (count > 20) break;
+        truncated += char;
+      }
+      optimizedTitle = truncated;
+    }
+
     const optimizedAnalysis = await analyzeTitle(optimizedTitle);
 
     return {
@@ -369,7 +429,7 @@ ${hotTopicsStr ? `可借势热点：${hotTopicsStr}` : ''}
       optimizedTitle,
       improvement: optimizedAnalysis.score - originalAnalysis.score,
       techniques: optimizedAnalysis.patterns,
-      reason: `从${originalAnalysis.score}分提升到${optimizedAnalysis.score}分`
+      reason: `从${originalAnalysis.score}分优化到${optimizedAnalysis.score}分`
     };
   } catch (e) {
     console.log('AI优化失败:', e);
