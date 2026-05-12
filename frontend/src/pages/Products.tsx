@@ -3,14 +3,15 @@ import { useState, useEffect } from 'react';
 import {
   Card, Table, Tag, Button, Space, Input, Select, Modal, Form,
   InputNumber, DatePicker, message, Statistic, Row, Col,
-  Descriptions, Collapse, Empty, Alert
+  Descriptions, Collapse, Empty, Alert, Upload, Spin
 } from 'antd';
 import {
   PlusOutlined, FireOutlined,
   ClockCircleOutlined, CheckCircleOutlined,
   UpCircleOutlined, DownCircleOutlined,
-  SafetyOutlined
+  SafetyOutlined, UploadOutlined
 } from '@ant-design/icons';
+import type { UploadProps } from 'antd';
 import dayjs from 'dayjs';
 import api from '../utils/api';
 
@@ -33,6 +34,10 @@ const typeMap: Record<string, { color: string; label: string }> = {
   LIFE: { color: 'purple', label: '终身寿险' },
   ACCIDENT: { color: 'orange', label: '意外险' },
   ANNUITY: { color: 'gold', label: '年金险' },
+  WHOLE_LIFE: { color: 'purple', label: '终身寿险' },
+  INCREASING_LIFE: { color: 'volcano', label: '增额终身寿险' },
+  CHILD: { color: 'magenta', label: '少儿保险' },
+  GROUP: { color: 'cyan', label: '团体险' },
   CHILDREN_CRITICAL: { color: 'magenta', label: '少儿重疾险' },
   HEALTH: { color: 'cyan', label: '健康险' }
 };
@@ -54,6 +59,84 @@ export default function Products() {
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [form] = Form.useForm();
+
+  // 上传解析弹窗状态
+  const [uploadModalVisible, setUploadModalVisible] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [analyzeResult, setAnalyzeResult] = useState<any>(null);
+  const [analyzeError, setAnalyzeError] = useState<string>('');
+
+  // 处理文件上传和AI分析
+  const handleAnalyzeUpload: UploadProps['customRequest'] = async (options) => {
+    const { file, onSuccess, onError } = options;
+    setUploading(true);
+    setAnalyzeError('');
+    setAnalyzeResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file as any);
+
+      const { data: res } = await api.post('/products/analyze-upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120000 // 2分钟超时
+      });
+
+      if (res.success) {
+        setAnalyzeResult(res.data);
+        onSuccess?.(res.data);
+        message.success('文档解析完成，请确认并编辑信息后提交');
+      } else {
+        setAnalyzeError(res.error || '解析失败');
+        onError?.(new Error(res.error));
+        message.error(res.error || '文档解析失败');
+      }
+    } catch (error: any) {
+      const errMsg = error.response?.data?.error || error.message || '上传失败';
+      setAnalyzeError(errMsg);
+      onError?.(new Error(errMsg));
+      message.error(errMsg);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 确认使用解析结果
+  const handleConfirmAnalyze = () => {
+    if (analyzeResult) {
+      // 填充表单数据
+      form.setFieldsValue({
+        name: analyzeResult.name,
+        company: analyzeResult.company,
+        insuranceType: analyzeResult.insuranceType,
+        priceAdult30: analyzeResult.priceAdult30,
+        priceChild0: analyzeResult.priceChild0,
+        highlightsSevere: analyzeResult.highlightsSevere,
+        highlightsMild: analyzeResult.highlightsMild,
+        highlightsWaiver: analyzeResult.highlightsWaiver,
+        highlightsSpecial: analyzeResult.highlightsSpecial,
+        highlightsValue: analyzeResult.highlightsValue,
+        advantagesPrice: analyzeResult.advantagesPrice,
+        advantagesCoverage: analyzeResult.advantagesCoverage,
+        advantagesUW: analyzeResult.advantagesUW,
+        advantagesService: analyzeResult.advantagesService,
+        competitorComparison: analyzeResult.competitorComparison,
+        drawbacks: analyzeResult.drawbacks,
+        source: analyzeResult.source,
+        notes: analyzeResult.notes
+      });
+      setUploadModalVisible(false);
+      setModalVisible(true);
+      setSelectedProduct(null); // 清除已选产品，确保是新增
+    }
+  };
+
+  // 关闭上传弹窗时重置状态
+  const handleCloseUploadModal = () => {
+    setUploadModalVisible(false);
+    setAnalyzeResult(null);
+    setAnalyzeError('');
+  };
 
   // 获取产品列表
   const fetchProducts = async () => {
@@ -340,6 +423,11 @@ export default function Products() {
             setModalVisible(true);
           }}>
             添加产品
+          </Button>
+          <Button icon={<UploadOutlined />} onClick={() => {
+            setUploadModalVisible(true);
+          }}>
+            上传素材
           </Button>
         </div>
       </Card>
@@ -670,6 +758,166 @@ export default function Products() {
             )}
           </div>
         )}
+      </Modal>
+
+      {/* 上传素材AI解析弹窗 */}
+      <Modal
+        title="上传素材 - AI自动解析"
+        open={uploadModalVisible}
+        onCancel={handleCloseUploadModal}
+        footer={[
+          <Button key="cancel" onClick={handleCloseUploadModal}>
+            取消
+          </Button>,
+          <Button
+            key="confirm"
+            type="primary"
+            disabled={!analyzeResult}
+            onClick={handleConfirmAnalyze}
+          >
+            确认并添加到表单
+          </Button>
+        ]}
+        width={600}
+      >
+        <div className="py-4">
+          {uploading && (
+            <div className="text-center py-8">
+              <Spin tip="AI正在解析文档，请稍候..." />
+            </div>
+          )}
+
+          {!uploading && !analyzeResult && !analyzeError && (
+            <div>
+              <Upload.Dragger
+                accept=".pdf,.docx,.doc,.txt"
+                customRequest={handleAnalyzeUpload}
+                showUploadList={true}
+                maxCount={1}
+                disabled={uploading}
+              >
+                <p className="ant-upload-drag-icon">
+                  <UploadOutlined />
+                </p>
+                <p className="ant-upload-text">点击或拖拽上传保险产品素材文档</p>
+                <p className="ant-upload-hint">
+                  支持 PDF、Word (.docx/.doc)、TXT 格式，文件大小不超过10MB
+                </p>
+              </Upload.Dragger>
+
+              <Alert
+                className="mt-4"
+                message="提示"
+                description="上传后，AI将自动分析文档内容，提取产品名称、保险公司、险种、保费、亮点等信息，并填充到产品表单中。"
+                type="info"
+                showIcon
+              />
+            </div>
+          )}
+
+          {analyzeError && (
+            <div>
+              <Alert
+                message="解析失败"
+                description={analyzeError}
+                type="error"
+                showIcon
+                className="mb-4"
+              />
+              <Upload.Dragger
+                accept=".pdf,.docx,.doc,.txt"
+                customRequest={handleAnalyzeUpload}
+                showUploadList={true}
+                maxCount={1}
+              >
+                <p className="ant-upload-drag-icon">
+                  <UploadOutlined />
+                </p>
+                <p className="ant-upload-text">点击或拖拽重新上传</p>
+              </Upload.Dragger>
+            </div>
+          )}
+
+          {analyzeResult && (
+            <div>
+              <Alert
+                message="解析完成"
+                description="AI已成功解析文档内容，请确认以下信息是否正确，可手动修改后确认提交。"
+                type="success"
+                showIcon
+                className="mb-4"
+              />
+
+              <Descriptions bordered column={2} size="small">
+                <Descriptions.Item label="产品名称" span={2}>
+                  {analyzeResult.name}
+                </Descriptions.Item>
+                <Descriptions.Item label="保险公司">
+                  {analyzeResult.company}
+                </Descriptions.Item>
+                <Descriptions.Item label="险种">
+                  <Tag color={typeMap[analyzeResult.insuranceType]?.color}>
+                    {typeMap[analyzeResult.insuranceType]?.label || analyzeResult.insuranceType}
+                  </Tag>
+                </Descriptions.Item>
+                {analyzeResult.priceAdult30 && (
+                  <Descriptions.Item label="成人保费（30岁）">
+                    ¥{Number(analyzeResult.priceAdult30).toLocaleString()}/年
+                  </Descriptions.Item>
+                )}
+                {analyzeResult.priceChild0 && (
+                  <Descriptions.Item label="儿童保费（0岁）">
+                    ¥{Number(analyzeResult.priceChild0).toLocaleString()}/年
+                  </Descriptions.Item>
+                )}
+              </Descriptions>
+
+              {analyzeResult.highlightsSevere?.length > 0 && (
+                <div className="mt-4">
+                  <Tag color="red">🩸 重疾亮点</Tag>
+                  <ul className="list-disc ml-6 mt-2">
+                    {analyzeResult.highlightsSevere.map((h: string, i: number) => (
+                      <li key={i}>{h}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {analyzeResult.advantagesPrice?.length > 0 && (
+                <div className="mt-4">
+                  <Tag color="green">💰 价格优势</Tag>
+                  <ul className="list-disc ml-6 mt-2">
+                    {analyzeResult.advantagesPrice.map((a: string, i: number) => (
+                      <li key={i}>{a}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {analyzeResult.drawbacks?.length > 0 && (
+                <div className="mt-4">
+                  <Tag color="orange">⚠️ 注意事项</Tag>
+                  <ul className="list-disc ml-6 mt-2">
+                    {analyzeResult.drawbacks.map((d: string, i: number) => (
+                      <li key={i}>{d}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="mt-4 text-center">
+                <Button
+                  type="link"
+                  onClick={() => {
+                    setAnalyzeResult(null);
+                  }}
+                >
+                  重新上传
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );
