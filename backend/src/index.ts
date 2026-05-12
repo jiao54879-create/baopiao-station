@@ -76,6 +76,7 @@ app.use('/api/title-optimization', titleOptimizationRoutes);  // 标题优化
 app.use('/api/generator', generatorRoutes);  // 标题生成
 app.use('/api/rewrite', rewriteRoutes);      // 一键仿写
 app.use("/api/images", imagesRoutes);      // 配图生成
+app.use('/api/materials', materialsRoutes);  // 素材库
 
 // 认证中间件
 import { authenticate, requireRole } from './middleware/auth.js';
@@ -85,7 +86,6 @@ const protectedRoutes = [
   { path: '/api/users', router: userRoutes },
   { path: '/api/teams', router: teamRoutes },
   { path: '/api/stats', router: statsRoutes },
-  { path: '/api/materials', router: materialsRoutes },
   { path: '/api/collect', router: collectRoutes },
   { path: '/api/import', router: importRoutes },
 ];
