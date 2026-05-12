@@ -1,187 +1,69 @@
-// 素材上传路由 - 支持文件上传管理
+// 保险素材库 API
 import { Router } from 'express';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 import { prisma } from '../lib/prisma.js';
+import { z } from 'zod';
 
 const router = Router();
 
-// 配置 multer 存储
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd(), 'uploads', 'materials');
-    // 自动创建目录
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // 生成唯一文件名：时间戳-原文件名
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    const ext = path.extname(file.originalname);
-    cb(null, `${uniqueSuffix}${ext}`);
-  }
+const MaterialSchema = z.object({
+  category: z.enum(['PITFALL', 'INFO_GAP', 'TRICK', 'CLAIM', 'COLD_FACT']),
+  title: z.string().min(1),
+  content: z.string().min(1),
+  tags: z.array(z.string()).optional(),
+  source: z.string().optional(),
 });
 
-// 文件过滤器：只允许常见格式
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedTypes = [
-    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
-    'application/pdf',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',       // .xlsx
-    'text/plain', 'text/markdown'
-  ];
+// GET / - 列表（分页+筛选）
+router.get('/', async (req, res) => {
+  const { page = '1', limit = '20', category, keyword, tag } = req.query;
+  const where: any = {};
+  if (category) where.category = category;
+  if (keyword) where.OR = [{ title: { contains: keyword as string } }, { content: { contains: keyword as string } }];
+  if (tag) where.tags = { contains: tag as string };
   
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error(`不支持的文件类型: ${file.mimetype}。支持的格式：图片/JPG/PNG/GIF/WebP、PDF、Word、Excel、TXT、Markdown`));
-  }
-};
-
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 单文件最大10MB
-  }
+  const [items, total] = await Promise.all([
+    prisma.material.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (Number(page) - 1) * Number(limit), take: Number(limit) }),
+    prisma.material.count({ where })
+  ]);
+  
+  // 解析tags JSON
+  const parsed = items.map(item => ({ ...item, tags: JSON.parse(item.tags || '[]') }));
+  res.json({ data: parsed, pagination: { page: Number(page), limit: Number(limit), total } });
 });
 
-// 上传单个文件
-router.post('/upload', upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      res.status(400).json({ error: '请选择要上传的文件' });
-      return;
-    }
-
-    // 保存到数据库
-    const material = await prisma.savedIntelligence.create({
-      data: {
-        userId: (req as any).user.id,
-        intelligenceId: 0, // 上传类不需要关联
-        notes: JSON.stringify({
-          type: 'MATERIAL_UPLOAD',
-          filename: req.file.originalname,
-          storedFilename: req.file.filename,
-          path: `/uploads/materials/${req.file.filename}`,
-          size: req.file.size,
-          mimeType: req.file.mimetype,
-        })
-      }
-    });
-
-    res.json({
-      success: true,
-      data: {
-        id: material.id,
-        filename: req.file.originalname,
-        url: `/uploads/materials/${req.file.filename}`,
-        size: req.file.size,
-        mimeType: req.file.mimetype,
-      }
-    });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
+// POST / - 新增
+router.post('/', async (req, res) => {
+  const data = MaterialSchema.parse(req.body);
+  const item = await prisma.material.create({ data: { ...data, tags: JSON.stringify(data.tags || []) } });
+  res.json({ data: { ...item, tags: JSON.parse(item.tags || '[]') } });
 });
 
-// 上传多个文件
-router.post('/upload/multiple', upload.array('files', 10), async (req, res) => {
-  try {
-    const files = req.files as Express.Multer.File[];
-    if (!files || files.length === 0) {
-      res.status(400).json({ error: '请选择要上传的文件' });
-      return;
-    }
-
-    const results = files.map(file => ({
-      filename: file.originalname,
-      url: `/uploads/materials/${file.filename}`,
-      size: file.size,
-      mimeType: file.mimetype,
-    }));
-
-    res.json({
-      success: true,
-      data: results,
-      total: results.length
-    });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
+// PUT /:id - 更新
+router.put('/:id', async (req, res) => {
+  const data = MaterialSchema.partial().parse(req.body);
+  if (data.tags) data.tags = JSON.stringify(data.tags) as any;
+  const item = await prisma.material.update({ where: { id: Number(req.params.id) }, data });
+  res.json({ data: { ...item, tags: JSON.parse(item.tags || '[]') } });
 });
 
-// 获取素材列表
-router.get('/list', async (req, res) => {
-  try {
-    const { type, page = '1', limit = '20' } = req.query;
-    
-    const uploads = await prisma.savedIntelligence.findMany({
-      where: {
-        userId: (req as any).user.id,
-        notes: { contains: '"type":"MATERIAL_UPLOAD"' }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: Number(limit),
-      skip: (Number(page) - 1) * Number(limit),
-    });
-
-    // 解析notes字段
-    const materials = uploads.map(u => {
-      const meta = JSON.parse(u.notes || '{}');
-      return {
-        id: u.id,
-        filename: meta.filename,
-        url: meta.url,
-        size: meta.size,
-        mimeType: meta.mimeType,
-        createdAt: u.createdAt,
-      };
-    });
-
-    res.json({ success: true, data: materials });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 删除素材
+// DELETE /:id
 router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const saved = await prisma.savedIntelligence.findFirst({
-      where: {
-        id: Number(id),
-        userId: (req as any).user.id,
-        notes: { contains: '"type":"MATERIAL_UPLOAD"' }
-      }
-    });
+  await prisma.material.delete({ where: { id: Number(req.params.id) } });
+  res.json({ success: true });
+});
 
-    if (!saved) {
-      res.status(404).json({ error: '素材不存在' });
-      return;
-    }
+// PATCH /:id/bookmark - 收藏/取消
+router.patch('/:id/bookmark', async (req, res) => {
+  const item = await prisma.material.findUnique({ where: { id: Number(req.params.id) } });
+  if (!item) return res.status(404).json({ error: '不存在' });
+  const updated = await prisma.material.update({ where: { id: item.id }, data: { isBookmark: !item.isBookmark } });
+  res.json({ data: { ...updated, tags: JSON.parse(updated.tags || '[]') } });
+});
 
-    // 删除物理文件
-    const meta = JSON.parse(saved.notes || '{}');
-    if (meta.storedFilename) {
-      const filePath = path.join(process.cwd(), 'uploads', 'materials', meta.storedFilename);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
-
-    await prisma.savedIntelligence.delete({ where: { id: Number(id) } });
-
-    res.json({ success: true, message: '删除成功' });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
+// PATCH /:id/use - 使用+1
+router.patch('/:id/use', async (req, res) => {
+  const item = await prisma.material.update({ where: { id: Number(req.params.id) }, data: { usageCount: { increment: 1 } } });
+  res.json({ data: { ...item, tags: JSON.parse(item.tags || '[]') } });
 });
 
 export default router;

@@ -1,0 +1,9 @@
+{
+  "version": "5.22.0",
+  "dialect": "postgresql",
+  "id": "20240512000000_add_materials",
+  "prevId": "00000000_initial",
+  "checksum": "placeholder",
+  "migrationName": "20240512000000_add_materials",
+  "appliedAt": "2024-05-12T00:00:00.000Z"
+}

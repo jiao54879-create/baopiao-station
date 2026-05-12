@@ -282,3 +282,20 @@ model ActivityLog {
   @@index([createdAt])
   @@map("activity_logs")
 }
+
+// ==================== 保险素材库 ====================
+
+model Material {
+  id          Int      @id @default(autoincrement())
+  category    String   // PITFALL, INFO_GAP, TRICK, CLAIM, COLD_FACT
+  title       String
+  content     String   // Markdown格式
+  tags        String   @default("[]")  // JSON数组
+  source      String?  
+  isBookmark  Boolean  @default(false)
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("materials")
+}
