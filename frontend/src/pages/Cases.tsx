@@ -6,13 +6,63 @@ import api from '../utils/api'
 
 const { Search } = Input
 
-// 5种仿写风格
+// 风格配置 - 5种风格 x 3个大佬锚点
 const rewriteStyles = [
-  { value: 'hearth', label: '走心唠嗑风', desc: '像闺蜜聊天，用真实故事打动人', icon: '💬' },
-  { value: 'practical', label: '干货避坑风', desc: '专业+实用，列要点讲清楚', icon: '📋' },
-  { value: 'twist', label: '反转打脸风', desc: '先抛常识→再颠覆→给方案', icon: '🎭' },
-  { value: 'anxiety', label: '焦虑共鸣风', desc: '戳痛点→引发共鸣→提供出路', icon: '🔥' },
-  { value: 'data', label: '数据震撼风', desc: '用数据说话，制造认知冲击', icon: '📊' },
+  {
+    value: 'hearth',
+    label: '走心唠嗑风',
+    desc: '像闺蜜聊天，用真实故事打动人',
+    icon: '💬',
+    masters: [
+      { value: 'mimeng', name: '咪蒙模式', avatar: '🧡', desc: '自黑式开头，情绪饱满，一句话独立成段' },
+      { value: 'houcuicui', name: '侯翠翠模式', avatar: '💚', desc: '闺蜜八卦式碎碎念，抱怨中带温暖' },
+      { value: 'leijun', name: '雷军模式', avatar: '💙', desc: '真诚大白话，偶尔自嘲，给朴素建议' }
+    ]
+  },
+  {
+    value: 'practical',
+    label: '干货避坑风',
+    desc: '专业+实用，列要点讲清楚',
+    icon: '📋',
+    masters: [
+      { value: 'banfo', name: '半佛仙人模式', avatar: '🧣', desc: '颠覆性结论开头，一句话一段，快节奏' },
+      { value: 'zhangxuefeng', name: '张雪峰模式', avatar: '🧢', desc: '极端判断抓注意，干货+段子，东北味' },
+      { value: 'kazike', name: '卡兹克模式', avatar: '🧤', desc: '真实体验切入，Slogan式干货，拒绝套话' }
+    ]
+  },
+  {
+    value: 'twist',
+    label: '反转打脸风',
+    desc: '先抛常识→再颠覆→给方案',
+    icon: '🎭',
+    masters: [
+      { value: 'baguamangguo', name: '八卦芒果模式', avatar: '🥭', desc: '八卦式切入，先站队再反转，打脸共同敌人' },
+      { value: 'mimeng-slap', name: '咪蒙打脸模式', avatar: '💜', desc: '一句话打脸→展开论证→金句锤死' },
+      { value: 'banfo-twist', name: '半佛反转模式', avatar: '🎪', desc: '颠覆结论→极端案例轰炸→拆解底层逻辑' }
+    ]
+  },
+  {
+    value: 'anxiety',
+    label: '焦虑共鸣风',
+    desc: '戳痛点→引发共鸣→提供出路',
+    icon: '🔥',
+    masters: [
+      { value: 'zhangxuefeng-anxiety', name: '张雪峰焦虑模式', avatar: '🔴', desc: '用具体数字制造紧迫感，"急"字当头给出路' },
+      { value: 'baolocaomei', name: '暴躁草莓模式', avatar: '🍓', desc: '抱怨吐槽真实困境，把痛苦写成段子' },
+      { value: 'mimeng-resonate', name: '咪蒙共鸣模式', avatar: '💗', desc: '戳中隐秘痛点，排比+反问，先共情再给力量' }
+    ]
+  },
+  {
+    value: 'data',
+    label: '数据震撼风',
+    desc: '用数据说话，制造认知冲击',
+    icon: '📊',
+    masters: [
+      { value: 'kazike-data', name: '卡兹克数据模式', avatar: '📈', desc: '震惊数据开头，Slogan式结论，数据支撑' },
+      { value: 'banfo-data', name: '半佛数据模式', avatar: '📉', desc: '一串数字砸脸，每个观点三个信源' },
+      { value: 'zhangxuefeng-data', name: '张雪峰数据模式', avatar: '💹', desc: '极端数据制造冲击，数据+金句配合' }
+    ]
+  }
 ]
 
 const platformMap: Record<string, { label: string; color: string }> = {
@@ -62,28 +112,45 @@ export default function Cases() {
   const [rewriteModalOpen, setRewriteModalOpen] = useState(false)
   const [rewriteCase, setRewriteCase] = useState<any>(null)
   const [selectedStyle, setSelectedStyle] = useState<string>('')
+  const [selectedMaster, setSelectedMaster] = useState<string>('')
   const [rewriting, setRewriting] = useState(false)
   const [rewriteResult, setRewriteResult] = useState<any>(null)
+
+  // 当前选中风格的大佬列表
+  const currentStyleMasters = rewriteStyles.find(s => s.value === selectedStyle)?.masters || []
 
   // 打开仿写弹窗
   const handleRewrite = (caseItem: any) => {
     setRewriteCase(caseItem)
     setSelectedStyle('')
+    setSelectedMaster('')
     setRewriteResult(null)
     setRewriteModalOpen(true)
   }
 
+  // 风格选择变化时，自动选中第一个大佬
+  const handleStyleChange = (styleValue: string) => {
+    setSelectedStyle(styleValue)
+    const style = rewriteStyles.find(s => s.value === styleValue)
+    if (style && style.masters.length > 0) {
+      setSelectedMaster(style.masters[0].value)
+    } else {
+      setSelectedMaster('')
+    }
+  }
+
   // 执行仿写
   const executeRewrite = async () => {
-    if (!selectedStyle) {
-      message.warning('请选择仿写风格')
+    if (!selectedStyle || !selectedMaster) {
+      message.warning('请选择仿写风格和大佬模式')
       return
     }
     setRewriting(true)
     setRewriteResult(null)
     try {
       const { data: res } = await api.post(`/cases/${rewriteCase.id}/rewrite`, {
-        style: selectedStyle
+        style: selectedStyle,
+        master: selectedMaster
       })
       setRewriteResult(res)
     } catch (error: any) {
@@ -584,7 +651,7 @@ export default function Cases() {
         open={rewriteModalOpen}
         onCancel={() => { setRewriteModalOpen(false); setRewriteResult(null); }}
         footer={null}
-        width={700}
+        width={800}
       >
         {rewriteCase && (
           <div className="space-y-4">
@@ -604,31 +671,52 @@ export default function Cases() {
               showIcon
             />
 
-            {/* 风格选择 */}
+            {/* 第一级：选择风格大类 */}
             <div>
-              <h4 className="font-medium mb-2">选择仿写风格</h4>
-              <div className="grid grid-cols-1 gap-2">
+              <h4 className="font-medium mb-2">第一步：选择风格大类</h4>
+              <div className="grid grid-cols-5 gap-2">
                 {rewriteStyles.map((style) => (
                   <div
                     key={style.value}
-                    className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                    className={`p-3 border rounded-lg cursor-pointer transition-all text-center ${
                       selectedStyle === style.value
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-blue-300'
                     }`}
-                    onClick={() => setSelectedStyle(style.value)}
+                    onClick={() => handleStyleChange(style.value)}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{style.icon}</span>
-                      <div>
-                        <div className="font-medium">{style.label}</div>
-                        <div className="text-xs text-gray-500">{style.desc}</div>
-                      </div>
-                    </div>
+                    <div className="text-2xl mb-1">{style.icon}</div>
+                    <div className="font-medium text-sm">{style.label}</div>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* 第二级：选择大佬模式 */}
+            {selectedStyle && (
+              <div>
+                <h4 className="font-medium mb-2">第二步：选择大佬模式 <span className="text-gray-500 font-normal text-sm">（AI将按该大佬的语言DNA生成内容）</span></h4>
+                <div className="grid grid-cols-3 gap-3">
+                  {currentStyleMasters.map((master) => (
+                    <div
+                      key={master.value}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                        selectedMaster === master.value
+                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                      onClick={() => setSelectedMaster(master.value)}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">{master.avatar}</span>
+                        <div className="font-medium">{master.name}</div>
+                      </div>
+                      <div className="text-xs text-gray-500">{master.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* 执行按钮 */}
             <Button
@@ -637,7 +725,7 @@ export default function Cases() {
               size="large"
               loading={rewriting}
               onClick={executeRewrite}
-              disabled={!selectedStyle}
+              disabled={!selectedStyle || !selectedMaster}
               icon={<EditOutlined />}
             >
               {rewriting ? 'AI 正在仿写中...' : '开始仿写'}
