@@ -1,10 +1,19 @@
 import { useState, useEffect } from 'react'
-import { Card, Row, Col, Tag, Select, Input, Spin, Empty, Button, Modal, List, Tooltip, Alert, message, Upload } from 'antd'
-import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined, CopyOutlined, UploadOutlined } from '@ant-design/icons'
+import { Card, Row, Col, Tag, Select, Input, Spin, Empty, Button, Modal, List, Tooltip, Alert, message, Upload, Space, Divider } from 'antd'
+import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined, CopyOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 import api from '../utils/api'
 
 const { Search } = Input
+
+// 5种仿写风格
+const rewriteStyles = [
+  { value: 'hearth', label: '走心唠嗑风', desc: '像闺蜜聊天，用真实故事打动人', icon: '💬' },
+  { value: 'practical', label: '干货避坑风', desc: '专业+实用，列要点讲清楚', icon: '📋' },
+  { value: 'twist', label: '反转打脸风', desc: '先抛常识→再颠覆→给方案', icon: '🎭' },
+  { value: 'anxiety', label: '焦虑共鸣风', desc: '戳痛点→引发共鸣→提供出路', icon: '🔥' },
+  { value: 'data', label: '数据震撼风', desc: '用数据说话，制造认知冲击', icon: '📊' },
+]
 
 const platformMap: Record<string, { label: string; color: string }> = {
   XHS: { label: '小红书', color: 'red' },
@@ -49,6 +58,65 @@ export default function Cases() {
   const [subscribeWechatId, setSubscribeWechatId] = useState('')
   const [subscribing, setSubscribing] = useState(false)
   const [subscribedList, setSubscribedList] = useState<any[]>([])
+  // 一键仿写相关状态
+  const [rewriteModalOpen, setRewriteModalOpen] = useState(false)
+  const [rewriteCase, setRewriteCase] = useState<any>(null)
+  const [selectedStyle, setSelectedStyle] = useState<string>('')
+  const [rewriting, setRewriting] = useState(false)
+  const [rewriteResult, setRewriteResult] = useState<any>(null)
+
+  // 打开仿写弹窗
+  const handleRewrite = (caseItem: any) => {
+    setRewriteCase(caseItem)
+    setSelectedStyle('')
+    setRewriteResult(null)
+    setRewriteModalOpen(true)
+  }
+
+  // 执行仿写
+  const executeRewrite = async () => {
+    if (!selectedStyle) {
+      message.warning('请选择仿写风格')
+      return
+    }
+    setRewriting(true)
+    setRewriteResult(null)
+    try {
+      const { data: res } = await api.post(`/cases/${rewriteCase.id}/rewrite`, {
+        style: selectedStyle
+      })
+      setRewriteResult(res)
+    } catch (error: any) {
+      message.error(error.response?.data?.error || '仿写失败，请稍后重试')
+    } finally {
+      setRewriting(false)
+    }
+  }
+
+  // 复制仿写结果
+  const copyRewriteResult = async (type: 'title' | 'content' | 'all') => {
+    if (!rewriteResult) return
+    let text = ''
+    if (type === 'title') {
+      text = rewriteResult.title
+    } else if (type === 'content') {
+      text = rewriteResult.content
+    } else {
+      text = `标题：${rewriteResult.title}\n\n正文：\n${rewriteResult.content}\n\n标签：${rewriteResult.tags?.join(' ') || ''}`
+    }
+    try {
+      await navigator.clipboard.writeText(text)
+      message.success('已复制到剪贴板')
+    } catch {
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      message.success('已复制到剪贴板')
+    }
+  }
 
   const fetchData = async (page = 1) => {
     setLoading(true)
@@ -335,40 +403,8 @@ export default function Cases() {
                   <Button key="analyze" type="text" icon={<ThunderboltOutlined />} onClick={() => analyzeCase(item)}>
                     AI分析
                   </Button>,
-                  <Button key="link" type="text" icon={<CopyOutlined />} onClick={() => {
-                    if (!item.url) {
-                      message.warning('该案例暂无原文链接');
-                      return;
-                    }
-                    // 检查是否是示例/占位数据
-                    const isDemo = item.url.includes('example.com') || item.url === '#' || item.url === '' || item.url.startsWith('https://example');
-                    if (isDemo) {
-                      message.info('示例数据暂无原文链接，请订阅真实公众号文章后采集真实数据');
-                      return;
-                    }
-                    // 小红书链接：复制到剪贴板并提示在App打开
-                    if (item.platform === 'XHS') {
-                      let xhsUrl = item.url;
-                      if (!xhsUrl.startsWith('http')) {
-                        xhsUrl = 'https://www.xiaohongshu.com/explore/' + xhsUrl;
-                      }
-                      navigator.clipboard.writeText(xhsUrl).then(() => {
-                        message.success('链接已复制！请在小红书App中打开查看原文');
-                      }).catch(() => {
-                        const textArea = document.createElement('textarea');
-                        textArea.value = xhsUrl;
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textArea);
-                        message.success('链接已复制！请在小红书App中打开查看原文');
-                      });
-                      return;
-                    }
-                    // 其他平台（公众号、微博等）直接打开
-                    window.open(item.url, '_blank');
-                  }}>
-                    {item.platform === 'XHS' ? '复制链接' : '查看原文'}
+                  <Button key="rewrite" type="text" icon={<EditOutlined />} onClick={() => handleRewrite(item)}>
+                    一键仿写
                   </Button>
                 ]}
               >
@@ -540,6 +576,131 @@ export default function Cases() {
             </div>
           </div>
         </div>
+      </Modal>
+
+      {/* 一键仿写 Modal */}
+      <Modal
+        title={<><EditOutlined /> 一键仿写爆款</>}
+        open={rewriteModalOpen}
+        onCancel={() => { setRewriteModalOpen(false); setRewriteResult(null); }}
+        footer={null}
+        width={700}
+      >
+        {rewriteCase && (
+          <div className="space-y-4">
+            {/* 原案例信息 */}
+            <Alert
+              message="原爆款笔记"
+              description={
+                <div>
+                  <div className="font-medium">{rewriteCase.title}</div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    👍 {rewriteCase.likesCount} ⭐ {rewriteCase.favoritesCount} 💬 {rewriteCase.commentsCount}
+                    {rewriteCase.author && <span> | 作者：{rewriteCase.author}</span>}
+                  </div>
+                </div>
+              }
+              type="info"
+              showIcon
+            />
+
+            {/* 风格选择 */}
+            <div>
+              <h4 className="font-medium mb-2">选择仿写风格</h4>
+              <div className="grid grid-cols-1 gap-2">
+                {rewriteStyles.map((style) => (
+                  <div
+                    key={style.value}
+                    className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                      selectedStyle === style.value
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-blue-300'
+                    }`}
+                    onClick={() => setSelectedStyle(style.value)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{style.icon}</span>
+                      <div>
+                        <div className="font-medium">{style.label}</div>
+                        <div className="text-xs text-gray-500">{style.desc}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 执行按钮 */}
+            <Button
+              type="primary"
+              block
+              size="large"
+              loading={rewriting}
+              onClick={executeRewrite}
+              disabled={!selectedStyle}
+              icon={<EditOutlined />}
+            >
+              {rewriting ? 'AI 正在仿写中...' : '开始仿写'}
+            </Button>
+
+            {/* 仿写结果 */}
+            {rewriteResult && (
+              <div className="space-y-4 mt-4">
+                <Divider>✨ 仿写结果</Divider>
+
+                {/* 标题 */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">📌 标题</h4>
+                    <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => copyRewriteResult('title')}>
+                      复制
+                    </Button>
+                  </div>
+                  <div className="bg-blue-50 p-3 rounded-lg text-lg font-medium">
+                    {rewriteResult.title}
+                  </div>
+                </div>
+
+                {/* 正文 */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">📝 正文</h4>
+                    <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => copyRewriteResult('content')}>
+                      复制
+                    </Button>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap text-sm leading-relaxed max-h-80 overflow-y-auto">
+                    {rewriteResult.content}
+                  </div>
+                </div>
+
+                {/* 标签 */}
+                {rewriteResult.tags && rewriteResult.tags.length > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">🏷️ 推荐标签</h4>
+                      <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => copyRewriteResult('all')}>
+                        复制全部
+                      </Button>
+                    </div>
+                    <Space wrap>
+                      {rewriteResult.tags.map((tag: string, i: number) => (
+                        <Tag key={i} color="blue">{tag}</Tag>
+                      ))}
+                    </Space>
+                  </div>
+                )}
+
+                {/* 操作按钮 */}
+                <div className="flex gap-2 pt-2">
+                  <Button type="primary" block icon={<CopyOutlined />} onClick={() => copyRewriteResult('all')}>
+                    一键复制全部内容
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
     </div>
   )
