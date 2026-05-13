@@ -161,6 +161,23 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// GET /styles - 获取所有风格和大佬配置
+router.get('/styles', (req, res) => {
+  const styles = Object.entries(styleConfig).map(([key, config]) => ({
+    key,
+    name: config.name,
+    icon: config.icon,
+    masters: config.masters.map(m => ({
+      key: m.key,
+      name: m.name,
+      avatar: m.avatar,
+      description: m.description
+    }))
+  }));
+  res.json(styles);
+});
+
+
 // 获取单条案例详情
 router.get('/:id', async (req, res, next) => {
   try {
@@ -286,107 +303,278 @@ router.get('/titles/mine', async (req, res, next) => {
 
 // ==================== 一键仿写功能 ====================
 
+// 语言DNA类型定义
+interface LanguageDNA {
+  opener: string;
+  sentencePattern: string;
+  emotion: string;
+  structure: string;
+  ending: string;
+  forbiddenWords: string[];
+}
+
+// 大佬锚点类型定义
+interface Master {
+  key: string;
+  name: string;
+  avatar: string;
+  description: string;
+  languageDNA: LanguageDNA;
+}
+
+// 风格配置类型
+interface StyleConfig {
+  name: string;
+  icon: string;
+  masters: Master[];
+}
+
 const RewriteRequestSchema = z.object({
-  style: z.enum(['hearth', 'practical', 'twist', 'anxiety', 'data'])
+  style: z.enum(['hearth', 'practical', 'twist', 'anxiety', 'data']),
+  master: z.string()
 });
 
-// 风格对应的Prompt配置
-const styleConfig: Record<string, { name: string; prompt: string }> = {
+// 风格配置 - 包含15个大佬锚点
+const styleConfig: Record<string, StyleConfig> = {
   hearth: {
     name: '走心唠嗑风',
-    prompt: `你是一个深谙小红书流量密码的保险赛道内容创作者，擅长写"走心唠嗑风"内容。
-
-风格特点：
-- 像闺蜜聊天一样亲切自然
-- 用真实故事打动人，引发情感共鸣
-- 语言口语化，有温度
-- 不要说教，要分享
-- 让读者觉得"这不就是我吗"
-
-写作要点：
-1. 开篇用真实场景/故事引入，让读者有代入感
-2. 中间穿插个人经历或客户案例
-3. 结尾给出实用建议，不要硬广
-4. 全文用"我""你"等人称，少用"我们""大家"
-5. 可以用一些口语化表达，如"真的"、"其实"、"说实话"
-6. 适当使用emoji增加亲切感`
+    icon: '💬',
+    masters: [
+      {
+        key: 'mimeng',
+        name: '咪蒙模式',
+        avatar: '🧡',
+        description: '自黑式开头，情绪饱满，一句话独立成段',
+        languageDNA: {
+          opener: '自黑/自嘲式开头，"我承认我……"',
+          sentencePattern: '5-15字一句，短句密集轰炸，一句话独立成段',
+          emotion: '情绪饱满贯穿全文，适当用"靠""妈蛋"增加真实感',
+          structure: '自黑开场→故事代入→金句收尾',
+          ending: '一句扎心金句收尾，让人忍不住截图',
+          forbiddenWords: ['四平八稳的客套话', '"然而""不过"等转折词太多']
+        }
+      },
+      {
+        key: 'houcuicui',
+        name: '侯翠翠模式',
+        avatar: '💚',
+        description: '闺蜜八卦式碎碎念，抱怨中带温暖',
+        languageDNA: {
+          opener: '"我跟你讲""你知道吗"闺蜜八卦式',
+          sentencePattern: '碎碎念式，想到哪说到哪，但逻辑暗线清晰',
+          emotion: '抱怨中带真实感，反焦虑治愈系，吐槽但不丧',
+          structure: '日常琐事切入→吐槽→突然给个温暖的结论',
+          ending: '温暖的鼓励或自我和解',
+          forbiddenWords: ['说教感', '鸡汤味', '端着说话']
+        }
+      },
+      {
+        key: 'leijun',
+        name: '雷军模式',
+        avatar: '💙',
+        description: '真诚大白话，偶尔自嘲，给朴素建议',
+        languageDNA: {
+          opener: '直接亮数据或事实，"说实话""跟你们讲"',
+          sentencePattern: '大白话，像隔壁大哥聊天，偶尔冒出一句金句',
+          emotion: '真诚不装，偶尔自嘲"Are you OK"式',
+          structure: '抛问题→讲真实经历→给朴素建议',
+          ending: '朴实但有力，"这事儿就这么简单"',
+          forbiddenWords: ['装腔作势', '故弄玄虚']
+        }
+      }
+    ]
   },
   practical: {
     name: '干货避坑风',
-    prompt: `你是一个深谙小红书流量密码的保险赛道内容创作者，擅长写"干货避坑风"内容。
-
-风格特点：
-- 专业+实用，让人觉得"学到了"
-- 结构清晰，用数字/列表让信息一目了然
-- 帮人避坑，提供有价值的信息
-- 像行业内部人士分享内幕
-
-写作要点：
-1. 开头直接点明主题，不要绕弯子
-2. 用"3个技巧"、"5个坑"、"4个要点"等结构化呈现
-3. 每个要点用简短的小标题+说明
-4. 适当用表格或对比让信息更清晰
-5. 结尾给出行动建议
-6. 可以用"划重点"、"敲黑板"、"注意"等引导词
-7. 适当使用emoji增加可读性`
+    icon: '📋',
+    masters: [
+      {
+        key: 'banfo',
+        name: '半佛仙人模式',
+        avatar: '🧣',
+        description: '颠覆性结论开头，一句话一段，快节奏',
+        languageDNA: {
+          opener: '颠覆性结论开头，"你以为的XXX全是错的"',
+          sentencePattern: '一句话一段，类现代诗格式，快节奏',
+          emotion: '冷静理性中带讽刺，"前方有坑绕行"的举牌人',
+          structure: '颠覆结论→极端案例→拆解底层逻辑→给可操作建议',
+          ending: '三步自救法，可操作',
+          forbiddenWords: ['模糊表述', '"可能""也许"', '不给结论']
+        }
+      },
+      {
+        key: 'zhangxuefeng',
+        name: '张雪峰模式',
+        avatar: '🧢',
+        description: '极端判断抓注意，干货+段子，东北味',
+        languageDNA: {
+          opener: '极端判断抓注意，"千万别""一定不要"',
+          sentencePattern: '干货+段子，单口相声节奏，东北味幽默',
+          emotion: '激昂亢奋，为普通人着急，"急"是核心情绪',
+          structure: '制造焦虑→给具体方案→用数据打脸',
+          ending: '扎心金句+行动指令',
+          forbiddenWords: ['模糊建议', '两头堵的话', '不痛不痒']
+        }
+      },
+      {
+        key: 'kazike',
+        name: '卡兹克模式',
+        avatar: '🧤',
+        description: '真实体验切入，Slogan式干货，拒绝套话',
+        languageDNA: {
+          opener: '从真实体验切入，不用宏大叙事',
+          sentencePattern: '平实直接，拒绝套话，Slogan式干货',
+          emotion: '冷静客观但有态度，自嘲幽默',
+          structure: '体验/观察→数据支撑→一句话结论→扩展解释',
+          ending: '一句话核心总结',
+          forbiddenWords: ['"赋能""抓手""闭环"', '"在当今XXX的时代"', '"说白了/本质上/换句话说"']
+        }
+      }
+    ]
   },
   twist: {
     name: '反转打脸风',
-    prompt: `你是一个深谙小红书流量密码的保险赛道内容创作者，擅长写"反转打脸风"内容。
-
-风格特点：
-- 先抛出一个"常识"或"普遍认知"
-- 然后反转，打破读者预期
-- 最后给出一个出人意料但合理的结论/方案
-- 让读者有"原来如此"的感觉
-
-写作要点：
-1. 开篇提出一个反直觉的观点或问题
-2. 如"买保险越大公司越好？错！"
-3. 用数据或案例支撑你的反转观点
-4. 制造认知冲突，让读者重新思考
-5. 结尾给出反转后的正确做法
-6. 可以用"但是"、"然而"、"真相是"等转折词
-7. 适当使用emoji增加戏剧效果`
+    icon: '🎭',
+    masters: [
+      {
+        key: 'baguamangguo',
+        name: '八卦芒果模式',
+        avatar: '🥭',
+        description: '八卦式切入，先站队再反转，打脸共同敌人',
+        languageDNA: {
+          opener: '"嘿我跟你说个事"，八卦式切入',
+          sentencePattern: '先站队→讲故事→突然反转，和观众站同一条战线',
+          emotion: '共同吐槽→认知颠覆→恍然大悟',
+          structure: '制造共同敌人→统一战线→用事实打脸→给出新认知',
+          ending: '反常识的新结论，让人"啊？是这样？"',
+          forbiddenWords: ['直接说教', '不给故事就讲道理']
+        }
+      },
+      {
+        key: 'mimeng-slap',
+        name: '咪蒙打脸模式',
+        avatar: '💜',
+        description: '一句话打脸→展开论证→金句锤死',
+        languageDNA: {
+          opener: '先承认普遍想法，"很多人觉得……"',
+          sentencePattern: '一句话打脸→展开论证→金句锤死',
+          emotion: '从温和到激烈，"如果善良是纵容，我愿意一辈子歹毒"',
+          structure: '承认普遍观点→一句话颠覆→案例论证→给行动方案',
+          ending: '态度鲜明的立场宣言',
+          forbiddenWords: ['和稀泥', '"各有各的道理"']
+        }
+      },
+      {
+        key: 'banfo-twist',
+        name: '半佛反转模式',
+        avatar: '🎪',
+        description: '颠覆结论→极端案例轰炸→拆解底层逻辑',
+        languageDNA: {
+          opener: '直接抛颠覆性结论',
+          sentencePattern: '前15秒结论→1-3分钟极端案例→3-5分钟拆解逻辑',
+          emotion: '冷静拆解中的暴击，"你以为你在XXX，其实你在YYY"',
+          structure: '颠覆结论→极端案例轰炸→拆解底层逻辑→可操作建议',
+          ending: '行动指南，三步自救',
+          forbiddenWords: ['不给具体案例就下结论']
+        }
+      }
+    ]
   },
   anxiety: {
     name: '焦虑共鸣风',
-    prompt: `你是一个深谙小红书流量密码的保险赛道内容创作者，擅长写"焦虑共鸣风"内容。
-
-风格特点：
-- 先戳痛点，引发焦虑
-- 然后引发共鸣，让读者觉得"被看穿了"
-- 最后提供出路，化解焦虑
-- 让人欲罢不能，想看下去
-
-写作要点：
-1. 开篇描述一个让人焦虑的场景
-2. 如"你有没有这种感觉..."
-3. 描述痛点时用具体的数字或案例增强焦虑感
-4. 中间引发共鸣，"你是不是也..."
-5. 结尾给出解决方案，化解焦虑
-6. 可以用"扎心了"、"破防了"、"太真实了"等情绪词
-7. 适当使用emoji增加情绪感染力`
+    icon: '🔥',
+    masters: [
+      {
+        key: 'zhangxuefeng-anxiety',
+        name: '张雪峰焦虑模式',
+        avatar: '🔴',
+        description: '用具体数字制造紧迫感，"急"字当头给出路',
+        languageDNA: {
+          opener: '用具体数字/场景制造紧迫感',
+          sentencePattern: '先扎心→给路，短句密集',
+          emotion: '为普通人着急，"急"是核心情绪，但底层是关心',
+          structure: '制造焦虑场景→用数据佐证→给具体出路',
+          ending: '具体行动指令，"现在就做XXX"',
+          forbiddenWords: ['只焦虑不给方案', '空洞鼓励']
+        }
+      },
+      {
+        key: 'baolocaomei',
+        name: '暴躁草莓模式',
+        avatar: '🍓',
+        description: '抱怨吐槽真实困境，把痛苦写成段子',
+        languageDNA: {
+          opener: '抱怨/吐槽真实困境，"烦死了""好崩溃"',
+          sentencePattern: '吐槽押韵，魔性文案，把痛苦写成段子',
+          emotion: '先暴露脆弱→在抱怨中坚持→最终没有放弃',
+          structure: '暴露困境→吐槽发泄→找到方法→继续前行',
+          ending: '不鸡汤但温暖的和解',
+          forbiddenWords: ['完美励志', '假装坚强']
+        }
+      },
+      {
+        key: 'mimeng-resonate',
+        name: '咪蒙共鸣模式',
+        avatar: '💗',
+        description: '戳中隐秘痛点，排比+反问，先共情再给力量',
+        languageDNA: {
+          opener: '戳中一个隐秘痛点，"你是不是也……"',
+          sentencePattern: '排比+反问增强情绪，短句为主',
+          emotion: '先共情→再愤怒→然后给力量',
+          structure: '戳痛点→引发共鸣→站在你这边→给行动力量',
+          ending: '有力的立场宣言',
+          forbiddenWords: ['居高临下的指导', '不痛不痒的安慰']
+        }
+      }
+    ]
   },
   data: {
     name: '数据震撼风',
-    prompt: `你是一个深谙小红书流量密码的保险赛道内容创作者，擅长写"数据震撼风"内容。
-
-风格特点：
-- 用数据说话，有理有据
-- 数据要具体、震撼、有冲击力
-- 让数据帮你讲故事
-- 制造认知冲击，改变读者认知
-
-写作要点：
-1. 开篇用一个大数据或反常规数据吸引注意
-2. 如"90%的人都不知道..."
-3. 用对比数据让差异更明显
-4. 数据要精确，不要模糊的数字
-5. 每个数据点都要有解读，不要只列数字
-6. 结尾用数据总结，给出建议
-7. 可以用图表或emoji配合数据呈现
-8. 数据来源要可信（可以标注"行业报告""调研数据"）`
+    icon: '📊',
+    masters: [
+      {
+        key: 'kazike-data',
+        name: '卡兹克数据模式',
+        avatar: '📈',
+        description: '震惊数据开头，Slogan式结论，数据支撑',
+        languageDNA: {
+          opener: '一个让人震惊的数据/事实',
+          sentencePattern: 'Slogan式一句话结论→数据支撑→扩展',
+          emotion: '冷静中有冲击，自嘲但不减说服力',
+          structure: '数据结论→对比数据→推导结论→一句话总结',
+          ending: '压缩成一句话的核心信息',
+          forbiddenWords: ['没有数据支撑的断言', '模糊表述']
+        }
+      },
+      {
+        key: 'banfo-data',
+        name: '半佛数据模式',
+        avatar: '📉',
+        description: '一串数字砸脸，每个观点三个信源',
+        languageDNA: {
+          opener: '一串数字直接砸脸',
+          sentencePattern: '每个观点三个信源，高信息密度',
+          emotion: '冷静理性，用数据说话不带情绪',
+          structure: '数据呈现→异常点分析→风险拆解→建议',
+          ending: '事实风控+可验证的建议',
+          forbiddenWords: ['无信源数据', '"据说""有人说"']
+        }
+      },
+      {
+        key: 'zhangxuefeng-data',
+        name: '张雪峰数据模式',
+        avatar: '💹',
+        description: '极端数据制造冲击，数据+金句配合',
+        languageDNA: {
+          opener: '极端数据制造冲击',
+          sentencePattern: '数据+金句配合，"80%都没干本行！"',
+          emotion: '亢奋激昂，用数据撕破幻想',
+          structure: '震撼数据→解释背后逻辑→给现实建议',
+          ending: '扎心数据+行动指令',
+          forbiddenWords: ['温和表述', '不痛不痒的数据']
+        }
+      }
+    ]
   }
 };
 
@@ -397,7 +585,8 @@ async function rewriteCaseContent(
   author: string | null,
   insuranceType: string | null,
   likesCount: number,
-  style: string
+  style: string,
+  master: string
 ): Promise<{ title: string; content: string; tags: string[] }> {
   const deepseek = new OpenAI({
     apiKey: process.env.DEEPSEEK_API_KEY || '',
@@ -405,8 +594,36 @@ async function rewriteCaseContent(
   });
 
   const styleInfo = styleConfig[style];
-  
-  const prompt = `${styleInfo.prompt}
+  const masterInfo = styleInfo?.masters?.find((m: Master) => m.key === master);
+
+  if (!masterInfo) {
+    throw new AppError('未找到指定的大佬模式', 400);
+  }
+
+  const { languageDNA } = masterInfo;
+
+  const prompt = `你是一个深谙小红书流量密码的保险赛道内容创作者。
+
+## 写作风格：大佬锚点 - ${masterInfo.name}
+严格按照以下语言DNA写作：
+
+【开场方式】
+${languageDNA.opener}
+
+【句式特征】
+${languageDNA.sentencePattern}
+
+【情绪基调】
+${languageDNA.emotion}
+
+【文章结构】
+${languageDNA.structure}
+
+【收尾方式】
+${languageDNA.ending}
+
+【禁用词/禁用表达】
+${languageDNA.forbiddenWords.join('；')}
 
 ## 原爆款笔记信息
 - 标题：${originalTitle}
@@ -416,7 +633,7 @@ async function rewriteCaseContent(
 - 原文内容：${originalContent || '无详细内容，仅有标题'}
 
 ## 写作任务
-请基于上述原爆款笔记的主题和风格，用"${styleInfo.name}"重新创作一篇小红书保险笔记。
+请基于上述原爆款笔记的主题，用"${masterInfo.name}"风格重新创作一篇小红书保险笔记。
 
 ## 严格要求
 1. 标题：≤20字，要有爆款感，像真人发的
@@ -426,6 +643,7 @@ async function rewriteCaseContent(
 5. 正文要分段，每段不要太长
 6. 保险相关内容要专业但易懂
 7. 不要直接抄袭原文，要原创改编
+8. 严格遵循上述语言DNA的每个维度
 
 ## 输出格式
 请直接输出纯JSON，不要用markdown代码块包裹，不要加\`\`\`json或\`\`\`：
@@ -449,7 +667,7 @@ async function rewriteCaseContent(
   }
 
   const responseText = response.choices[0]?.message?.content || '';
-  
+
   // 解析JSON响应
   let jsonStr = responseText.trim();
   // 去掉markdown代码块包裹
@@ -493,10 +711,16 @@ async function rewriteCaseContent(
 router.post('/:id/rewrite', async (req, res, next) => {
   try {
     const caseId = Number(req.params.id);
-    const { style } = RewriteRequestSchema.parse(req.body);
+    const { style, master } = RewriteRequestSchema.parse(req.body);
 
     if (!process.env.DEEPSEEK_API_KEY) {
       throw new AppError('AI 服务未配置，请联系管理员配置 DeepSeek API Key', 500);
+    }
+
+    // 验证 master 是否属于指定的 style
+    const styleInfo = styleConfig[style];
+    if (!styleInfo || !styleInfo.masters.find((m: Master) => m.key === master)) {
+      throw new AppError('无效的大佬模式', 400);
     }
 
     // 从数据库获取案例信息
@@ -515,7 +739,8 @@ router.post('/:id/rewrite', async (req, res, next) => {
       viralCase.author,
       viralCase.insuranceType,
       viralCase.likesCount,
-      style
+      style,
+      master
     );
 
     res.json(result);
