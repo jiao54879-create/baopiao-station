@@ -300,15 +300,12 @@ export async function generateTitles(keywords: string[], context?: string): Prom
   // 去掉markdown代码块包裹
   let cleanText = responseText.trim();
   // 处理 ```json 或 ``` 开头
-  while (cleanText.startsWith('```')) {
-    cleanText = cleanText.replace(/^```json
-?/i, '').replace(/^```
-?/i, '').trim();
+  while (cleanText.startsWith(tripleBacktick)) {
+    cleanText = cleanText.replace(new RegExp('^' + tripleBacktick + 'json\\n?', 'i'), '').replace(new RegExp('^' + tripleBacktick + '\\n?', 'i'), '').trim();
   }
   // 处理结尾的 ```
-  while (cleanText.endsWith('```')) {
-    cleanText = cleanText.replace(/
-?```$/, '').trim();
+  while (cleanText.endsWith(tripleBacktick)) {
+    cleanText = cleanText.replace(new RegExp('\\n?' + tripleBacktick + '$'), '').trim();
   }
 
   let jsonStr = cleanText;
@@ -418,10 +415,7 @@ export async function analyzeViralCase(
   });
 
   const responseText = response.choices[0]?.message?.content || '';
-  let cleanText = responseText.trim().replace(/^```json
-?/i, '').replace(/^```
-?/i, '').replace(/
-?```$/, '').trim();
+  let cleanText = responseText.trim().replace(new RegExp('^' + tripleBacktick + 'json\\n?', 'i'), '').replace(new RegExp('^' + tripleBacktick + '\\n?', 'i'), '').replace(new RegExp('\\n?' + tripleBacktick + '$'), '').trim();
 
   try {
     return CaseAnalysisSchema.parse(JSON.parse(cleanText));
