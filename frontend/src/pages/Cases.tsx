@@ -3,8 +3,76 @@ import { Card, Row, Col, Tag, Select, Input, Spin, Empty, Button, Modal, List, T
 import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined, CopyOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 import api from '../utils/api'
+
 const { Search } = Input
-// 风格配置 - 5种风格 x 6个大佬锚点 (部分有5个)
+
+// 内容结构配置 - 4种内容结构类型
+const contentStructures = [
+  {
+    value: 'strategy',
+    label: '思路类',
+    icon: '🧭',
+    desc: '讲不同人群如何配置保险',
+    subOptions: [
+      { value: 'baby', label: '宝宝/儿童', icon: '👶' },
+      { value: 'adult', label: '成人', icon: '👤' },
+      { value: 'elder', label: '老人/父母', icon: '👴' },
+      { value: 'white-collar', label: '白领/打工人', icon: '💼' },
+      { value: 'mom', label: '宝妈', icon: '👩‍👧' },
+      { value: 'single-woman', label: '单身女性', icon: '👩' },
+      { value: 'poor', label: '穷人/预算有限', icon: '💰' },
+      { value: 'rich', label: '大佬/高净值', icon: '👑' },
+      { value: 'doctor', label: '医生/医护', icon: '🩺' },
+      { value: 'ordinary-family', label: '普通家庭', icon: '🏠' },
+      { value: 'mortgage', label: '房贷族', icon: '🏦' },
+      { value: 'only-child', label: '独生子女', icon: '1️⃣' },
+    ]
+  },
+  {
+    value: 'pitfall',
+    label: '避坑类',
+    icon: '⚠️',
+    desc: '保险信息差和普通人容易踩的坑',
+    subOptions: [
+      { value: 'info-gap', label: '信息差揭秘', icon: '🔍' },
+      { value: 'hidden-trap', label: '隐形坑点', icon: '🕳️' },
+      { value: 'sales-trick', label: '销售套路', icon: '🎭' },
+      { value: 'claim-trap', label: '理赔坑点', icon: '📋' },
+      { value: 'product-trap', label: '产品坑点', icon: '🚫' },
+    ]
+  },
+  {
+    value: 'product',
+    label: '产品类',
+    icon: '📦',
+    desc: '保险产品测评对比',
+    subOptions: [
+      { value: 'critical-illness', label: '重疾险测评', icon: '❤️‍🩹' },
+      { value: 'medical', label: '医疗险测评', icon: '🏥' },
+      { value: 'life', label: '寿险测评', icon: '🛡️' },
+      { value: 'accident', label: '意外险测评', icon: '⚡' },
+      { value: 'annuity', label: '年金险测评', icon: '💵' },
+      { value: 'whole-life', label: '增额终身寿测评', icon: '📈' },
+      { value: 'child', label: '少儿险测评', icon: '🍼' },
+      { value: 'comparison', label: '横向对比', icon: '⚖️' },
+    ]
+  },
+  {
+    value: 'demand',
+    label: '需求激发类',
+    icon: '🔥',
+    desc: '为什么需要买保险',
+    subOptions: [
+      { value: 'risk-awareness', label: '风险意识', icon: '⚡' },
+      { value: 'family-responsibility', label: '家庭责任', icon: '👨‍👩‍👧' },
+      { value: 'cost-of-illness', label: '疾病花费', icon: '💊' },
+      { value: 'social-insurance-gap', label: '社保缺口', icon: '📉' },
+      { value: 'age-urgency', label: '年龄紧迫', icon: '⏰' },
+    ]
+  }
+]
+
+// 风格配置 - 5种风格 x 3个大佬锚点 + 不模仿 + 自定义模仿
 const rewriteStyles = [
   {
     value: 'hearth',
@@ -15,9 +83,8 @@ const rewriteStyles = [
       { value: 'mimeng', name: '咪蒙模式', avatar: '🧡', desc: '自黑式开头，情绪饱满，一句话独立成段' },
       { value: 'houcuicui', name: '侯翠翠模式', avatar: '💚', desc: '闺蜜八卦式碎碎念，抱怨中带温暖' },
       { value: 'leijun', name: '雷军模式', avatar: '💙', desc: '真诚大白话，偶尔自嘲，给朴素建议' },
-      { value: 'yizhongtian', name: '易中天', avatar: '🏛️', desc: '评书式"妙说"，用"俗不可耐"的语言讲深刻道理，口语化+反差幽默+声情并茂' },
-      { value: 'luoxiang', name: '罗翔', avatar: '⚖️', desc: '法学教授讲故事，用极端案例讲道理，自嘲"法外狂徒张三"' },
-      { value: 'papijiang', name: 'papi酱', avatar: '🎬', desc: '短视频式吐槽，一人分饰多角，节奏快笑点密' }
+      { value: 'no-imitation', name: '不模仿，自由发挥', avatar: '🎨', desc: '不用任何大佬风格，AI根据内容自然发挥' },
+      { value: 'custom-imitation', name: '自定义风格', avatar: '✏️', desc: '输入你想模仿的风格描述，AI按你的要求来' }
     ]
   },
   {
@@ -29,8 +96,8 @@ const rewriteStyles = [
       { value: 'banfo', name: '半佛仙人模式', avatar: '🧣', desc: '颠覆性结论开头，一句话一段，快节奏' },
       { value: 'zhangxuefeng', name: '张雪峰模式', avatar: '🧢', desc: '极端判断抓注意，干货+段子，东北味' },
       { value: 'kazike', name: '卡兹克模式', avatar: '🧤', desc: '真实体验切入，Slogan式干货，拒绝套话' },
-      { value: 'xiaocai', name: '小蔡碎碎念', avatar: '📝', desc: '保险公众号大V，普通消费者立场，7000字深度长文逻辑拆解，先提问题再拆解决策逻辑' },
-      { value: 'liyongle', name: '李永乐老师', avatar: '📐', desc: '数学老师讲热点，用数学/逻辑推演，白板式讲解，把复杂问题变简单' }
+      { value: 'no-imitation', name: '不模仿，自由发挥', avatar: '🎨', desc: '不用任何大佬风格，AI根据内容自然发挥' },
+      { value: 'custom-imitation', name: '自定义风格', avatar: '✏️', desc: '输入你想模仿的风格描述，AI按你的要求来' }
     ]
   },
   {
@@ -42,8 +109,8 @@ const rewriteStyles = [
       { value: 'baguamangguo', name: '八卦芒果模式', avatar: '🥭', desc: '八卦式切入，先站队再反转，打脸共同敌人' },
       { value: 'mimeng-slap', name: '咪蒙打脸模式', avatar: '💜', desc: '一句话打脸→展开论证→金句锤死' },
       { value: 'banfo-twist', name: '半佛反转模式', avatar: '🎪', desc: '颠覆结论→极端案例轰炸→拆解底层逻辑' },
-      { value: 'luxun', name: '鲁迅', avatar: '🖋️', desc: '匕首投枪式，冷峻讽刺，一句话见血，揭露真相' },
-      { value: 'chaijing', name: '柴静', avatar: '🎥', desc: '纪录片式叙事，用真实故事击穿认知，冷静但有力' }
+      { value: 'no-imitation', name: '不模仿，自由发挥', avatar: '🎨', desc: '不用任何大佬风格，AI根据内容自然发挥' },
+      { value: 'custom-imitation', name: '自定义风格', avatar: '✏️', desc: '输入你想模仿的风格描述，AI按你的要求来' }
     ]
   },
   {
@@ -55,8 +122,8 @@ const rewriteStyles = [
       { value: 'zhangxuefeng-anxiety', name: '张雪峰焦虑模式', avatar: '🔴', desc: '用具体数字制造紧迫感，"急"字当头给出路' },
       { value: 'baolocaomei', name: '暴躁草莓模式', avatar: '🍓', desc: '抱怨吐槽真实困境，把痛苦写成段子' },
       { value: 'mimeng-resonate', name: '咪蒙共鸣模式', avatar: '💗', desc: '戳中隐秘痛点，排比+反问，先共情再给力量' },
-      { value: 'yuhua', name: '余华', avatar: '📖', desc: '写最苦的人生说最通透的话，把苦难写成段子' },
-      { value: 'liurun', name: '刘润', avatar: '💡', desc: '商业顾问式焦虑，用商业逻辑解释生活困境，给框架给出路' }
+      { value: 'no-imitation', name: '不模仿，自由发挥', avatar: '🎨', desc: '不用任何大佬风格，AI根据内容自然发挥' },
+      { value: 'custom-imitation', name: '自定义风格', avatar: '✏️', desc: '输入你想模仿的风格描述，AI按你的要求来' }
     ]
   },
   {
@@ -68,11 +135,12 @@ const rewriteStyles = [
       { value: 'kazike-data', name: '卡兹克数据模式', avatar: '📈', desc: '震惊数据开头，Slogan式结论，数据支撑' },
       { value: 'banfo-data', name: '半佛数据模式', avatar: '📉', desc: '一串数字砸脸，每个观点三个信源' },
       { value: 'zhangxuefeng-data', name: '张雪峰数据模式', avatar: '💹', desc: '极端数据制造冲击，数据+金句配合' },
-      { value: 'liurun-data', name: '刘润数据', avatar: '📊', desc: '用商业数据模型震撼认知，数据+逻辑双管齐下' },
-      { value: 'wushicaijing', name: '巫师财经', avatar: '📈', desc: '金融硬核分析，数据密集，"以我为准"的自信' }
+      { value: 'no-imitation', name: '不模仿，自由发挥', avatar: '🎨', desc: '不用任何大佬风格，AI根据内容自然发挥' },
+      { value: 'custom-imitation', name: '自定义风格', avatar: '✏️', desc: '输入你想模仿的风格描述，AI按你的要求来' }
     ]
   }
 ]
+
 const platformMap: Record<string, { label: string; color: string }> = {
   XHS: { label: '小红书', color: 'red' },
   WX: { label: '公众号', color: 'blue' },
@@ -80,6 +148,7 @@ const platformMap: Record<string, { label: string; color: string }> = {
   WEIBO: { label: '微博', color: 'orange' },
   ZHIHU: { label: '知乎', color: 'geekblue' }
 }
+
 const insuranceTypeMap: Record<string, string> = {
   medical: '医疗险',
   critical: '重疾险',
@@ -89,6 +158,7 @@ const insuranceTypeMap: Record<string, string> = {
   child: '少儿险',
   pension: '养老险'
 }
+
 // 推荐订阅的公众号列表（说明如何获取真实RSS）
 const recommendedAccounts = [
   { name: '深蓝保', bizId: 'gh_8b9c0d7a8f5c', description: '深蓝保官方公众号' },
@@ -98,6 +168,7 @@ const recommendedAccounts = [
   { name: '奶爸保', bizId: 'gh_4e8a0c5f6b1d', description: '奶爸保官方公众号' },
   { name: '小雨伞', bizId: 'gh_3d7f9a2c5e8b', description: '小雨伞官方公众号' },
 ]
+
 export default function Cases() {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -116,20 +187,33 @@ export default function Cases() {
   // 一键仿写相关状态
   const [rewriteModalOpen, setRewriteModalOpen] = useState(false)
   const [rewriteCase, setRewriteCase] = useState<any>(null)
+  const [selectedStructure, setSelectedStructure] = useState<string>('')
+  const [selectedStructureSub, setSelectedStructureSub] = useState<string>('')
   const [selectedStyle, setSelectedStyle] = useState<string>('')
   const [selectedMaster, setSelectedMaster] = useState<string>('')
+  const [customStyleDesc, setCustomStyleDesc] = useState<string>('')
   const [rewriting, setRewriting] = useState(false)
   const [rewriteResult, setRewriteResult] = useState<any>(null)
+
   // 当前选中风格的大佬列表
   const currentStyleMasters = rewriteStyles.find(s => s.value === selectedStyle)?.masters || []
+  // 当前选中的内容结构
+  const currentStructure = contentStructures.find(s => s.value === selectedStructure)
+  // 当前内容结构的子选项
+  const currentStructureSubOptions = currentStructure?.subOptions || []
+
   // 打开仿写弹窗
   const handleRewrite = (caseItem: any) => {
     setRewriteCase(caseItem)
+    setSelectedStructure('')
+    setSelectedStructureSub('')
     setSelectedStyle('')
     setSelectedMaster('')
+    setCustomStyleDesc('')
     setRewriteResult(null)
     setRewriteModalOpen(true)
   }
+
   // 风格选择变化时，自动选中第一个大佬
   const handleStyleChange = (styleValue: string) => {
     setSelectedStyle(styleValue)
@@ -140,19 +224,34 @@ export default function Cases() {
       setSelectedMaster('')
     }
   }
+
   // 执行仿写
   const executeRewrite = async () => {
     if (!selectedStyle || !selectedMaster) {
       message.warning('请选择仿写风格和大佬模式')
       return
     }
+    if (selectedMaster === 'custom-imitation' && !customStyleDesc.trim()) {
+      message.warning('请输入自定义风格描述')
+      return
+    }
     setRewriting(true)
     setRewriteResult(null)
     try {
-      const { data: res } = await api.post(`/cases/${rewriteCase.id}/rewrite`, {
+      const requestData: any = {
         style: selectedStyle,
         master: selectedMaster
-      })
+      }
+      if (selectedStructure) {
+        requestData.structure = selectedStructure
+      }
+      if (selectedStructureSub) {
+        requestData.structureSub = selectedStructureSub
+      }
+      if (customStyleDesc.trim()) {
+        requestData.customStyleDesc = customStyleDesc.trim()
+      }
+      const { data: res } = await api.post(`/cases/${rewriteCase.id}/rewrite`, requestData)
       setRewriteResult(res)
     } catch (error: any) {
       message.error(error.response?.data?.error || '仿写失败，请稍后重试')
@@ -160,6 +259,7 @@ export default function Cases() {
       setRewriting(false)
     }
   }
+
   // 复制仿写结果
   const copyRewriteResult = async (type: 'title' | 'content' | 'all') => {
     if (!rewriteResult) return
@@ -184,6 +284,7 @@ export default function Cases() {
       message.success('已复制到剪贴板')
     }
   }
+
   const fetchData = async (page = 1) => {
     setLoading(true)
     try {
@@ -191,15 +292,18 @@ export default function Cases() {
       if (selectedPlatform) params.platform = selectedPlatform
       if (selectedInsuranceType) params.insuranceType = selectedInsuranceType
       if (keyword) params.keyword = keyword
+
       const { data: res } = await api.get('/cases', { params })
       setData(res.data)
     } finally {
       setLoading(false)
     }
   }
+
   useEffect(() => {
     fetchData()
   }, [selectedPlatform, selectedInsuranceType])
+
   const handleSave = async (caseId: number) => {
     try {
       await api.post(`/cases/${caseId}/save`)
@@ -208,6 +312,7 @@ export default function Cases() {
       message.error(error.response?.data?.error || '收藏失败')
     }
   }
+
   const analyzeCase = async (caseItem: any) => {
     setSelectedCase(caseItem)
     setAnalyzing(true)
@@ -228,6 +333,7 @@ export default function Cases() {
       setAnalyzing(false)
     }
   }
+
   // 采集爆款数据（真实小红书笔记，需要 Chrome 已登录 + autocli 扩展）
   const handleCollect = async () => {
     setCollecting(true)
@@ -273,6 +379,7 @@ export default function Cases() {
       setCollecting(false)
     }
   }
+
   // 订阅公众号
   const handleSubscribe = async () => {
     // 如果有 wechatId，直接用 wechatId 订阅
@@ -293,18 +400,19 @@ export default function Cases() {
       }
       return
     }
-
+    
     // 否则使用文章链接
     if (!subscribeUrl.trim()) {
       message.warning('请输入公众号文章链接或微信号')
       return
     }
-
+    
     // 验证是否是微信文章链接
     if (!subscribeUrl.includes('mp.weixin.qq.com')) {
       message.error('请输入正确的微信公众号文章链接')
       return
     }
+
     setSubscribing(true)
     try {
       await api.post('/subscribe/wechat', {
@@ -319,6 +427,7 @@ export default function Cases() {
       setSubscribing(false)
     }
   }
+
   // 快速订阅公众号
   const handleQuickSubscribe = async (bizId: string, name: string) => {
     setSubscribeWechatId(bizId)
@@ -336,54 +445,47 @@ export default function Cases() {
       setSubscribeWechatId('')
     }
   }
+
   // 导入本地采集的 JSON 文件
   const handleImportJSON: UploadProps['customRequest'] = async (options) => {
-    const { file, onSuccess, onError } = options;
-    setImporting(true);
+    const { file, onSuccess, onError } = options
+    setImporting(true)
     try {
-      const formData = new FormData();
-      formData.append('file', file as File);
-      // 先读取文件内容
-      const text = await (file as File).text();
-      const cases = JSON.parse(text);
-      if (!Array.isArray(cases) || cases.length === 0) {
-        throw new Error('JSON 文件内容为空或格式错误');
-      }
-      const { data: res } = await api.post('/import/xhs-json', { cases });
-      if (res.success) {
-        message.success(res.message || `成功导入 ${cases.length} 条数据`);
-        fetchData();
-      } else {
-        throw new Error(res.error || '导入失败');
-      }
-      onSuccess?.(res);
+      const formData = new FormData()
+      formData.append('file', file as File)
+      await api.post('/cases/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      message.success('导入成功')
+      fetchData()
+      onSuccess?.(null)
     } catch (error: any) {
-      const errMsg = error.message || error.response?.data?.error || '导入失败，请检查 JSON 格式是否正确';
-      message.error(errMsg);
-      onError?.(error);
+      message.error(error.response?.data?.error || '导入失败')
+      onError?.(new Error(error.response?.data?.error || '导入失败'))
     } finally {
-      setImporting(false);
+      setImporting(false)
     }
-  };
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold">🔥 爆款案例库</h2>
-          <Tooltip title="采集小红书近15天点赞50+的保险获客类真实笔记（需Chrome已登录小红书+autocli扩展）">
-            <Button
-              type="primary"
-              icon={<DownloadOutlined />}
-              loading={collecting}
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-4">🔥 爆款情报站</h1>
+        <div className="flex gap-2 mb-4">
+          <Tooltip title="采集小红书真实笔记（需安装 AutoCLI Chrome 扩展并已登录）">
+            <Button 
+              type="primary" 
+              icon={<ThunderboltOutlined />} 
               onClick={handleCollect}
-              size="small"
+              loading={collecting}
+              danger
             >
-              采集小红书真实笔记
+              采集爆款
             </Button>
           </Tooltip>
-          <Tooltip title="订阅公众号文章">
-            <Button
-              icon={<WechatOutlined />}
+          <Tooltip title="订阅公众号自动采集文章">
+            <Button 
+              icon={<WechatOutlined />} 
               onClick={() => setSubscribeModalOpen(true)}
               size="small"
             >
@@ -403,7 +505,6 @@ export default function Cases() {
             </Tooltip>
           </Upload>
         </div>
-
         <div className="flex gap-2 flex-wrap">
           <Select
             placeholder="选择平台"
@@ -447,7 +548,6 @@ export default function Cases() {
         <Row gutter={[16, 16]}>
           {data.map((item) => (
             <Col key={item.id} span={12}>
-
               <Card
                 hoverable
                 className="hover-lift"
@@ -493,6 +593,7 @@ export default function Cases() {
             </Col>
           ))}
         </Row>
+
         {data.length === 0 && !loading && (
           <Empty description="暂无爆款案例，点击「订阅公众号」开始采集" />
         )}
@@ -517,6 +618,7 @@ export default function Cases() {
               <h4 className="font-medium">原文标题</h4>
               <p>{selectedCase.title}</p>
             </div>
+
             {analyzing ? (
               <div className="text-center py-8">
                 <Spin tip="AI 正在分析中..." />
@@ -531,16 +633,19 @@ export default function Cases() {
                     ))}
                   </ul>
                 </div>
+
                 <div>
                   <h4 className="font-medium text-secondary">📝 内容结构</h4>
                   <p><strong>开头：</strong>{selectedCase.analysis.contentStructure?.opening}</p>
                   <p><strong>中间：</strong>{selectedCase.analysis.contentStructure?.middle}</p>
                   <p><strong>结尾：</strong>{selectedCase.analysis.contentStructure?.ending}</p>
                 </div>
+
                 <div>
                   <h4 className="font-medium text-blue-500">💡 可复用公式</h4>
                   <p className="bg-blue-50 p-3 rounded">{selectedCase.analysis.reusableFormula}</p>
                 </div>
+
                 <div>
                   <h4 className="font-medium text-green-500">✨ 模仿建议</h4>
                   <ul className="list-disc pl-5">
@@ -577,6 +682,7 @@ export default function Cases() {
             type="info"
             showIcon
           />
+
           <div className="space-y-2">
             {recommendedAccounts.map((account) => (
               <div key={account.bizId} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
@@ -598,6 +704,7 @@ export default function Cases() {
               </div>
             ))}
           </div>
+
           <div className="border-t pt-4">
             <h4 className="font-medium mb-2">自定义订阅</h4>
             <div className="space-y-2">
@@ -612,10 +719,10 @@ export default function Cases() {
                 value={subscribeWechatId}
                 onChange={(e) => setSubscribeWechatId(e.target.value)}
               />
-              <Button
-                type="primary"
-                block
-                loading={subscribing}
+              <Button 
+                type="primary" 
+                block 
+                loading={subscribing} 
                 onClick={handleSubscribe}
                 disabled={!subscribeUrl.includes('mp.weixin.qq.com') && !subscribeWechatId}
               >
@@ -626,13 +733,13 @@ export default function Cases() {
         </div>
       </Modal>
 
-      {/* 一键仿写 Modal */}
+      {/* 一键仿写 Modal - 新版三步选择 */}
       <Modal
-        title={<>📝 一键仿写爆款</>}
+        title={<><EditOutlined /> 一键仿写爆款</>}
         open={rewriteModalOpen}
         onCancel={() => { setRewriteModalOpen(false); setRewriteResult(null); }}
         footer={null}
-        width={800}
+        width={900}
       >
         {rewriteCase && (
           <div className="space-y-4">
@@ -652,9 +759,61 @@ export default function Cases() {
               showIcon
             />
 
-            {/* 第一级：选择风格大类 */}
+            {/* 第一步：选择内容结构（可选） */}
             <div>
-              <h4 className="font-medium mb-2">第一步：选择风格大类</h4>
+              <h4 className="font-medium mb-2">
+                第一步：选择内容结构 <span className="text-gray-500 font-normal text-sm">（可选，不选则AI自由发挥）</span>
+              </h4>
+              <div className="grid grid-cols-4 gap-2">
+                {contentStructures.map((structure) => (
+                  <div
+                    key={structure.value}
+                    className={`p-3 border rounded-lg cursor-pointer transition-all text-center ${
+                      selectedStructure === structure.value
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-purple-300'
+                    }`}
+                    onClick={() => {
+                      setSelectedStructure(selectedStructure === structure.value ? '' : structure.value)
+                      setSelectedStructureSub('')
+                    }}
+                  >
+                    <div className="text-2xl mb-1">{structure.icon}</div>
+                    <div className="font-medium text-sm">{structure.label}</div>
+                    <div className="text-xs text-gray-500">{structure.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 第二步：选择子选项（根据内容结构动态显示） */}
+            {selectedStructure && currentStructureSubOptions.length > 0 && (
+              <div>
+                <h4 className="font-medium mb-2">
+                  第二步：选择具体方向 <span className="text-gray-500 font-normal text-sm">（可选）</span>
+                </h4>
+                <div className="grid grid-cols-4 gap-2">
+                  {currentStructureSubOptions.map((sub) => (
+                    <div
+                      key={sub.value}
+                      className={`p-2 border rounded-lg cursor-pointer transition-all text-center ${
+                        selectedStructureSub === sub.value
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 hover:border-purple-300'
+                      }`}
+                      onClick={() => setSelectedStructureSub(selectedStructureSub === sub.value ? '' : sub.value)}
+                    >
+                      <span className="text-xl mr-1">{sub.icon}</span>
+                      <span className="text-sm">{sub.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 第三步：选择风格大类 */}
+            <div>
+              <h4 className="font-medium mb-2">第三步：选择风格大类</h4>
               <div className="grid grid-cols-5 gap-2">
                 {rewriteStyles.map((style) => (
                   <div
@@ -673,10 +832,12 @@ export default function Cases() {
               </div>
             </div>
 
-            {/* 第二级：选择大佬模式 */}
+            {/* 第四步：选择大佬模式 */}
             {selectedStyle && (
               <div>
-                <h4 className="font-medium mb-2">第二步：选择大佬模式 <span className="text-gray-500 font-normal text-sm">（AI将按该大佬的语言DNA生成内容）</span></h4>
+                <h4 className="font-medium mb-2">
+                  第四步：选择写作模式 <span className="text-gray-500 font-normal text-sm">（AI将按该模式生成内容）</span>
+                </h4>
                 <div className="grid grid-cols-3 gap-3">
                   {currentStyleMasters.map((master) => (
                     <div
@@ -699,6 +860,26 @@ export default function Cases() {
               </div>
             )}
 
+            {/* 自定义风格输入框 */}
+            {selectedMaster === 'custom-imitation' && (
+              <div>
+                <h4 className="font-medium mb-2">
+                  请描述你想要的风格 <span className="text-red-500">*</span>
+                </h4>
+                <Input.TextArea
+                  placeholder="例如：用小蔡碎碎念的风格写，像跟朋友聊天一样自然亲切"
+                  value={customStyleDesc}
+                  onChange={(e) => setCustomStyleDesc(e.target.value)}
+                  rows={3}
+                  maxLength={200}
+                  showCount
+                />
+                <div className="text-xs text-gray-500 mt-1">
+                  描述越详细，AI越能按你的要求来写
+                </div>
+              </div>
+            )}
+
             {/* 执行按钮 */}
             <Button
               type="primary"
@@ -706,7 +887,7 @@ export default function Cases() {
               size="large"
               loading={rewriting}
               onClick={executeRewrite}
-              disabled={!selectedStyle || !selectedMaster}
+              disabled={!selectedStyle || !selectedMaster || (selectedMaster === 'custom-imitation' && !customStyleDesc.trim())}
               icon={<EditOutlined />}
             >
               {rewriting ? 'AI 正在仿写中...' : '开始仿写'}
@@ -716,6 +897,7 @@ export default function Cases() {
             {rewriteResult && (
               <div className="space-y-4 mt-4">
                 <Divider>✨ 仿写结果</Divider>
+
                 {/* 标题 */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
