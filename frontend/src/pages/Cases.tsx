@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Card, Row, Col, Tag, Input, Spin, Empty, Button, Modal, List, Tooltip, message, Upload, Space, Divider } from 'antd'
-import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined, CopyOutlined, EditOutlined, CheckOutlined } from '@ant-design/icons'
+import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined, CopyOutlined, EditOutlined, CheckOutlined, UploadOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 import api from '../utils/api'
 
