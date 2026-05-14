@@ -276,7 +276,7 @@ export async function generateTitles(keywords: string[], context?: string): Prom
 
 ⚠️ 自我批判：生成后诚实自评，参照真实爆款衡量。
 
-【重要】请直接输出纯JSON，不要用markdown代码块包裹，不要加```json或```：
+【重要】请直接输出纯JSON，不要用markdown代码块包裹，不要加${tripleBacktick}json或${tripleBacktick}：
 {
   "titles": [
     {"title": "标题1", "type": "大佬思路风", "score": 9, "explanation": "说明", "hashtags": ["标签1"], "selfCriticism": "自我批评", "targetAudience": "打工人"}
