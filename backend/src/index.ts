@@ -24,6 +24,7 @@ import collectRoutes from './routes/collect.js';
 import importRoutes from './routes/import.js';
 import imagesRoutes from "./routes/images.js";
 import rewriteRoutes from './routes/rewrite.js';
+import creationRoutes from './routes/creation.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authLimiter } from './middleware/rateLimiter.js';
 
