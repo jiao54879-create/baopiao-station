@@ -17,7 +17,7 @@ import Templates from './pages/Templates'
 import TitleOptimizer from './pages/TitleOptimizer'
 import Products from './pages/Products'
 import Materials from './pages/Materials'
-import Rewrite from './pages/Rewrite'
+import Rewrite from './pages/Creation'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore()
