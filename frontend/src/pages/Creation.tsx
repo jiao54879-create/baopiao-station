@@ -5,7 +5,7 @@ import {
 } from 'antd'
 import {
   EditOutlined, CopyOutlined, ThunderboltOutlined,
-  CheckCircleOutlined, LightbulbOutlined
+  CheckCircleOutlined, BulbOutlined
 } from '@ant-design/icons'
 import api from '../utils/api'
 
@@ -295,7 +295,7 @@ export default function Creation() {
             <Card 
               title={
                 <span>
-                  <LightbulbOutlined className="mr-2" />
+                  <BulbOutlined className="mr-2" />
                   参考素材（可选）
                 </span>
               }
@@ -582,7 +582,7 @@ export default function Creation() {
               {/* 创作说明 */}
               <Card size="small" style={{ background: '#f8f9ff', borderColor: '#4f46e5' }}>
                 <div className="flex gap-2">
-                  <LightbulbOutlined style={{ color: '#4f46e5', marginTop: 2 }} />
+                  <BulbOutlined style={{ color: '#4f46e5', marginTop: 2 }} />
                   <div>
                     <Text strong style={{ fontSize: 12, color: '#4f46e5' }}>创作说明</Text>
                     <div className="text-sm text-gray-600 mt-1">
