@@ -76,6 +76,7 @@ app.use('/api/templates', templatesRoutes);  // 模板库
 app.use('/api/title-optimization', titleOptimizationRoutes);  // 标题优化
 app.use('/api/generator', generatorRoutes);  // 标题生成
 app.use('/api/rewrite', rewriteRoutes);      // 一键仿写
+app.use('/api/creation', creationRoutes);   // 笔记创作
 app.use("/api/images", imagesRoutes);      // 配图生成
 app.use('/api/materials', materialsRoutes);  // 素材库
 
