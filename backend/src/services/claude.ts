@@ -15,7 +15,8 @@ const TitleOutputSchema = z.object({
     score: z.number().min(1).max(10),
     explanation: z.string(),
     hashtags: z.array(z.string()),
-    selfCriticism: z.string()
+    selfCriticism: z.string(),
+    targetAudience: z.string().optional()  // 精准人群标签，如"宝妈""打工人"等
   }))
 });
 
@@ -25,7 +26,8 @@ const TitleArraySchema = z.array(z.object({
   score: z.number().min(1).max(10),
   explanation: z.string(),
   hashtags: z.array(z.string()),
-  selfCriticism: z.string()
+  selfCriticism: z.string(),
+  targetAudience: z.string().optional()
 }));
 
 const tripleBacktick = '\x60\x60\x60';
@@ -92,7 +94,194 @@ export async function generateTitles(keywords: string[], context?: string): Prom
   // 动态注入真实爆款参考标题
   const viralExamples = await fetchViralTitleExamples(keywords);
 
-  const prompt = '你是一个深谙小红书流量密码的保险赛道标题黑客。你深知小红书用户的心理：她们不吃恐吓那套，反而对"大佬思路""行业大实话""反套路"这种走心唠嗑风毫无抵抗力。\n\n用户输入的关键词：' + keywords.join(', ') + background + viralExamples + '\n\n## 铁律\n1. 标题必须≤20个字（小红书硬性限制）\n2. 必须像真人发的朋友圈，不像AI生成的广告\n3. 禁止恐吓式标题（"千万别买""后悔死了"已过时）\n\n## 5种爆款风格（每种至少生成1-2个）\n\n### 1. 大佬思路通透风（最高点击率）\n用"大佬""聪明人""内行"制造降维打击感，让用户觉得"我要学他们"\n模板句式：\n- 大佬买XX的思路，真的太通透了\n- 聪明人XX，从来不乱跟风\n- 真正懂XX的人，都在悄悄这样买\n- 看懂大佬XX逻辑，少花几万冤枉钱\n\n### 2. 行业大实话风（最高信任感）\n用"不卖了""退出行业""从业多年"制造内部人爆料感\n模板句式：\n- 不卖XX了，掏句良心大实话\n- 做XX多年，有些真话不敢公开说\n- 退出XX行业，说点没人敢讲的真话\n- 从业多年，揭开XX不为人知内幕\n\n### 3. 反套路吐槽风（最高互动率）\n直接点破行业套路，让用户觉得"终于有人说真话了"\n模板句式：\n- 别再瞎买XX，全是隐形大坑\n- XX里的信息差，被我扒得明明白白\n- 买XX别听业务员画大饼了\n- XX水太深，小白千万别盲目入手\n\n### 4. 走心共情风（最高收藏率）\n站在普通人立场说话，消除焦虑\n模板句式：\n- 普通家庭XX，真的不用买太贵\n- 给家人XX，记住这几点就够了\n- XX避坑，普通人看完少走弯路\n- 越精简越靠谱\n\n### 5. 悬念好奇风（最高点击率）\n制造信息差缺口，不点不舒服\n模板句式：\n- 为什么聪明人，从不乱买XX\n- XX最大信息差，90%人都不知道\n- XX的谎言，终于被拆穿了\n- 我悟了，XX根本不用纠结\n\n## 评分标准（与真实爆款对标）\n- 9-10分：能和"我发现大佬买保险思路好清晰"级别的真实爆款掰手腕\n- 7-8分：有强烈点击欲，像真人说的\n- 5-6分：中规中矩，没有记忆点\n- 3-4分：像AI生成的，或像广告\n- 1-2分：说明书式，完全不想点\n\n评分重点：新颖度>情绪张力>信息量。一个没数字但走心的标题（如"大佬买保险的思路好通透"）远比一个堆数字但像广告的标题（如"3种保险坑让你亏8万"）更有爆款潜力。\n\n## 禁止清单\n- 禁止"今天分享""一起来了解""给大家介绍"式开头\n- 禁止纯"科普""攻略""指南"等说明书式用词\n- 禁止过度恐吓（"千万别""后悔死了"已审美疲劳）\n- 禁止像产品广告\n- 禁止超过20字\n\n⚠️ 自我批判：生成后诚实自评，参照真实爆款衡量。\n\n【重要】请直接输出纯JSON，不要用markdown代码块包裹，不要加```json或```：\n{\n  "titles": [\n    {"title": "标题1", "type": "大佬思路风", "score": 9, "explanation": "说明", "hashtags": ["标签1"], "selfCriticism": "自我批评"}\n  ]\n}';
+  const prompt = `你是一个深谙小红书流量密码的保险赛道标题黑客。你深知小红书用户的心理：她们不吃恐吓那套，反而对"大佬思路""行业大实话""反套路"这种走心唠嗑风毫无抵抗力。
+
+用户输入的关键词：` + keywords.join(', ') + background + viralExamples + `
+
+## 铁律
+1. 标题必须≤20个字（小红书硬性限制）
+2. 必须像真人发的朋友圈，不像AI生成的广告
+3. 禁止恐吓式标题（"千万别买""后悔死了"已过时）
+
+## 12种爆款风格（每种至少生成1个，共12-15个标题）
+
+### 风格1：大佬思路通透风（最高点击率）
+用"大佬""聪明人""内行"制造降维打击感，让用户觉得"我要学他们"
+模板句式：
+- 大佬买XX的思路，真的太通透了
+- 聪明人XX，从来不乱跟风
+- 真正懂XX的人，都在悄悄这样买
+- 看懂大佬XX逻辑，少花几万冤枉钱
+- 我发现大佬买XX思路好清晰啊
+- 我发现大佬选XX逻辑好清晰啊
+- 我发现大佬避XX坑好清晰啊
+- 内行买XX，只抓这3个核心点
+
+### 风格2：行业大实话风（最高信任感）
+用"不卖了""退出行业""从业多年"制造内部人爆料感
+模板句式：
+- 不卖XX了，掏句良心大实话
+- 做XX多年，有些真话不敢公开说
+- 退出XX行业，说点没人敢讲的真话
+- 从业多年，揭开XX不为人知内幕
+- 我已经不卖XX，但还想说点大实话
+- 干了X年保险，辞职前说句掏心窝的话
+- 从保险公司离职，说点没人敢讲的内幕
+
+### 风格3：反套路吐槽风（最高互动率）
+直接点破行业套路，让用户觉得"终于有人说真话了"
+模板句式：
+- 别再瞎买XX，全是隐形大坑
+- XX里的信息差，被我扒得明明白白
+- 买XX别听业务员画大饼了
+- XX水太深，小白千万别盲目入手
+- 揭秘保险噱头，都是收割普通人
+- XX，就是专门收割普通人的
+
+### 风格4：走心共情风（最高收藏率）
+站在普通人立场说话，消除焦虑
+模板句式：
+- 普通家庭XX，真的不用买太贵
+- 给家人XX，记住这几点就够了
+- XX避坑，普通人看完少走弯路
+- 越精简越靠谱
+- 坦白了，很多XX根本没必要买
+- 关于XX的套路，劝你越早知道越好
+
+### 风格5：悬念好奇风（最高点击率）
+制造信息差缺口，不点不舒服
+模板句式：
+- 为什么聪明人，从不乱买XX
+- XX最大信息差，90%人都不知道
+- XX的谎言，终于被拆穿了
+- 我悟了，XX根本不用纠结
+- 业务员绝不告诉你的XX真相
+- 一张表看透XX所有坑点套路
+
+### 风格6：灵魂拷问式（戳中隐性焦虑）
+不用陈述句说教，用直击灵魂的问题戳中用户最担心的点
+模板句式：
+- 你买的XX，真的有用吗？
+- 你家的XX，其实都是白花钱
+- 花几万买XX，出事能赔多少？
+- 你的XX，能报外购药吗？
+- XX确诊即赔？纯纯大谎言
+
+### 风格7：极端场景代入式（制造紧迫感）
+把用户带入一个极端但真实可能发生的场景
+模板句式：
+- 如果明天得XX，你的保险够吗？
+- 如果突然失业，你的XX能兜底吗？
+- 如果住院花10万，XX能报多少？
+- 如果老公出事，家里能撑多久？
+- 如果明天XX，你的XX能扛住吗？
+
+### 风格8：一句话反常识式（颠覆认知）
+直接说一句和大众认知完全相反的话，制造强烈反差
+模板句式：
+- 先给孩子买XX，是最大的错误
+- XX买得越多，反而越不安全
+- 大公司的XX，其实更坑人
+- 带身故的XX，就是智商税
+- XX，其实是最大的误区
+
+### 风格9：精准人群劝退式（命中目标用户）
+直接点名某一类人群，告诉他们什么不能买
+模板句式：
+- 如果你是XX，别买XX
+- 如果你是工薪族，别买终身寿险
+- 如果你没钱，别碰返还型保险
+- 如果你超过40岁，别买XX
+- 如果你有房贷，一定要买定期寿险
+
+### 风格10：数字暴击式（具体数字冲击）
+用具体、有冲击力的数字对比，突出信息差
+模板句式：
+- 花1万买的XX，只赔了1000块
+- 交了10年保费，退保只退2000
+- 同样50万保额，差价能差3倍
+- 90%的人，XX都买贵了50%
+- XX，80%的情况用不上
+
+### 风格11：亲身踩坑故事式（共情力拉满）
+用一个简短的、有结果的亲身故事开头
+模板句式：
+- 我闺蜜买XX，理赔时被拒了
+- 我妈买的XX，10年亏了2万
+- 我同事买XX，肠子都悔青了
+- 我给娃买XX，白花了5000块
+- 我朋友买XX，最后XX了
+
+### 风格12：紧急预警式（紧迫感）
+用"注意""警惕""马上"等词，营造紧急氛围
+模板句式：
+- 注意！这些XX下个月就要涨价
+- 警惕！这种XX正在大量拒赔
+- 赶紧查！你的XX可能已经失效
+- 别买了！这些XX马上要停售
+- 提醒！买XX前一定要看这一点
+
+## 12种精准身份选题方向（生成标题时必须考虑，至少3个标题要精准命中目标人群）
+
+1. **宝妈** — 宝妈买XX，XX
+2. **打工人/社畜** — 打工人买XX，XX
+3. **房贷族** — 有房贷的人，一定要XX
+4. **独生子女** — 独生子女买XX，XX
+5. **刚毕业** — 刚毕业买XX，XX
+6. **理赔过的人** — 理赔过的人，告诉你XX
+7. **退保过的人** — 退保亏了X万，我才明白XX
+8. **医生/护士** — 医生买XX，只买XX
+9. **律师** — 律师买XX，只看XX
+10. **自由职业者** — 自由职业者，一定要买XX
+11. **单亲妈妈/爸爸** — 单亲妈妈买XX，XX
+12. **丁克/单身贵族** — 丁克买XX，和别人不一样
+
+## 5种高转化句式变体（高互动、高收藏）
+
+1. **跟XX聊完 + 全换/全退**
+   - 跟医生朋友聊完，把宝宝保险全换了
+   - 跟律师聊完，才知道XX要这样买
+
+2. **经历完XX + 全换/全退**
+   - 陪妈妈住院后，把医疗险全换了
+   - 经历完理赔，我把XX全退了
+
+3. **XX之后 + 只留了XX**
+   - 跟医生聊完，宝宝保险我只留了2种
+   - 退完保之后，我只留了XX
+
+4. **原来XX + 我把XX全换了**
+   - 原来保险这么买，我把旧的全换了
+   - 原来XX才是坑，我把XX全换了
+
+5. **听了XX的话 + 我把XX全换了**
+   - 听了医生的话，把宝宝保险全换了
+   - 听了内行的话，我把XX全换了
+
+## 评分标准（与真实爆款对标）
+- 9-10分：能和"我发现大佬买保险思路好清晰"级别的真实爆款掰手腕
+- 7-8分：有强烈点击欲，像真人说的
+- 5-6分：中规中矩，没有记忆点
+- 3-4分：像AI生成的，或像广告
+- 1-2分：说明书式，完全不想点
+
+评分重点：新颖度>情绪张力>信息量。一个没数字但走心的标题（如"大佬买保险的思路好通透"）远比一个堆数字但像广告的标题（如"3种保险坑让你亏8万"）更有爆款潜力。
+
+## 禁止清单
+- 禁止"今天分享""一起来了解""给大家介绍"式开头
+- 禁止纯"科普""攻略""指南"等说明书式用词
+- 禁止过度恐吓（"千万别""后悔死了"已审美疲劳）
+- 禁止像产品广告
+- 禁止超过20字
+
+⚠️ 自我批判：生成后诚实自评，参照真实爆款衡量。
+
+【重要】请直接输出纯JSON，不要用markdown代码块包裹，不要加```json或```：
+{
+  "titles": [
+    {"title": "标题1", "type": "大佬思路风", "score": 9, "explanation": "说明", "hashtags": ["标签1"], "selfCriticism": "自我批评", "targetAudience": "打工人"}
+  ]
+}`;
 
   let response;
   try {
@@ -112,11 +301,14 @@ export async function generateTitles(keywords: string[], context?: string): Prom
   let cleanText = responseText.trim();
   // 处理 ```json 或 ``` 开头
   while (cleanText.startsWith('```')) {
-    cleanText = cleanText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').trim();
+    cleanText = cleanText.replace(/^```json
+?/i, '').replace(/^```
+?/i, '').trim();
   }
   // 处理结尾的 ```
   while (cleanText.endsWith('```')) {
-    cleanText = cleanText.replace(/\n?```$/, '').trim();
+    cleanText = cleanText.replace(/
+?```$/, '').trim();
   }
 
   let jsonStr = cleanText;
@@ -151,7 +343,7 @@ export async function generateTitles(keywords: string[], context?: string): Prom
   // 方法4：用正则从混乱文本中逐个提取标题对象（即使JSON被截断/重叠也能工作）
   try {
     const titleRegex = /"title"\s*:\s*"([^"]+)"\s*,\s*"type"\s*:\s*"([^"]+)"\s*,\s*"score"\s*:\s*(\d+)\s*,\s*"explanation"\s*:\s*"(.+?)"\s*,\s*"hashtags"\s*:\s*\[([^\]]*)\]\s*,\s*"selfCriticism"\s*:\s*"(.+?)"\s*\}/g;
-    const extractedTitles: Array<{title: string; type: string; score: number; explanation: string; hashtags: string[]; selfCriticism: string}> = [];
+    const extractedTitles: Array<{title: string; type: string; score: number; explanation: string; hashtags: string[]; selfCriticism: string; targetAudience?: string}> = [];
     let match;
     while ((match = titleRegex.exec(cleanText)) !== null) {
       const hashtagsStr = match[5];
@@ -198,19 +390,24 @@ export async function analyzeViralCase(
 
 标题：${title}
 内容：${content}
-数据表现：点赞 ${metrics.likes} | 收藏 ${metrics.favorites} | 评论 ${metrics.comments}
+点赞：${metrics.likes}
+收藏：${metrics.favorites}
+评论：${metrics.comments}
 
-请严格按照以下JSON格式输出分析结果（不要输出其他内容）：
+请从以下维度分析：
+1. 爆款因子（为什么能爆）
+2. 内容结构（开头、中间、结尾如何设计）
+3. 选题角度（切入角度是否独特）
+4. 可复用公式（能否提炼出模板）
+5. 改进建议
+
+【重要】请直接输出纯JSON，不要用markdown代码块包裹：
 {
-  "viralFactors": ["爆款因素1", "爆款因素2", "爆款因素3"],
-  "contentStructure": {
-    "opening": "开头部分分析：如何抓住注意力",
-    "middle": "中间部分分析：如何维持阅读兴趣",
-    "ending": "结尾部分分析：如何引导互动"
-  },
-  "topicAngle": "选题角度分析：为什么这个选题能火",
-  "reusableFormula": "可复制的爆款公式：提炼出可以套用的内容模板",
-  "suggestions": ["改进建议1", "改进建议2", "改进建议3"]
+  "viralFactors": ["因子1", "因子2"],
+  "contentStructure": {"opening": "开头", "middle": "中间", "ending": "结尾"},
+  "topicAngle": "选题角度分析",
+  "reusableFormula": "可复用公式",
+  "suggestions": ["建议1", "建议2"]
 }`;
 
   const response = await deepseek.chat.completions.create({
@@ -221,212 +418,17 @@ export async function analyzeViralCase(
   });
 
   const responseText = response.choices[0]?.message?.content || '';
-  let cleanText = responseText.trim();
-  // 去掉markdown代码块包裹
-  while (cleanText.startsWith('```')) {
-    cleanText = cleanText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').trim();
-  }
-  while (cleanText.endsWith('```')) {
-    cleanText = cleanText.replace(/\n?```$/, '').trim();
-  }
-  const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('AI 返回格式错误，无法解析 JSON');
-  }
-  const parsed = JSON.parse(jsonMatch[0]);
-  return CaseAnalysisSchema.parse(parsed);
-}
+  let cleanText = responseText.trim().replace(/^```json
+?/i, '').replace(/^```
+?/i, '').replace(/
+?```$/, '').trim();
 
-export async function summarizeIntelligence(
-  title: string,
-  content: string
-): Promise<string> {
-  const prompt = '请帮我将以下内容提炼成一段简洁的摘要（100字以内），保留核心信息：\n\n标题：' + title + '\n内容：' + content;
-
-  const response = await deepseek.chat.completions.create({
-    model: 'deepseek-chat',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.5,
-    max_tokens: 256,
-  });
-
-  return response.choices[0]?.message?.content?.trim() || '';
-}
-
-// ========== 一键仿写 ==========
-
-export interface RewriteResult {
-  style: 'xhs' | 'wechat';
-  targetTopic?: string;
-  originalAnalysis: {
-    topic: string;
-    coreIdea: string;
-    structure: string;
-    styleFeatures: string;
-    hooks: string[];
-    detectedStructureType: string;   // 识别出的结构类型
-    detectedToneType: string;        // 识别出的语气类型
-  };
-  rewrittenContent: {
-    title: string;
-    content: string;
-    hashtags: string[];
-    callToAction: string;
-  };
-  writingNotes: string;
-}
-
-export async function rewriteContent(
-  originalTitle: string,
-  originalContent: string,
-  style: 'xhs' | 'wechat',
-  sourceUrl?: string,
-  targetTopic?: string
-): Promise<RewriteResult> {
-  const styleGuide = style === 'xhs'
-    ? `【小红书风格要求】
-- 标题：带emoji，20字以内，制造悬念或情绪冲击
-- 开头：前3行必须留悬念或情绪钩子（折叠前可见）
-- 正文：分点排列，每点带emoji，口语化、亲切感强
-- 结尾：互动引导 + 行动号召
-- 标签：5-10个保险相关话题标签
-- 字数：500-800字
-- 视觉节奏：用💢👉✅等符号引导阅读`
-    : `【微信公众号风格要求】
-- 标题：20字以内，权威感+情感共鸣
-- 开头：故事/数据/提问 三选一
-- 正文：有深度分析，小标题分段，逻辑严密
-- 结尾：总结+升华主题+引导关注
-- 字数：1000-1500字`;
-
-  // 跨领域仿写说明
-  let crossDomainInstruction = '';
-  if (targetTopic && targetTopic.trim()) {
-    crossDomainInstruction = `
-
-## 【跨领域仿写模式】
-原文不是保险内容，你需要提取其"爆款骨架"（选题逻辑、情绪节奏、钩子位置、叙事结构），移植到保险领域。
-目标选题方向：${targetTopic}
-举例：原文如果是美食教程"5个踩坑+正确做法"，保险版就是"买保险5个坑+正确选择"。
-`;
-  }
-
-  const prompt = `你是保险赛道爆款内容创作专家。你的核心能力是"灵魂仿写"——学其神不抄其形。
-
-【原文信息】
-标题：${originalTitle}
-${sourceUrl ? '来源：' + sourceUrl + '\n' : ''}内容：
-${originalContent.substring(0, 3000)}
-${crossDomainInstruction}
-
-${styleGuide}
-
-## ⚠️ 最关键的原则：沿用原文的结构和风格类型
-
-你必须先识别原文属于哪种结构和语气，然后**沿用同类型**来仿写。如果原文是"递进推荐式"，你就用递进推荐式；如果原文是"先破后立式"，你就用先破后立式。绝不能原文给思路推荐，你却写出避坑拆解。
-
-### 结构类型对照表（先识别，再沿用）
-1. **先破后立式**：💢坑点→👉避坑技巧→✅正确选择。原文如果是在"揭露坑/误区/套路"，属于此类。
-2. **递进推荐式**：从便宜到贵、从基础到进阶、按优先级排列。原文如果是"第一买XX、第二买XX"，属于此类。
-3. **人群细分式**：按不同人群（打工人/父母/孩子/带病体）分别给方案。原文如果是"XX人群买什么"，属于此类。
-4. **干货条目式**：1-N条干货清单，信息密度极高。原文如果是"说几条最重要的/几个真相"，属于此类。
-5. **案例故事式**：用客户真实案例开头，从案例引出建议。原文如果有具体人名+金额+结局，属于此类。
-
-### 语气类型对照表（先识别，再沿用）
-1. **犀利吐槽型** 😤：敢说敢骂，"智商税""坑死人"。原文如果有强烈情绪批判，属于此类。
-2. **温柔科普型** 😊：像姐姐教你，"咱家""咱们""慢慢来"。原文如果温和耐心、像朋友分享，属于此类。
-3. **权威拆解型** 🤓：内部人视角，"精算师设计""合同条款"。原文如果用专业术语+内部视角，属于此类。
-4. **穷人共情型** 🤝：同路人视角，"几千块月薪""农民父母"。原文如果有强烈身份代入，属于此类。
-
-## 爆款标题公式（从中选择最贴合原文风格的）
-1. 反常识冲击型："穷人买保险=买条命"
-2. 身份反转型："不卖保险了，就想说点没人敢说的"
-3. 权威揭秘型："卖了几年保险，我想说点小红书上搜不到的"
-4. 悬念揭秘型："第一批买XX的人已经发现不对劲了"
-5. 大胆宣言型："我有一个大胆的想法：教会所有普通人买保险"
-6. 对比反差型："几百块能搞定的保障，有人花几千却赔不到钱"
-
-标题必须包含以下至少2个要素：具体数字、反常识/情绪冲击词、身份标签、悬念词。
-
-## 爆款钩子公式（根据原文风格选择对应的）
-1. 情绪冲击钩："买保险=买条命"、"买对了能救命，买错了打水漂"
-2. 身份代入钩："和我一样的普通打工人"、"穷人视角"、"宝妈必看"
-3. 避坑恐吓钩："合同没写就是耍流氓"、"承诺续保≠保证续保"
-4. 悬念揭秘钩："不对劲了"、"今天说点不一样的"
-5. 权威背书钩："干过理赔的人告诉你"、"2000个家庭经验总结"
-
-## 爆款样本参考（学习语气和节奏）
-【样本1-干货条目式】"有些宝宝保险，真的不配让你花钱！我给2000多个家庭做过规划。8年经验让我明白：良心比赚钱重要，真话比业绩重要。"
-【样本2-递进推荐式】"第一，先参加职工医保...第二，买惠民保...第三，百万医疗险..."
-【样本3-先破后立式】"💢坑点1：承诺续保不靠谱 → 👉避坑技巧：合同没写【保证续保20年】的全是耍流氓！"
-【样本4-金句】"只选对的，不选贵的"、"买对了能救命，买错了就是花钱打水漂"
-【样本5-结尾互动】"如果你还是不太清楚，就抄作业！有问必答~"
-
-## 任务（严格按顺序执行）
-
-### 第一步：识别原文的结构类型和语气类型
-仔细分析原文，判断它属于上述5种结构中的哪一种、4种语气中的哪一种。
-
-### 第二步：沿用同类型创作
-- 使用与原文**相同**的结构类型来组织仿写内容
-- 使用与原文**相同**的语气类型来撰写
-- 选题方向可以相同但内容必须完全原创
-- 钩子和标题公式选择最贴合原文风格的
-
-### 第三步：输出结果
-
-请严格按照以下 JSON 格式输出：
-${tripleBacktick}json
-{
-  "originalAnalysis": {
-    "topic": "原文选题方向（20字以内）",
-    "coreIdea": "核心思路（50字以内）",
-    "structure": "内容结构分析（80字以内）",
-    "styleFeatures": "风格特点（50字以内）",
-    "hooks": ["钩子1", "钩子2", "钩子3"],
-    "detectedStructureType": "识别出的结构类型（先破后立式/递进推荐式/人群细分式/干货条目式/案例故事式）",
-    "detectedToneType": "识别出的语气类型（犀利吐槽型/温柔科普型/权威拆解型/穷人共情型）"
-  },
-  "rewrittenContent": {
-    "title": "仿写标题",
-    "content": "仿写正文（换行用\\n）",
-    "hashtags": ["标签1", "标签2", "标签3", "标签4", "标签5"],
-    "callToAction": "结尾互动引导语"
-  },
-  "writingNotes": "创作说明：沿用原文的XX结构+XX语气，如何借鉴精华并创新（100字以内）"
-}
-${tripleBacktick}`;
-
-  let response;
   try {
-    response = await deepseek.chat.completions.create({
-      model: 'deepseek-chat',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.9,
-      max_tokens: 3500,
-    });
-  } catch (error: any) {
-    throw new Error('AI 服务调用失败: ' + (error?.message || '未知错误'));
-  }
-
-  const responseText = response.choices[0]?.message?.content || '';
-
-  let cleanText = responseText.trim();
-  if (cleanText.startsWith(tripleBacktick)) {
-    cleanText = cleanText.replace(tripleBacktick + 'json', '').replace(new RegExp(tripleBacktick, 'g'), '').trim();
-  }
-
-  const braceStart = cleanText.indexOf('{');
-  const braceEnd = cleanText.lastIndexOf('}');
-  if (braceStart === -1 || braceEnd === -1) {
+    return CaseAnalysisSchema.parse(JSON.parse(cleanText));
+  } catch (e: any) {
+    console.error('案例分析解析失败:', e.message, '原始内容:', responseText.substring(0, 500));
     throw new Error('AI 返回格式错误');
   }
-  const jsonStr = cleanText.substring(braceStart, braceEnd + 1);
-
-  const parsed = JSON.parse(jsonStr);
-  return {
-    style,
-    targetTopic: targetTopic || undefined,
-    ...parsed
-  } as RewriteResult;
 }
+
+export { TitleOutputSchema, TitleArraySchema };
