@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import {
-  Card, Input, Button, Tag, Divider,
-  message, Spin, Row, Col, Typography, Space, Alert
+  Card, Input, Button, Tag, Divider, Radio,
+  message, Spin, Row, Col, Typography, Space, Alert, Switch
 } from 'antd'
 import {
   EditOutlined, CopyOutlined, ThunderboltOutlined,
-  CheckCircleOutlined, BulbOutlined
+  CheckCircleOutlined, BulbOutlined, LinkOutlined, SwapOutlined,
+  RedditOutlined, WechatOutlined
 } from '@ant-design/icons'
 import api from '../utils/api'
 
@@ -163,6 +164,19 @@ export default function Creation() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
   
+  // 创作模式：create=从零创作，rewrite=仿写改写
+  const [mode, setMode] = useState<'create' | 'rewrite'>('create')
+  // 仿写输入
+  const [inputMode, setInputMode] = useState<'url' | 'manual'>('url')
+  const [url, setUrl] = useState('')
+  const [manualContent, setManualContent] = useState('')
+  const [manualTitle, setManualTitle] = useState('')
+  // 跨领域仿写
+  const [crossDomainEnabled, setCrossDomainEnabled] = useState(false)
+  const [targetTopic, setTargetTopic] = useState('')
+  // 仿写目标风格
+  const [rewriteStyle, setRewriteStyle] = useState<'xhs' | 'wechat'>('xhs')
+
   // 选项状态
   const [selectedStructure, setSelectedStructure] = useState<string>('')
   const [selectedStructureSub, setSelectedStructureSub] = useState<string>('')
@@ -188,48 +202,91 @@ export default function Creation() {
   }
 
   const handleCreate = async () => {
-    if (!topic.trim()) {
-      message.warning('请输入选题/主题')
-      return
-    }
-    if (!selectedStyle || !selectedMaster) {
-      message.warning('请选择风格和大佬锚点')
-      return
-    }
-    if (selectedMaster === 'custom-imitation' && !customStyleDesc.trim()) {
-      message.warning('请输入自定义风格描述')
-      return
-    }
-
-    setLoading(true)
-    setResult(null)
-
-    try {
-      const requestData: any = {
-        topic: topic.trim(),
-        style: selectedStyle,
-        master: selectedMaster
+    if (mode === 'create') {
+      // 从零创作模式
+      if (!topic.trim()) {
+        message.warning('请输入选题/主题')
+        return
       }
-      if (selectedStructure) {
-        requestData.structure = selectedStructure
+      if (!selectedStyle || !selectedMaster) {
+        message.warning('请选择风格和大佬锚点')
+        return
       }
-      if (selectedStructureSub) {
-        requestData.structureSub = selectedStructureSub
-      }
-      if (customStyleDesc.trim()) {
-        requestData.customStyleDesc = customStyleDesc.trim()
-      }
-      if (reference.trim()) {
-        requestData.reference = reference.trim()
+      if (selectedMaster === 'custom-imitation' && !customStyleDesc.trim()) {
+        message.warning('请输入自定义风格描述')
+        return
       }
 
-      const { data } = await api.post('/creation', requestData)
-      setResult(data)
-      message.success('创作完成！')
-    } catch (error: any) {
-      message.error(error.response?.data?.error || '创作失败，请稍后重试')
-    } finally {
-      setLoading(false)
+      setLoading(true)
+      setResult(null)
+
+      try {
+        const requestData: any = {
+          topic: topic.trim(),
+          style: selectedStyle,
+          master: selectedMaster
+        }
+        if (selectedStructure) requestData.structure = selectedStructure
+        if (selectedStructureSub) requestData.structureSub = selectedStructureSub
+        if (customStyleDesc.trim()) requestData.customStyleDesc = customStyleDesc.trim()
+        if (reference.trim()) requestData.reference = reference.trim()
+
+        const { data } = await api.post('/creation', requestData)
+        setResult(data)
+        message.success('创作完成！')
+      } catch (error: any) {
+        message.error(error.response?.data?.error || '创作失败，请稍后重试')
+      } finally {
+        setLoading(false)
+      }
+    } else {
+      // 仿写模式
+      if (inputMode === 'url' && !url.trim()) {
+        message.warning('请输入文章链接')
+        return
+      }
+      if (inputMode === 'manual' && !manualContent.trim()) {
+        message.warning('请粘贴文章内容')
+        return
+      }
+      if (crossDomainEnabled && !targetTopic.trim()) {
+        message.warning('请填写目标保险选题方向')
+        return
+      }
+      if (!selectedStyle || !selectedMaster) {
+        message.warning('请选择风格和大佬锚点')
+        return
+      }
+
+      setLoading(true)
+      setResult(null)
+
+      try {
+        const payload: any = {
+          style: rewriteStyle,
+          rewriteStyle: selectedStyle,
+          master: selectedMaster
+        }
+        if (inputMode === 'url') {
+          payload.url = url.trim()
+        } else {
+          payload.title = manualTitle.trim()
+          payload.content = manualContent.trim()
+        }
+        if (crossDomainEnabled && targetTopic.trim()) {
+          payload.targetTopic = targetTopic.trim()
+        }
+        if (selectedStructure) payload.structure = selectedStructure
+        if (customStyleDesc.trim()) payload.customStyleDesc = customStyleDesc.trim()
+
+        const { data } = await api.post('/rewrite', payload)
+        setResult(data)
+        message.success('仿写完成！')
+      } catch (error: any) {
+        message.error(error.response?.data?.error || '仿写失败，请稍后重试')
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -472,10 +529,10 @@ export default function Creation() {
               icon={<ThunderboltOutlined />}
               onClick={handleCreate}
               loading={loading}
-              disabled={!topic.trim() || !selectedStyle || !selectedMaster}
+              disabled={mode === 'create' ? (!topic.trim() || !selectedStyle || !selectedMaster) : ((inputMode === 'url' ? !url.trim() : !manualContent.trim()) || !selectedStyle || !selectedMaster)}
               style={{ height: 56, fontSize: 16 }}
             >
-              {loading ? 'AI 创作中...' : '开始创作'}
+              {loading ? 'AI 创作中...' : mode === 'create' ? '开始创作' : '一键仿写'}
             </Button>
           </Space>
         </Col>
