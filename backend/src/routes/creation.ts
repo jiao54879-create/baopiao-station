@@ -245,7 +245,7 @@ async function createNoteContent(
   structureSub?: string,
   customStyleDesc?: string,
   reference?: string
-): Promise<{ title: string; content: string; tags: string[]; callToAction?: string }> {
+): Promise<{ title: string; content: string; tags: string[]; callToAction?: string; usageTip?: string }> {
   const deepseek = new OpenAI({
     apiKey: process.env.DEEPSEEK_API_KEY || '',
     baseURL: 'https://api.deepseek.com',
