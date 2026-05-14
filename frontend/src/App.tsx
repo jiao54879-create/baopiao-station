@@ -17,7 +17,7 @@ import Templates from './pages/Templates'
 import TitleOptimizer from './pages/TitleOptimizer'
 import Products from './pages/Products'
 import Materials from './pages/Materials'
-import Rewrite from './pages/Creation'
+import Creation from './pages/Creation'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore()
@@ -55,7 +55,7 @@ function App() {
         <Route path="title-optimizer" element={<TitleOptimizer />} />
         <Route path="templates" element={<Templates />} />
         <Route path="products" element={<Products />} />
-        <Route path="rewrite" element={<Rewrite />} />
+        <Route path="creation" element={<Creation />} />
       </Route>
 
       {/* 需登录的路由 - 个性化功能 */}
