@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Card, Row, Col, Tag, Input, Spin, Empty, Button, Modal, List, Tooltip, message, Upload, Space, Divider } from 'antd'
-import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined, CopyOutlined, EditOutlined, CheckOutlined, UploadOutlined } from '@ant-design/icons'
-import type { UploadProps } from 'antd'
+import { Card, Row, Col, Tag, Input, Spin, Empty, Button, Modal, List, Tooltip, message, Space, Divider } from 'antd'
+import { StarOutlined, SaveOutlined, ThunderboltOutlined, CopyOutlined, EditOutlined, CheckOutlined } from '@ant-design/icons'
 import api from '../utils/api'
 
 const { Search } = Input
@@ -168,15 +167,6 @@ const insuranceTypeMap: Record<string, string> = {
   pension: '养老险'
 }
 
-// 推荐订阅的公众号列表
-const recommendedAccounts = [
-  { name: '深蓝保', bizId: 'gh_8b9c0d7a8f5c', description: '深蓝保官方公众号' },
-  { name: '多保鱼', bizId: 'gh_7d5c9b3f6e4a', description: '多保鱼官方公众号' },
-  { name: '小骆驼', bizId: 'gh_6a8b2c4e5d9f', description: '小骆驼教你保' },
-  { name: '学霸说保险', bizId: 'gh_5f9a1b3c7e2d', description: '学霸说保险官方公众号' },
-  { name: '奶爸保', bizId: 'gh_4e8a0c5f6b1d', description: '奶爸保官方公众号' },
-  { name: '小雨伞', bizId: 'gh_3d7f9a2c5e8b', description: '小雨伞官方公众号' },
-]
 
 export default function Cases() {
   const [data, setData] = useState<any[]>([])
@@ -186,13 +176,6 @@ export default function Cases() {
   const [keyword, setKeyword] = useState('')
   const [selectedCase, setSelectedCase] = useState<any>(null)
   const [analyzing, setAnalyzing] = useState(false)
-  const [collecting, setCollecting] = useState(false)
-  const [importing, setImporting] = useState(false)
-  const [subscribeModalOpen, setSubscribeModalOpen] = useState(false)
-  const [subscribeUrl, setSubscribeUrl] = useState('')
-  const [subscribeWechatId, setSubscribeWechatId] = useState('')
-  const [subscribing, setSubscribing] = useState(false)
-  const [subscribedList, setSubscribedList] = useState<any[]>([])
   
   // 一键仿写相关状态
   const [rewriteModalOpen, setRewriteModalOpen] = useState(false)
@@ -344,170 +327,13 @@ export default function Cases() {
     }
   }
 
-  // 采集爆款数据
-  const handleCollect = async () => {
-    setCollecting(true)
-    try {
-      const { data: res } = await api.post('/collect/viral')
-      if (res.success) {
-        message.success(res.message || '采集完成')
-        fetchData()
-      } else {
-        Modal.warning({
-          title: '采集失败',
-          content: (
-            <div>
-              <p style={{ marginBottom: 8 }}>{res.message}</p>
-              <p style={{ color: '#666', fontSize: 13 }}>采集小红书真实笔记需要：</p>
-              <ol style={{ paddingLeft: 18, fontSize: 13, color: '#666' }}>
-                <li>在 Chrome 中打开并登录小红书</li>
-                <li>安装 autocli Chrome 扩展</li>
-                <li>确保 autocli 已正常运行</li>
-              </ol>
-            </div>
-          )
-        })
-      }
-    } catch (error: any) {
-      const errMsg = error.response?.data?.message || error.response?.data?.error || '采集失败，请检查 Chrome 是否已登录小红书并安装 autocli 扩展'
-      Modal.error({
-        title: '采集失败',
-        content: (
-          <div>
-            <p>{errMsg}</p>
-            <p style={{ color: '#666', fontSize: 13, marginTop: 8 }}>采集小红书真实笔记需要：</p>
-            <ol style={{ paddingLeft: 18, fontSize: 13, color: '#666' }}>
-              <li>在 Chrome 中打开并登录小红书</li>
-              <li>安装 autocli Chrome 扩展并保持连接</li>
-            </ol>
-          </div>
-        )
-      })
-    } finally {
-      setCollecting(false)
-    }
-  }
 
-  // 订阅公众号
-  const handleSubscribe = async () => {
-    if (subscribeWechatId) {
-      setSubscribing(true)
-      try {
-        await api.post('/subscribe/wechat', {
-          wechatId: subscribeWechatId,
-          wechatName: subscribeWechatId
-        })
-        message.success('订阅成功！')
-        setSubscribeWechatId('')
-        setSubscribeModalOpen(false)
-      } catch (error: any) {
-        message.error(error.response?.data?.error || '订阅失败')
-      } finally {
-        setSubscribing(false)
-      }
-      return
-    }
-    
-    if (!subscribeUrl.trim()) {
-      message.warning('请输入公众号文章链接或微信号')
-      return
-    }
-    
-    if (!subscribeUrl.includes('mp.weixin.qq.com')) {
-      message.error('请输入正确的微信公众号文章链接')
-      return
-    }
-
-    setSubscribing(true)
-    try {
-      await api.post('/subscribe/wechat', {
-        articleUrl: subscribeUrl
-      })
-      message.success('订阅成功！系统将自动采集该公众号的最新文章')
-      setSubscribeUrl('')
-      setSubscribeModalOpen(false)
-    } catch (error: any) {
-      message.error(error.response?.data?.error || '订阅失败')
-    } finally {
-      setSubscribing(false)
-    }
-  }
-
-  // 快速订阅公众号
-  const handleQuickSubscribe = async (bizId: string, name: string) => {
-    setSubscribeWechatId(bizId)
-    setSubscribing(true)
-    try {
-      await api.post('/subscribe/wechat', {
-        wechatId: bizId,
-        wechatName: name
-      })
-      message.success(`已订阅 ${name}！`)
-    } catch (error: any) {
-      message.error(error.response?.data?.error || '订阅失败')
-    } finally {
-      setSubscribing(false)
-      setSubscribeWechatId('')
-    }
-  }
-
-  // 导入本地采集的 JSON 文件
-  const handleImportJSON: UploadProps['customRequest'] = async (options) => {
-    const { file, onSuccess, onError } = options
-    setImporting(true)
-    try {
-      const formData = new FormData()
-      formData.append('file', file as File)
-      await api.post('/cases/import', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
-      message.success('导入成功')
-      fetchData()
-      onSuccess?.(null)
-    } catch (error: any) {
-      message.error(error.response?.data?.error || '导入失败')
-      onError?.(new Error(error.response?.data?.error || '导入失败'))
-    } finally {
-      setImporting(false)
-    }
-  }
 
   return (
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-4">🔥 爆款情报站</h1>
-        <div className="flex gap-2 mb-4">
-          <Tooltip title="采集小红书真实笔记（需安装 AutoCLI Chrome 扩展并已登录）">
-            <Button 
-              type="primary" 
-              icon={<ThunderboltOutlined />} 
-              onClick={handleCollect}
-              loading={collecting}
-              danger
-            >
-              采集爆款
-            </Button>
-          </Tooltip>
-          <Tooltip title="订阅公众号自动采集文章">
-            <Button 
-              icon={<WechatOutlined />} 
-              onClick={() => setSubscribeModalOpen(true)}
-              size="small"
-            >
-              订阅公众号
-            </Button>
-          </Tooltip>
-          <Upload
-            accept=".json"
-            showUploadList={false}
-            customRequest={handleImportJSON}
-            disabled={importing}
-          >
-            <Button icon={<UploadOutlined />} size="small" loading={importing}>
-              导入JSON
-            </Button>
-          </Upload>
-        </div>
+
 
         <div className="flex gap-2 flex-wrap">
           <Input.Search
@@ -611,50 +437,6 @@ export default function Cases() {
           ))}
         </Row>
       )}
-
-      {/* 订阅公众号弹窗 */}
-      <Modal
-        title="订阅公众号"
-        open={subscribeModalOpen}
-        onCancel={() => {
-          setSubscribeModalOpen(false)
-          setSubscribeUrl('')
-          setSubscribeWechatId('')
-        }}
-        footer={null}
-      >
-        <div className="mb-4">
-          <Input
-            prefix={<WechatOutlined />}
-            placeholder="粘贴微信公众号文章链接"
-            value={subscribeUrl}
-            onChange={e => setSubscribeUrl(e.target.value)}
-          />
-          <div className="text-xs text-gray-500 mt-1">
-            或直接输入微信号ID（如：gh_xxx）
-          </div>
-        </div>
-        
-        <div className="mb-4">
-          <div className="text-sm font-medium mb-2">快速订阅</div>
-          <div className="flex flex-wrap gap-2">
-            {recommendedAccounts.map(acc => (
-              <Button
-                key={acc.bizId}
-                size="small"
-                onClick={() => handleQuickSubscribe(acc.bizId, acc.name)}
-                loading={subscribing && subscribeWechatId === acc.bizId}
-              >
-                {acc.name}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        <Button type="primary" block onClick={handleSubscribe} loading={subscribing}>
-          确认订阅
-        </Button>
-      </Modal>
 
       {/* 仿写弹窗 - 新卡片式UI */}
       <Modal
