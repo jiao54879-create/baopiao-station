@@ -5,11 +5,14 @@ import { prisma } from '../lib/prisma.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { generateTitles, analyzeViralCase } from '../services/claude.js';
 import OpenAI from 'openai';
+
 const router = Router();
+
 const GenerateTitleSchema = z.object({
   keywords: z.array(z.string()).min(1).max(5),
   context: z.string().optional()
 });
+
 const AnalyzeCaseSchema = z.object({
   title: z.string(),
   content: z.string(),
@@ -19,6 +22,7 @@ const AnalyzeCaseSchema = z.object({
     comments: z.number()
   })
 });
+
 const CreateCaseSchema = z.object({
   platform: z.enum(['XHS', 'WX', 'DOUYIN', 'VIDEO', 'WEIBO', 'ZHIHU']),
   title: z.string(),
@@ -37,26 +41,32 @@ const CreateCaseSchema = z.object({
   analysis: z.string().optional(),
   publishedAt: z.string().datetime().optional()
 });
+
 // AI 生成标题
 router.post('/generate', async (req, res, next) => {
   try {
     const { keywords, context } = GenerateTitleSchema.parse(req.body);
+
     if (!process.env.DEEPSEEK_API_KEY) {
       throw new AppError('AI 服务未配置', 500);
     }
+
     const result = await generateTitles(keywords, context);
     res.json(result);
   } catch (error) {
     next(error);
   }
 });
+
 // 分析爆款案例
 router.post('/analyze', async (req, res, next) => {
   try {
     const { title, content, metrics } = AnalyzeCaseSchema.parse(req.body);
+
     if (!process.env.DEEPSEEK_API_KEY) {
       return res.status(500).json({ error: 'AI 服务未配置，请联系管理员配置 DeepSeek API Key' });
     }
+
     const result = await analyzeViralCase(title, content, metrics);
     res.json(result);
   } catch (error: any) {
@@ -64,10 +74,12 @@ router.post('/analyze', async (req, res, next) => {
     return res.status(500).json({ error: 'AI 分析失败: ' + error.message });
   }
 });
+
 // 创建爆款案例
 router.post('/', async (req, res, next) => {
   try {
     const data = CreateCaseSchema.parse(req.body);
+
     const viralCase = await prisma.viralCase.create({
       data: {
         platform: data.platform,
@@ -88,15 +100,18 @@ router.post('/', async (req, res, next) => {
         publishedAt: data.publishedAt ? new Date(data.publishedAt) : undefined
       }
     });
+
     res.status(201).json(viralCase);
   } catch (error) {
     next(error);
   }
 });
+
 // 获取爆款案例列表
 router.get('/', async (req, res, next) => {
   try {
     const { platform, insuranceType, keyword, page = 1, limit = 20 } = req.query;
+
     const where: any = {};
     if (platform) where.platform = platform;
     if (insuranceType) where.insuranceType = insuranceType;
@@ -106,6 +121,7 @@ router.get('/', async (req, res, next) => {
         { content: { contains: String(keyword), mode: 'insensitive' } }
       ];
     }
+
     const [data, total] = await Promise.all([
       prisma.viralCase.findMany({
         where,
@@ -130,6 +146,7 @@ router.get('/', async (req, res, next) => {
       }),
       prisma.viralCase.count({ where })
     ]);
+
     res.json({
       data,
       pagination: {
@@ -143,6 +160,7 @@ router.get('/', async (req, res, next) => {
     next(error);
   }
 });
+
 // GET /styles - 获取所有风格和大佬配置
 router.get('/styles', (req, res) => {
   const styles = Object.entries(styleConfig).map(([key, config]) => ({
@@ -158,6 +176,12 @@ router.get('/styles', (req, res) => {
   }));
   res.json(styles);
 });
+
+// GET /structures - 获取内容结构配置
+router.get('/structures', (req, res) => {
+  res.json(contentStructures);
+});
+
 // 获取单条案例详情
 router.get('/:id', async (req, res, next) => {
   try {
@@ -170,9 +194,11 @@ router.get('/:id', async (req, res, next) => {
         }
       }
     });
+
     if (!viralCase) {
       throw new AppError('案例不存在', 404);
     }
+
     res.json({
       ...viralCase,
       isSaved: viralCase.savedBy.length > 0
@@ -181,45 +207,55 @@ router.get('/:id', async (req, res, next) => {
     next(error);
   }
 });
+
 // 收藏案例
 router.post('/:id/save', async (req, res, next) => {
   try {
     const { notes } = req.body;
     const userId = req.user!.id;
     const caseId = Number(req.params.id);
+
     const existing = await prisma.savedCase.findUnique({
       where: { userId_caseId: { userId, caseId } }
     });
+
     if (existing) {
       throw new AppError('已经收藏过了', 409);
     }
+
     const saved = await prisma.savedCase.create({
       data: { userId, caseId, notes },
       include: { case: true }
     });
+
     res.json(saved);
   } catch (error) {
     next(error);
   }
 });
+
 // 取消收藏
 router.delete('/:id/save', async (req, res, next) => {
   try {
     const userId = req.user!.id;
     const caseId = Number(req.params.id);
+
     await prisma.savedCase.delete({
       where: { userId_caseId: { userId, caseId } }
     });
+
     res.json({ success: true });
   } catch (error) {
     next(error);
   }
 });
+
 // 保存生成的标题
 router.post('/titles/save', async (req, res, next) => {
   try {
     const { keywords, generatedTitles, finalTitle, notes } = req.body;
     const userId = req.user!.id;
+
     const saved = await prisma.savedTitle.create({
       data: {
         userId,
@@ -229,18 +265,22 @@ router.post('/titles/save', async (req, res, next) => {
         notes
       }
     });
+
     res.json(saved);
   } catch (error) {
     next(error);
   }
 });
+
 // 获取我的标题收藏
 router.get('/titles/mine', async (req, res, next) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
     const userId = req.user!.id;
+
     const where: any = { userId };
     if (status) where.status = status;
+
     const [data, total] = await Promise.all([
       prisma.savedTitle.findMany({
         where,
@@ -250,6 +290,7 @@ router.get('/titles/mine', async (req, res, next) => {
       }),
       prisma.savedTitle.count({ where })
     ]);
+
     res.json({
       data,
       pagination: {
@@ -263,7 +304,9 @@ router.get('/titles/mine', async (req, res, next) => {
     next(error);
   }
 });
+
 // ==================== 一键仿写功能 ====================
+
 // 语言DNA类型定义
 interface LanguageDNA {
   opener: string;
@@ -273,6 +316,7 @@ interface LanguageDNA {
   ending: string;
   forbiddenWords: string[];
 }
+
 // 大佬锚点类型定义
 interface Master {
   key: string;
@@ -281,17 +325,141 @@ interface Master {
   description: string;
   languageDNA: LanguageDNA;
 }
+
 // 风格配置类型
 interface StyleConfig {
   name: string;
   icon: string;
   masters: Master[];
 }
+
+// 内容结构配置类型
+interface ContentStructure {
+  value: string;
+  label: string;
+  icon: string;
+  desc: string;
+  subOptions: {
+    value: string;
+    label: string;
+    icon: string;
+    desc?: string;
+  }[];
+  promptHint: string;
+}
+
+// 内容结构配置 - 4种内容结构类型
+const contentStructures: ContentStructure[] = [
+  {
+    value: 'strategy',
+    label: '思路类',
+    icon: '🧭',
+    desc: '讲不同人群如何配置保险',
+    subOptions: [
+      { value: 'baby', label: '宝宝/儿童', icon: '👶' },
+      { value: 'adult', label: '成人', icon: '👤' },
+      { value: 'elder', label: '老人/父母', icon: '👴' },
+      { value: 'white-collar', label: '白领/打工人', icon: '💼' },
+      { value: 'mom', label: '宝妈', icon: '👩‍👧' },
+      { value: 'single-woman', label: '单身女性', icon: '👩' },
+      { value: 'poor', label: '穷人/预算有限', icon: '💰' },
+      { value: 'rich', label: '大佬/高净值', icon: '👑' },
+      { value: 'doctor', label: '医生/医护', icon: '🩺' },
+      { value: 'ordinary-family', label: '普通家庭', icon: '🏠' },
+      { value: 'mortgage', label: '房贷族', icon: '🏦' },
+      { value: 'only-child', label: '独生子女', icon: '1️⃣' },
+    ],
+    promptHint: '重点讲解该人群的保险配置思路：该买什么、不该买什么、预算怎么分配、优先级怎么排。给出具体的保障方案和保费参考。'
+  },
+  {
+    value: 'pitfall',
+    label: '避坑类',
+    icon: '⚠️',
+    desc: '保险信息差和普通人容易踩的坑',
+    subOptions: [
+      { value: 'info-gap', label: '信息差揭秘', icon: '🔍', desc: '大部分人以为是这样，实际是那样' },
+      { value: 'hidden-trap', label: '隐形坑点', icon: '🕳️', desc: '条款里藏着你不知道的坑' },
+      { value: 'sales-trick', label: '销售套路', icon: '🎭', desc: '业务员不会告诉你的真相' },
+      { value: 'claim-trap', label: '理赔坑点', icon: '📋', desc: '买了也赔不了的那些情况' },
+      { value: 'product-trap', label: '产品坑点', icon: '🚫', desc: '这些产品普通人别碰' },
+    ],
+    promptHint: '重点揭露保险信息差和坑点：普通人最容易犯的错误、业务员不会说的真相、条款里的隐藏陷阱。用"大部分人以为XX，实际XX"的对比结构。参考网站素材库中的避坑/信息差素材。'
+  },
+  {
+    value: 'product',
+    label: '产品类',
+    icon: '📦',
+    desc: '保险产品测评对比',
+    subOptions: [
+      { value: 'critical-illness', label: '重疾险测评', icon: '❤️‍🩹' },
+      { value: 'medical', label: '医疗险测评', icon: '🏥' },
+      { value: 'life', label: '寿险测评', icon: '🛡️' },
+      { value: 'accident', label: '意外险测评', icon: '⚡' },
+      { value: 'annuity', label: '年金险测评', icon: '💵' },
+      { value: 'whole-life', label: '增额终身寿测评', icon: '📈' },
+      { value: 'child', label: '少儿险测评', icon: '🍼' },
+      { value: 'comparison', label: '横向对比', icon: '⚖️', desc: '同类产品多款对比' },
+    ],
+    promptHint: '重点做产品测评对比：保障内容拆解、价格对比、优缺点分析、适合人群、购买建议。要客观专业，有数据支撑。'
+  },
+  {
+    value: 'demand',
+    label: '需求激发类',
+    icon: '🔥',
+    desc: '为什么需要买保险',
+    subOptions: [
+      { value: 'risk-awareness', label: '风险意识', icon: '⚡', desc: '真实案例唤醒风险意识' },
+      { value: 'family-responsibility', label: '家庭责任', icon: '👨‍👩‍👧', desc: '为家人撑起保护伞' },
+      { value: 'cost-of-illness', label: '疾病花费', icon: '💊', desc: '一场病要花多少钱' },
+      { value: 'social-insurance-gap', label: '社保缺口', icon: '📉', desc: '社保不够用的地方' },
+      { value: 'age-urgency', label: '年龄紧迫', icon: '⏰', desc: '越晚买越贵/越难买' },
+    ],
+    promptHint: '重点激发保险需求：用真实案例、数据、场景代入让读者意识到风险的存在和保险的必要性。不硬推销，而是让读者自己产生"我需要"的念头。'
+  }
+];
+
+// 不模仿风格配置（所有风格通用）
+const noImitationMaster = {
+  key: 'no-imitation',
+  name: '不模仿，自由发挥',
+  avatar: '🎨',
+  description: '不用任何大佬风格，AI根据内容自然发挥',
+  languageDNA: {
+    opener: '自然开场，用最适合内容的方式切入',
+    sentencePattern: '灵活多样，根据主题自然调整',
+    emotion: '真实自然，不做作不刻意',
+    structure: '根据内容主题选择最合适的结构',
+    ending: '自然收尾，留下余味',
+    forbiddenWords: ['刻意模仿任何特定风格', '做作的表达']
+  }
+};
+
+// 自定义模仿风格配置（所有风格通用）
+const customImitationMaster = {
+  key: 'custom-imitation',
+  name: '自定义风格',
+  avatar: '✏️',
+  description: '输入你想模仿的风格描述，AI按你的要求来',
+  languageDNA: {
+    opener: '根据用户描述的风格开场',
+    sentencePattern: '根据用户描述的风格调整句式',
+    emotion: '根据用户描述的风格调整情绪',
+    structure: '根据用户描述的风格调整结构',
+    ending: '根据用户描述的风格收尾',
+    forbiddenWords: ['偏离用户描述的风格']
+  }
+};
+
+// RewriteRequestSchema 更新 - 新增 structure, structureSub, customStyleDesc 字段
 const RewriteRequestSchema = z.object({
   style: z.enum(['hearth', 'practical', 'twist', 'anxiety', 'data']),
-  master: z.string()
+  master: z.string(),
+  structure: z.enum(['strategy', 'pitfall', 'product', 'demand']).optional(),
+  structureSub: z.string().optional(),
+  customStyleDesc: z.string().optional()
 });
-// 风格配置 - 包含25+大佬锚点
+
+// 风格配置 - 包含15个大佬锚点 + 不模仿 + 自定义模仿
 const styleConfig: Record<string, StyleConfig> = {
   hearth: {
     name: '走心唠嗑风',
@@ -339,48 +507,8 @@ const styleConfig: Record<string, StyleConfig> = {
           forbiddenWords: ['装腔作势', '故弄玄虚']
         }
       },
-      {
-        key: 'yizhongtian',
-        name: '易中天',
-        avatar: '🏛️',
-        description: '评书式"妙说"，用"俗不可耐"的语言讲深刻道理，口语化+反差幽默+声情并茂',
-        languageDNA: {
-          opener: '评书式开场，先讲个故事或场景，让听众坐下来',
-          sentencePattern: '口语化讲述，大俗即大雅，用最接地气的话讲最深刻的道理',
-          emotion: '反差幽默，严肃中带调侃，调侃中有深情',
-          structure: '故事引入→反差转折→妙语点题→余味收尾',
-          ending: '留一个让人回味的妙语',
-          forbiddenWords: ['学术腔', '端着说话', '不接地的华丽词藻']
-        }
-      },
-      {
-        key: 'luoxiang',
-        name: '罗翔',
-        avatar: '⚖️',
-        description: '法学教授讲故事，用极端案例讲道理，自嘲"法外狂徒张三"',
-        languageDNA: {
-          opener: '先讲一个极端案例或荒诞故事，"张三又来了"',
-          sentencePattern: '故事驱动，从极端案例讲普遍道理，自嘲式幽默',
-          emotion: '严肃话题中带自嘲，用荒诞消解沉重，但核心是认真',
-          structure: '荒诞案例→追问本质→法理分析→人生哲思',
-          ending: '一句话点破荒诞中的人性',
-          forbiddenWords: ['空洞说教', '不讲故事直接讲道理']
-        }
-      },
-      {
-        key: 'papijiang',
-        name: 'papi酱',
-        avatar: '🎬',
-        description: '短视频式吐槽，一人分饰多角，节奏快笑点密',
-        languageDNA: {
-          opener: '模仿某类人的经典台词开头，一秒带入场景',
-          sentencePattern: '一人分饰多角对话式，节奏快笑点密，短句连珠炮',
-          emotion: '吐槽+吐槽+吐槽，但吐槽背后是共情',
-          structure: '场景还原→夸张模仿→犀利吐槽→说回现实',
-          ending: '一个让人又笑又心酸的反转',
-          forbiddenWords: ['正经腔', '慢节奏', '长篇大论']
-        }
-      }
+      noImitationMaster,
+      customImitationMaster
     ]
   },
   practical: {
@@ -429,34 +557,8 @@ const styleConfig: Record<string, StyleConfig> = {
           forbiddenWords: ['"赋能""抓手""闭环"', '"在当今XXX的时代"', '"说白了/本质上/换句话说"']
         }
       },
-      {
-        key: 'xiaocai',
-        name: '小蔡碎碎念',
-        avatar: '📝',
-        description: '保险公众号大V，普通消费者立场，7000字深度长文逻辑拆解，先提问题再拆解决策逻辑，像朋友帮你分析',
-        languageDNA: {
-          opener: '先抛一个保险购买的真实困境，"你是不是也遇到这种情况"',
-          sentencePattern: '先提问题→拆解决策逻辑→给出明确结论，像朋友在帮你分析',
-          emotion: '站在消费者这边，替普通人说话，不装专家但比专家还细致',
-          structure: '真实问题→逐层拆解→逻辑推导→明确结论→避坑清单',
-          ending: '给一个明确的选择建议，不含糊',
-          forbiddenWords: ['含糊其辞', '两头堵', '不给出结论']
-        }
-      },
-      {
-        key: 'liyongle',
-        name: '李永乐老师',
-        avatar: '📐',
-        description: '数学老师讲热点，用数学/逻辑推演，白板式讲解，把复杂问题变简单',
-        languageDNA: {
-          opener: '用一个数字或问题开场，"你有没有想过一个问题"',
-          sentencePattern: '白板式讲解，一步一步推导，复杂问题拆成简单步骤',
-          emotion: '理性平和，像老师讲课但有趣，把复杂变简单',
-          structure: '提出问题→数学/逻辑推演→得出结论→实际应用',
-          ending: '一句话总结核心逻辑',
-          forbiddenWords: ['模糊结论', '不推导直接给答案', '故弄玄虚']
-        }
-      }
+      noImitationMaster,
+      customImitationMaster
     ]
   },
   twist: {
@@ -505,34 +607,8 @@ const styleConfig: Record<string, StyleConfig> = {
           forbiddenWords: ['不给具体案例就下结论']
         }
       },
-      {
-        key: 'luxun',
-        name: '鲁迅',
-        avatar: '🖋️',
-        description: '匕首投枪式，冷峻讽刺，一句话见血，揭露真相',
-        languageDNA: {
-          opener: '冷峻观察一个普遍现象，看似平静实则暗藏锋芒',
-          sentencePattern: '短句如刀，一句见血，不怒自威，偶用反讽',
-          emotion: '冷峻中带着痛心，讽刺但不虚无，绝望中仍有希望',
-          structure: '现象观察→反讽揭露→本质拆解→一声叹息',
-          ending: '一声叹息或一句反问，让人脊背发凉',
-          forbiddenWords: ['温情脉脉', '和稀泥', '不痛不痒']
-        }
-      },
-      {
-        key: 'chaijing',
-        name: '柴静',
-        avatar: '🎥',
-        description: '纪录片式叙事，用真实故事击穿认知，冷静但有力',
-        languageDNA: {
-          opener: '从一个具体的人物/故事切入，细节开场',
-          sentencePattern: '纪录片式叙事，冷静叙述中见力量，细节为王',
-          emotion: '克制但有力，用事实说话不用情绪煽动',
-          structure: '人物故事→细节铺陈→认知颠覆→真相揭示',
-          ending: '一个让人沉默的细节',
-          forbiddenWords: ['情绪煽动', '空洞口号', '没有故事就下结论']
-        }
-      }
+      noImitationMaster,
+      customImitationMaster
     ]
   },
   anxiety: {
@@ -581,34 +657,8 @@ const styleConfig: Record<string, StyleConfig> = {
           forbiddenWords: ['居高临下的指导', '不痛不痒的安慰']
         }
       },
-      {
-        key: 'yuhua',
-        name: '余华',
-        avatar: '📖',
-        description: '写最苦的人生说最通透的话，把苦难写成段子',
-        languageDNA: {
-          opener: '讲一个苦到发笑的真实故事',
-          sentencePattern: '苦中带笑，把苦难当段子讲，短句冷幽默',
-          emotion: '表面自嘲，内核通透，苦但不丧',
-          structure: '苦难故事→荒诞解读→通透领悟→继续生活',
-          ending: '一句通透但心酸的话',
-          forbiddenWords: ['鸡汤', '假装积极', '端着抒情']
-        }
-      },
-      {
-        key: 'liurun',
-        name: '刘润',
-        avatar: '💡',
-        description: '商业顾问式焦虑，用商业逻辑解释生活困境，给框架给出路',
-        languageDNA: {
-          opener: '用一个商业框架解释生活现象',
-          sentencePattern: '框架式表达，每段一个小模型，结论前置',
-          emotion: '理性但紧迫，"这不是你的错，但你需要知道"',
-          structure: '现象→底层逻辑→框架分析→行动建议',
-          ending: '一个可执行的行动框架',
-          forbiddenWords: ['只焦虑不给方法', '空洞鼓励', '不给底层逻辑']
-        }
-      }
+      noImitationMaster,
+      customImitationMaster
     ]
   },
   data: {
@@ -634,7 +684,6 @@ const styleConfig: Record<string, StyleConfig> = {
         name: '半佛数据模式',
         avatar: '📉',
         description: '一串数字砸脸，每个观点三个信源',
-
         languageDNA: {
           opener: '一串数字直接砸脸',
           sentencePattern: '每个观点三个信源，高信息密度',
@@ -658,38 +707,13 @@ const styleConfig: Record<string, StyleConfig> = {
           forbiddenWords: ['温和表述', '不痛不痒的数据']
         }
       },
-      {
-        key: 'liurun-data',
-        name: '刘润数据',
-        avatar: '📊',
-        description: '用商业数据模型震撼认知，数据+逻辑双管齐下',
-        languageDNA: {
-          opener: '一个商业数据让你重新认识世界',
-          sentencePattern: '数据→模型→结论，三步走，简洁有力',
-          emotion: '冷静震撼，用数据撕开认知缺口',
-          structure: '震撼数据→模型解释→逻辑推导→行动建议',
-          ending: '一句话模型总结',
-          forbiddenWords: ['无数据断言', '模糊模型', '不给推导']
-        }
-      },
-      {
-        key: 'wushicaijing',
-        name: '巫师财经',
-        avatar: '📈',
-        description: '金融硬核分析，数据密集，"以我为准"的自信',
-        languageDNA: {
-          opener: '一个震撼的数据或金融事实，"以我为准"',
-          sentencePattern: '数据密集轰炸，硬核分析，专业术语+大白话混搭',
-          emotion: '自信霸气，"以我为准"式权威感，用数据碾压',
-          structure: '数据呈现→硬核拆解→金融逻辑→投资建议',
-          ending: '一个自信的结论判断',
-          forbiddenWords: ['模棱两可', '不给数据就下结论', '软绵绵的表达']
-        }
-      }
+      noImitationMaster,
+      customImitationMaster
     ]
   }
 };
-// 生成仿写内容
+
+// 生成仿写内容 - 更新版本，支持内容结构和自定义风格
 async function rewriteCaseContent(
   originalTitle: string,
   originalContent: string | null,
@@ -697,48 +721,91 @@ async function rewriteCaseContent(
   insuranceType: string | null,
   likesCount: number,
   style: string,
-  master: string
+  master: string,
+  structure?: string,
+  structureSub?: string,
+  customStyleDesc?: string
 ): Promise<{ title: string; content: string; tags: string[] }> {
   const deepseek = new OpenAI({
     apiKey: process.env.DEEPSEEK_API_KEY || '',
     baseURL: 'https://api.deepseek.com',
   });
+
   const styleInfo = styleConfig[style];
   const masterInfo = styleInfo?.masters?.find((m: Master) => m.key === master);
+
   if (!masterInfo) {
     throw new AppError('未找到指定的大佬模式', 400);
   }
-  const { languageDNA } = masterInfo;
 
-  // 处理空内容的情况
-  let contentHint = '';
-  if (!originalContent || originalContent.trim() === '') {
-    contentHint = '\n\n【重要提示】\n注意：原文无详细内容，请基于标题主题，结合保险行业知识进行深度创作，确保内容专业有价值。不要仅凭标题脑补，要补充实质性的保险知识、案例和数据。';
+  // 获取 languageDNA
+  let languageDNA = masterInfo.languageDNA;
+
+  // 如果是自定义模仿模式且有自定义描述，则用自定义描述构建 languageDNA
+  if (master === 'custom-imitation' && customStyleDesc) {
+    languageDNA = {
+      opener: `用"${customStyleDesc}"描述的风格开场`,
+      sentencePattern: `用"${customStyleDesc}"描述的风格调整句式`,
+      emotion: `用"${customStyleDesc}"描述的风格调整情绪`,
+      structure: `用"${customStyleDesc}"描述的风格调整结构`,
+      ending: `用"${customStyleDesc}"描述的风格收尾`,
+      forbiddenWords: ['偏离用户描述的风格']
+    };
+  }
+
+  // 获取内容结构提示
+  let structureHint = '';
+  if (structure) {
+    const structureInfo = contentStructures.find(s => s.value === structure);
+    if (structureInfo) {
+      structureHint = `\n\n## 内容结构要求：${structureInfo.label}\n${structureInfo.promptHint}`;
+      
+      // 如果有子选项，添加人群/类型提示
+      if (structureSub) {
+        const subInfo = structureInfo.subOptions.find(sub => sub.value === structureSub);
+        if (subInfo) {
+          structureHint += `\n具体方向：${subInfo.label}`;
+        }
+      }
+    }
   }
 
   const prompt = `你是一个深谙小红书流量密码的保险赛道内容创作者。
+
 ## 写作风格：大佬锚点 - ${masterInfo.name}
+${master === 'custom-imitation' && customStyleDesc ? `（自定义风格：${customStyleDesc}）` : ''}
 严格按照以下语言DNA写作：
+
 【开场方式】
 ${languageDNA.opener}
+
 【句式特征】
 ${languageDNA.sentencePattern}
+
 【情绪基调】
 ${languageDNA.emotion}
+
 【文章结构】
 ${languageDNA.structure}
+
 【收尾方式】
 ${languageDNA.ending}
+
 【禁用词/禁用表达】
 ${languageDNA.forbiddenWords.join('；')}
+${structureHint}
+
 ## 原爆款笔记信息
 - 标题：${originalTitle}
 - 作者：${author || '未知'}
 - 险种：${insuranceType || '保险'}
 - 点赞数：${likesCount}
-- 原文内容：${originalContent || '无详细内容，仅有标题'}${contentHint}
+- 原文内容：${originalContent || '无详细内容，仅有标题'}
+
 ## 写作任务
 请基于上述原爆款笔记的主题，用"${masterInfo.name}"风格重新创作一篇小红书保险笔记。
+${structure ? `内容类型：${contentStructures.find(s => s.value === structure)?.label || structure}` : ''}
+
 ## 严格要求
 1. 标题：≤20字，要有爆款感，像真人发的
 2. 正文：500-800字，符合小红书排版风格
@@ -748,6 +815,8 @@ ${languageDNA.forbiddenWords.join('；')}
 6. 保险相关内容要专业但易懂
 7. 不要直接抄袭原文，要原创改编
 8. 严格遵循上述语言DNA的每个维度
+9. ${structureHint ? '严格按照内容结构要求来组织文章' : '灵活组织文章结构'}
+
 ## 输出格式
 请直接输出纯JSON，不要用markdown代码块包裹，不要加\`\`\`json或\`\`\`：
 {
@@ -755,6 +824,7 @@ ${languageDNA.forbiddenWords.join('；')}
   "content": "正文内容（500-800字，含emoji和分段）",
   "tags": ["标签1", "标签2", "标签3", "标签4", "标签5"]
 }`;
+
   let response;
   try {
     response = await deepseek.chat.completions.create({
@@ -767,7 +837,9 @@ ${languageDNA.forbiddenWords.join('；')}
     console.error('DeepSeek API 调用失败:', error?.message || error);
     throw new AppError('AI 服务调用失败: ' + (error?.message || '未知错误'), 500);
   }
+
   const responseText = response.choices[0]?.message?.content || '';
+
   // 解析JSON响应
   let jsonStr = responseText.trim();
   // 去掉markdown代码块包裹
@@ -777,6 +849,7 @@ ${languageDNA.forbiddenWords.join('；')}
   while (jsonStr.endsWith('```')) {
     jsonStr = jsonStr.replace(/\n?```$/, '').trim();
   }
+
   try {
     const parsed = JSON.parse(jsonStr);
     return {
@@ -805,26 +878,37 @@ ${languageDNA.forbiddenWords.join('；')}
     throw new AppError('AI 返回格式错误', 500);
   }
 }
-// POST /:id/rewrite - 一键仿写
+
+// POST /:id/rewrite - 一键仿写（更新版本，支持内容结构和自定义风格）
 router.post('/:id/rewrite', async (req, res, next) => {
   try {
     const caseId = Number(req.params.id);
-    const { style, master } = RewriteRequestSchema.parse(req.body);
+    const { style, master, structure, structureSub, customStyleDesc } = RewriteRequestSchema.parse(req.body);
+
     if (!process.env.DEEPSEEK_API_KEY) {
       throw new AppError('AI 服务未配置，请联系管理员配置 DeepSeek API Key', 500);
     }
+
     // 验证 master 是否属于指定的 style
     const styleInfo = styleConfig[style];
     if (!styleInfo || !styleInfo.masters.find((m: Master) => m.key === master)) {
       throw new AppError('无效的大佬模式', 400);
     }
+
+    // 自定义风格必须有 customStyleDesc
+    if (master === 'custom-imitation' && !customStyleDesc) {
+      throw new AppError('自定义风格需要输入风格描述', 400);
+    }
+
     // 从数据库获取案例信息
     const viralCase = await prisma.viralCase.findUnique({
       where: { id: caseId }
     });
+
     if (!viralCase) {
       throw new AppError('案例不存在', 404);
     }
+
     // 生成仿写内容
     const result = await rewriteCaseContent(
       viralCase.title,
@@ -833,11 +917,16 @@ router.post('/:id/rewrite', async (req, res, next) => {
       viralCase.insuranceType,
       viralCase.likesCount,
       style,
-      master
+      master,
+      structure,
+      structureSub,
+      customStyleDesc
     );
+
     res.json(result);
   } catch (error) {
     next(error);
   }
 });
+
 export default router;
