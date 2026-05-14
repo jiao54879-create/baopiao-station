@@ -293,8 +293,8 @@ export default function Creation() {
       try {
         const payload: any = {
           style: rewriteStyle,
-          rewriteStyle: selectedStyle,
-          master: selectedMaster
+          rewriteStyle: selectedStyle || undefined,
+          master: selectedMaster || undefined
         }
         if (inputMode === 'url') {
           payload.url = url.trim()
@@ -592,8 +592,8 @@ export default function Creation() {
             <Card 
               title={
                 <span>
-                  <span className="mr-2">1️⃣</span>
-                  内容结构（可选）
+                  <span className="mr-2">{mode === 'create' ? '1️⃣' : '🔧'}</span>
+                  内容结构{mode === 'create' ? '' : '（仿写可不选，默认跟随原文）'}
                 </span>
               }
             >
@@ -653,8 +653,8 @@ export default function Creation() {
             <Card 
               title={
                 <span>
-                  <span className="mr-2">2️⃣</span>
-                  风格选择
+                  <span className="mr-2">{mode === 'create' ? '2️⃣' : '🎨'}</span>
+                  风格选择{mode === 'create' ? '' : '（可选，不选则跟随原文风格）'}
                 </span>
               }
             >
@@ -742,7 +742,7 @@ export default function Creation() {
             </Card>
 
             {/* 文章长度 */}
-            <Card title={<span><span className="mr-2">3️⃣</span>文章长度</span>}>
+            <Card title={<span><span className="mr-2">{mode === 'create' ? '3️⃣' : '📏'}</span>文章长度</span>}>
               <Row gutter={12}>
                 <Col span={8}>
                   <div
