@@ -3,10 +3,8 @@ import { Card, Row, Col, Tag, Select, Input, Spin, Empty, Button, Modal, List, T
 import { StarOutlined, SaveOutlined, ThunderboltOutlined, DownloadOutlined, WechatOutlined, CopyOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 import api from '../utils/api'
-
 const { Search } = Input
-
-// 风格配置 - 5种风格 x 3个大佬锚点
+// 风格配置 - 5种风格 x 6个大佬锚点 (部分有5个)
 const rewriteStyles = [
   {
     value: 'hearth',
@@ -16,7 +14,10 @@ const rewriteStyles = [
     masters: [
       { value: 'mimeng', name: '咪蒙模式', avatar: '🧡', desc: '自黑式开头，情绪饱满，一句话独立成段' },
       { value: 'houcuicui', name: '侯翠翠模式', avatar: '💚', desc: '闺蜜八卦式碎碎念，抱怨中带温暖' },
-      { value: 'leijun', name: '雷军模式', avatar: '💙', desc: '真诚大白话，偶尔自嘲，给朴素建议' }
+      { value: 'leijun', name: '雷军模式', avatar: '💙', desc: '真诚大白话，偶尔自嘲，给朴素建议' },
+      { value: 'yizhongtian', name: '易中天', avatar: '🏛️', desc: '评书式"妙说"，用"俗不可耐"的语言讲深刻道理，口语化+反差幽默+声情并茂' },
+      { value: 'luoxiang', name: '罗翔', avatar: '⚖️', desc: '法学教授讲故事，用极端案例讲道理，自嘲"法外狂徒张三"' },
+      { value: 'papijiang', name: 'papi酱', avatar: '🎬', desc: '短视频式吐槽，一人分饰多角，节奏快笑点密' }
     ]
   },
   {
@@ -27,7 +28,9 @@ const rewriteStyles = [
     masters: [
       { value: 'banfo', name: '半佛仙人模式', avatar: '🧣', desc: '颠覆性结论开头，一句话一段，快节奏' },
       { value: 'zhangxuefeng', name: '张雪峰模式', avatar: '🧢', desc: '极端判断抓注意，干货+段子，东北味' },
-      { value: 'kazike', name: '卡兹克模式', avatar: '🧤', desc: '真实体验切入，Slogan式干货，拒绝套话' }
+      { value: 'kazike', name: '卡兹克模式', avatar: '🧤', desc: '真实体验切入，Slogan式干货，拒绝套话' },
+      { value: 'xiaocai', name: '小蔡碎碎念', avatar: '📝', desc: '保险公众号大V，普通消费者立场，7000字深度长文逻辑拆解，先提问题再拆解决策逻辑' },
+      { value: 'liyongle', name: '李永乐老师', avatar: '📐', desc: '数学老师讲热点，用数学/逻辑推演，白板式讲解，把复杂问题变简单' }
     ]
   },
   {
@@ -38,7 +41,9 @@ const rewriteStyles = [
     masters: [
       { value: 'baguamangguo', name: '八卦芒果模式', avatar: '🥭', desc: '八卦式切入，先站队再反转，打脸共同敌人' },
       { value: 'mimeng-slap', name: '咪蒙打脸模式', avatar: '💜', desc: '一句话打脸→展开论证→金句锤死' },
-      { value: 'banfo-twist', name: '半佛反转模式', avatar: '🎪', desc: '颠覆结论→极端案例轰炸→拆解底层逻辑' }
+      { value: 'banfo-twist', name: '半佛反转模式', avatar: '🎪', desc: '颠覆结论→极端案例轰炸→拆解底层逻辑' },
+      { value: 'luxun', name: '鲁迅', avatar: '🖋️', desc: '匕首投枪式，冷峻讽刺，一句话见血，揭露真相' },
+      { value: 'chaijing', name: '柴静', avatar: '🎥', desc: '纪录片式叙事，用真实故事击穿认知，冷静但有力' }
     ]
   },
   {
@@ -49,7 +54,9 @@ const rewriteStyles = [
     masters: [
       { value: 'zhangxuefeng-anxiety', name: '张雪峰焦虑模式', avatar: '🔴', desc: '用具体数字制造紧迫感，"急"字当头给出路' },
       { value: 'baolocaomei', name: '暴躁草莓模式', avatar: '🍓', desc: '抱怨吐槽真实困境，把痛苦写成段子' },
-      { value: 'mimeng-resonate', name: '咪蒙共鸣模式', avatar: '💗', desc: '戳中隐秘痛点，排比+反问，先共情再给力量' }
+      { value: 'mimeng-resonate', name: '咪蒙共鸣模式', avatar: '💗', desc: '戳中隐秘痛点，排比+反问，先共情再给力量' },
+      { value: 'yuhua', name: '余华', avatar: '📖', desc: '写最苦的人生说最通透的话，把苦难写成段子' },
+      { value: 'liurun', name: '刘润', avatar: '💡', desc: '商业顾问式焦虑，用商业逻辑解释生活困境，给框架给出路' }
     ]
   },
   {
@@ -60,11 +67,12 @@ const rewriteStyles = [
     masters: [
       { value: 'kazike-data', name: '卡兹克数据模式', avatar: '📈', desc: '震惊数据开头，Slogan式结论，数据支撑' },
       { value: 'banfo-data', name: '半佛数据模式', avatar: '📉', desc: '一串数字砸脸，每个观点三个信源' },
-      { value: 'zhangxuefeng-data', name: '张雪峰数据模式', avatar: '💹', desc: '极端数据制造冲击，数据+金句配合' }
+      { value: 'zhangxuefeng-data', name: '张雪峰数据模式', avatar: '💹', desc: '极端数据制造冲击，数据+金句配合' },
+      { value: 'liurun-data', name: '刘润数据', avatar: '📊', desc: '用商业数据模型震撼认知，数据+逻辑双管齐下' },
+      { value: 'wushicaijing', name: '巫师财经', avatar: '📈', desc: '金融硬核分析，数据密集，"以我为准"的自信' }
     ]
   }
 ]
-
 const platformMap: Record<string, { label: string; color: string }> = {
   XHS: { label: '小红书', color: 'red' },
   WX: { label: '公众号', color: 'blue' },
@@ -72,7 +80,6 @@ const platformMap: Record<string, { label: string; color: string }> = {
   WEIBO: { label: '微博', color: 'orange' },
   ZHIHU: { label: '知乎', color: 'geekblue' }
 }
-
 const insuranceTypeMap: Record<string, string> = {
   medical: '医疗险',
   critical: '重疾险',
@@ -82,7 +89,6 @@ const insuranceTypeMap: Record<string, string> = {
   child: '少儿险',
   pension: '养老险'
 }
-
 // 推荐订阅的公众号列表（说明如何获取真实RSS）
 const recommendedAccounts = [
   { name: '深蓝保', bizId: 'gh_8b9c0d7a8f5c', description: '深蓝保官方公众号' },
@@ -92,7 +98,6 @@ const recommendedAccounts = [
   { name: '奶爸保', bizId: 'gh_4e8a0c5f6b1d', description: '奶爸保官方公众号' },
   { name: '小雨伞', bizId: 'gh_3d7f9a2c5e8b', description: '小雨伞官方公众号' },
 ]
-
 export default function Cases() {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -115,10 +120,8 @@ export default function Cases() {
   const [selectedMaster, setSelectedMaster] = useState<string>('')
   const [rewriting, setRewriting] = useState(false)
   const [rewriteResult, setRewriteResult] = useState<any>(null)
-
   // 当前选中风格的大佬列表
   const currentStyleMasters = rewriteStyles.find(s => s.value === selectedStyle)?.masters || []
-
   // 打开仿写弹窗
   const handleRewrite = (caseItem: any) => {
     setRewriteCase(caseItem)
@@ -127,7 +130,6 @@ export default function Cases() {
     setRewriteResult(null)
     setRewriteModalOpen(true)
   }
-
   // 风格选择变化时，自动选中第一个大佬
   const handleStyleChange = (styleValue: string) => {
     setSelectedStyle(styleValue)
@@ -138,7 +140,6 @@ export default function Cases() {
       setSelectedMaster('')
     }
   }
-
   // 执行仿写
   const executeRewrite = async () => {
     if (!selectedStyle || !selectedMaster) {
@@ -159,7 +160,6 @@ export default function Cases() {
       setRewriting(false)
     }
   }
-
   // 复制仿写结果
   const copyRewriteResult = async (type: 'title' | 'content' | 'all') => {
     if (!rewriteResult) return
@@ -184,7 +184,6 @@ export default function Cases() {
       message.success('已复制到剪贴板')
     }
   }
-
   const fetchData = async (page = 1) => {
     setLoading(true)
     try {
@@ -192,18 +191,15 @@ export default function Cases() {
       if (selectedPlatform) params.platform = selectedPlatform
       if (selectedInsuranceType) params.insuranceType = selectedInsuranceType
       if (keyword) params.keyword = keyword
-
       const { data: res } = await api.get('/cases', { params })
       setData(res.data)
     } finally {
       setLoading(false)
     }
   }
-
   useEffect(() => {
     fetchData()
   }, [selectedPlatform, selectedInsuranceType])
-
   const handleSave = async (caseId: number) => {
     try {
       await api.post(`/cases/${caseId}/save`)
@@ -212,7 +208,6 @@ export default function Cases() {
       message.error(error.response?.data?.error || '收藏失败')
     }
   }
-
   const analyzeCase = async (caseItem: any) => {
     setSelectedCase(caseItem)
     setAnalyzing(true)
@@ -233,7 +228,6 @@ export default function Cases() {
       setAnalyzing(false)
     }
   }
-
   // 采集爆款数据（真实小红书笔记，需要 Chrome 已登录 + autocli 扩展）
   const handleCollect = async () => {
     setCollecting(true)
@@ -279,7 +273,6 @@ export default function Cases() {
       setCollecting(false)
     }
   }
-
   // 订阅公众号
   const handleSubscribe = async () => {
     // 如果有 wechatId，直接用 wechatId 订阅
@@ -300,19 +293,18 @@ export default function Cases() {
       }
       return
     }
-    
+
     // 否则使用文章链接
     if (!subscribeUrl.trim()) {
       message.warning('请输入公众号文章链接或微信号')
       return
     }
-    
+
     // 验证是否是微信文章链接
     if (!subscribeUrl.includes('mp.weixin.qq.com')) {
       message.error('请输入正确的微信公众号文章链接')
       return
     }
-
     setSubscribing(true)
     try {
       await api.post('/subscribe/wechat', {
@@ -327,7 +319,6 @@ export default function Cases() {
       setSubscribing(false)
     }
   }
-
   // 快速订阅公众号
   const handleQuickSubscribe = async (bizId: string, name: string) => {
     setSubscribeWechatId(bizId)
@@ -345,7 +336,6 @@ export default function Cases() {
       setSubscribeWechatId('')
     }
   }
-
   // 导入本地采集的 JSON 文件
   const handleImportJSON: UploadProps['customRequest'] = async (options) => {
     const { file, onSuccess, onError } = options;
@@ -353,15 +343,12 @@ export default function Cases() {
     try {
       const formData = new FormData();
       formData.append('file', file as File);
-
       // 先读取文件内容
       const text = await (file as File).text();
       const cases = JSON.parse(text);
-
       if (!Array.isArray(cases) || cases.length === 0) {
         throw new Error('JSON 文件内容为空或格式错误');
       }
-
       const { data: res } = await api.post('/import/xhs-json', { cases });
       if (res.success) {
         message.success(res.message || `成功导入 ${cases.length} 条数据`);
@@ -378,16 +365,15 @@ export default function Cases() {
       setImporting(false);
     }
   };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-bold">🔥 爆款案例库</h2>
           <Tooltip title="采集小红书近15天点赞50+的保险获客类真实笔记（需Chrome已登录小红书+autocli扩展）">
-            <Button 
-              type="primary" 
-              icon={<DownloadOutlined />} 
+            <Button
+              type="primary"
+              icon={<DownloadOutlined />}
               loading={collecting}
               onClick={handleCollect}
               size="small"
@@ -396,8 +382,8 @@ export default function Cases() {
             </Button>
           </Tooltip>
           <Tooltip title="订阅公众号文章">
-            <Button 
-              icon={<WechatOutlined />} 
+            <Button
+              icon={<WechatOutlined />}
               onClick={() => setSubscribeModalOpen(true)}
               size="small"
             >
@@ -417,6 +403,7 @@ export default function Cases() {
             </Tooltip>
           </Upload>
         </div>
+
         <div className="flex gap-2 flex-wrap">
           <Select
             placeholder="选择平台"
@@ -460,6 +447,7 @@ export default function Cases() {
         <Row gutter={[16, 16]}>
           {data.map((item) => (
             <Col key={item.id} span={12}>
+
               <Card
                 hoverable
                 className="hover-lift"
@@ -505,7 +493,6 @@ export default function Cases() {
             </Col>
           ))}
         </Row>
-
         {data.length === 0 && !loading && (
           <Empty description="暂无爆款案例，点击「订阅公众号」开始采集" />
         )}
@@ -530,7 +517,6 @@ export default function Cases() {
               <h4 className="font-medium">原文标题</h4>
               <p>{selectedCase.title}</p>
             </div>
-
             {analyzing ? (
               <div className="text-center py-8">
                 <Spin tip="AI 正在分析中..." />
@@ -545,19 +531,16 @@ export default function Cases() {
                     ))}
                   </ul>
                 </div>
-
                 <div>
                   <h4 className="font-medium text-secondary">📝 内容结构</h4>
                   <p><strong>开头：</strong>{selectedCase.analysis.contentStructure?.opening}</p>
                   <p><strong>中间：</strong>{selectedCase.analysis.contentStructure?.middle}</p>
                   <p><strong>结尾：</strong>{selectedCase.analysis.contentStructure?.ending}</p>
                 </div>
-
                 <div>
                   <h4 className="font-medium text-blue-500">💡 可复用公式</h4>
                   <p className="bg-blue-50 p-3 rounded">{selectedCase.analysis.reusableFormula}</p>
                 </div>
-
                 <div>
                   <h4 className="font-medium text-green-500">✨ 模仿建议</h4>
                   <ul className="list-disc pl-5">
@@ -594,7 +577,6 @@ export default function Cases() {
             type="info"
             showIcon
           />
-
           <div className="space-y-2">
             {recommendedAccounts.map((account) => (
               <div key={account.bizId} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
@@ -616,7 +598,6 @@ export default function Cases() {
               </div>
             ))}
           </div>
-
           <div className="border-t pt-4">
             <h4 className="font-medium mb-2">自定义订阅</h4>
             <div className="space-y-2">
@@ -631,10 +612,10 @@ export default function Cases() {
                 value={subscribeWechatId}
                 onChange={(e) => setSubscribeWechatId(e.target.value)}
               />
-              <Button 
-                type="primary" 
-                block 
-                loading={subscribing} 
+              <Button
+                type="primary"
+                block
+                loading={subscribing}
                 onClick={handleSubscribe}
                 disabled={!subscribeUrl.includes('mp.weixin.qq.com') && !subscribeWechatId}
               >
@@ -647,7 +628,7 @@ export default function Cases() {
 
       {/* 一键仿写 Modal */}
       <Modal
-        title={<><EditOutlined /> 一键仿写爆款</>}
+        title={<>📝 一键仿写爆款</>}
         open={rewriteModalOpen}
         onCancel={() => { setRewriteModalOpen(false); setRewriteResult(null); }}
         footer={null}
@@ -735,7 +716,6 @@ export default function Cases() {
             {rewriteResult && (
               <div className="space-y-4 mt-4">
                 <Divider>✨ 仿写结果</Divider>
-
                 {/* 标题 */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
