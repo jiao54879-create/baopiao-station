@@ -193,6 +193,8 @@ export default function Creation() {
   const [images, setImages] = useState<string[]>([])
   const [imageLoading, setImageLoading] = useState(false)
   const [imageBgColor, setImageBgColor] = useState('#FFF5F5')
+  const [imageContent, setImageContent] = useState('')
+  const [markupLoading, setMarkupLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
 
@@ -232,13 +234,39 @@ export default function Creation() {
     // 不重置公共状态：selectedStyle, selectedMaster, customStyleDesc, selectedStructure, selectedStructureSub
   }
 
+  // 初始化图片内容
+  const initImageContent = () => {
+    if (result && !imageContent) {
+      setImageContent(result.content)
+    }
+  }
+
+  const handleAutoMarkup = async () => {
+    if (!result) return
+    setMarkupLoading(true)
+    try {
+      const { data } = await api.post('/images/auto-markup', {
+        title: result.title,
+        content: imageContent || result.content
+      })
+      if (data.success) {
+        setImageContent(data.content)
+        message.success('AI 标注完成！重点已自动高亮')
+      }
+    } catch (error: any) {
+      message.error('AI标注失败，请手动标注')
+    } finally {
+      setMarkupLoading(false)
+    }
+  }
+
   const handleGenerateImages = async () => {
     if (!result) return
     setImageLoading(true)
     try {
       const { data } = await api.post('/images/note', {
         title: result.title,
-        content: result.content,
+        content: imageContent || result.content,
         bgColor: imageBgColor,
         accentColor: '#FF4757',
         highlightColor: '#FFE66D'
@@ -960,43 +988,75 @@ export default function Creation() {
               {/* 生成配图 */}
               <Card 
                 title={<span><PictureOutlined style={{ color: '#ff4757' }} /> 一键生成配图</span>}
-                extra={
-                  <Space>
-                    <div className="flex gap-2 items-center">
-                      {['#FFF5F5','#FFF8F0','#F0F5FF','#F0FFF4','#F5F0FF','#FFFFF0'].map(c => (
-                        <div
-                          key={c}
-                          onClick={() => setImageBgColor(c)}
-                          className="cursor-pointer w-6 h-6 rounded-full border-2 transition-all"
-                          style={{
-                            background: c,
-                            borderColor: imageBgColor === c ? '#333' : '#ddd',
-                            transform: imageBgColor === c ? 'scale(1.2)' : 'scale(1)'
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <Button
-                      type="primary"
-                      icon={<PictureOutlined />}
-                      onClick={handleGenerateImages}
-                      loading={imageLoading}
-                    >
-                      {imageLoading ? '生成中...' : '生成配图'}
-                    </Button>
-                  </Space>
-                }
               >
+                {/* 标注语法说明 + 可编辑内容区 */}
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      编辑内容，标注重点后生成图片
+                    </Text>
+                    <Button 
+                      size="small" 
+                      type="dashed"
+                      icon={<ThunderboltOutlined />}
+                      onClick={handleAutoMarkup}
+                      loading={markupLoading}
+                    >
+                      AI自动标注
+                    </Button>
+                  </div>
+                  <div className="flex gap-2 mb-2 flex-wrap">
+                    <Tag color="gold">**重点** = 高亮涂抹</Tag>
+                    <Tag color="red">*警示* = 变色强调</Tag>
+                    <Tag color="blue">__术语__ = 下划线</Tag>
+                  </div>
+                  <TextArea
+                    value={imageContent || result?.content || ''}
+                    onChange={e => setImageContent(e.target.value)}
+                    rows={8}
+                    style={{ fontSize: 13, lineHeight: 1.8 }}
+                    placeholder="笔记内容会自动填入，你可以用标注语法标记重点..."
+                  />
+                </div>
+
+                {/* 颜色选择 + 生成按钮 */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex gap-2 items-center">
+                    <Text type="secondary" style={{ fontSize: 12 }}>背景色：</Text>
+                    {['#FFF5F5','#FFF8F0','#F0F5FF','#F0FFF4','#F5F0FF','#FFFFF0'].map(c => (
+                      <div
+                        key={c}
+                        onClick={() => setImageBgColor(c)}
+                        className="cursor-pointer w-6 h-6 rounded-full border-2 transition-all"
+                        style={{
+                          background: c,
+                          borderColor: imageBgColor === c ? '#333' : '#ddd',
+                          transform: imageBgColor === c ? 'scale(1.2)' : 'scale(1)'
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <Button
+                    type="primary"
+                    icon={<PictureOutlined />}
+                    onClick={handleGenerateImages}
+                    loading={imageLoading}
+                  >
+                    {imageLoading ? '生成中...' : '生成配图'}
+                  </Button>
+                </div>
+
+                {/* 图片预览 */}
                 {images.length === 0 && !imageLoading && (
-                  <div className="text-center py-8 text-gray-400">
-                    <PictureOutlined style={{ fontSize: 48 }} />
-                    <div className="mt-2">点击「生成配图」自动生成首图+内容图</div>
+                  <div className="text-center py-6 text-gray-400">
+                    <PictureOutlined style={{ fontSize: 40 }} />
+                    <div className="mt-2 text-sm">标注重点后点击「生成配图」</div>
                   </div>
                 )}
                 {imageLoading && (
-                  <div className="text-center py-8">
+                  <div className="text-center py-6">
                     <Spin size="large" />
-                    <div className="mt-2 text-gray-500">AI 正在生成配图...</div>
+                    <div className="mt-2 text-gray-500 text-sm">正在生成配图...</div>
                   </div>
                 )}
                 {images.length > 0 && (
