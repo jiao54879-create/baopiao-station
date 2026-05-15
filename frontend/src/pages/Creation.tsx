@@ -188,6 +188,7 @@ export default function Creation() {
   const [selectedStructureSub, setSelectedStructureSub] = useState<string>('')
   const [selectedStyle, setSelectedStyle] = useState<string>('')
   const [selectedMaster, setSelectedMaster] = useState<string>('')
+  const [articleLength, setArticleLength] = useState<'short' | 'medium' | 'long'>('medium')
 
   // 当前选中风格的大佬列表
   const currentStyleMasters = rewriteStyles.find(s => s.value === selectedStyle)?.masters || []
@@ -243,6 +244,7 @@ export default function Creation() {
         if (selectedStructureSub) requestData.structureSub = selectedStructureSub
         if (customStyleDesc.trim()) requestData.customStyleDesc = customStyleDesc.trim()
         if (reference.trim()) requestData.reference = reference.trim()
+        requestData.length = articleLength
 
         const { data } = await api.post('/creation', requestData)
         setResult(data)
@@ -291,6 +293,7 @@ export default function Creation() {
         }
         if (selectedStructure) payload.structure = selectedStructure
         if (customStyleDesc.trim()) payload.customStyleDesc = customStyleDesc.trim()
+        payload.length = articleLength
 
         const { data } = await api.post('/rewrite', payload)
         setResult(data)
