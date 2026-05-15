@@ -367,13 +367,16 @@ export async function generateTitles(keywords: string[], context?: string): Prom
 }
 
 const CaseAnalysisSchema = z.object({
+  viralScore: z.number().min(0).max(100),
   viralFactors: z.array(z.string()),
   contentStructure: z.object({
     opening: z.string(),
-    middle: z.string(),
+    body: z.string(),
     ending: z.string()
   }),
   topicAngle: z.string(),
+  hooks: z.array(z.string()),
+  styleFeatures: z.string(),
   reusableFormula: z.string(),
   suggestions: z.array(z.string())
 });
@@ -383,29 +386,52 @@ export async function analyzeViralCase(
   content: string,
   metrics: { likes: number; favorites: number; comments: number }
 ): Promise<z.infer<typeof CaseAnalysisSchema>> {
-  const prompt = `你是一个深谙小红书流量密码的保险赛道内容分析师。请分析以下爆款笔记的爆款原因。
+  const prompt = `你是一个深谙小红书流量密码的保险赛道内容分析师，拥有8年保险行业内容创作经验。请对以下爆款笔记进行深度结构化分析。
 
 标题：${title}
 内容：${content}
-点赞：${metrics.likes}
-收藏：${metrics.favorites}
-评论：${metrics.comments}
+互动数据：👍${metrics.likes} ⭐${metrics.favorites} 💬${metrics.comments}
 
-请从以下维度分析：
-1. 爆款因子（为什么能爆）
-2. 内容结构（开头、中间、结尾如何设计）
-3. 选题角度（切入角度是否独特）
-4. 可复用公式（能否提炼出模板）
-5. 改进建议
+## 分析要求
+
+### 1. 爆款指数（0-100分）
+综合互动数据、内容质量、选题热度评分。
+
+### 2. 爆款因子
+找出3-5个让这篇笔记爆火的核心因素，每个要具体。
+例如："标题用数字+反转制造好奇"、"开头3秒用身份背书建立信任"、"对比格式增强可读性"
+
+### 3. 内容结构拆解
+- opening：开头用了什么钩子？如何3秒抓人？
+- body：正文如何组织论点？分块方式？过渡如何衔接？
+- ending：结尾CTA是什么？如何引导互动？
+
+### 4. 选题角度
+切入角度是否独特？蹭了什么热点/情绪？痛点击中了哪里？
+
+### 5. 爆款钩子
+找出所有吸睛点：标题钩子、开头钩子、正文钩子（对比标记/emoji锚点/金句）、结尾钩子
+
+### 6. 语言风格
+口语化程度、emoji使用、段落节奏、情绪走向、专业度平衡
+
+### 7. 可复用公式
+可套用的内容模板/公式，要具体可执行
+
+### 8. 仿写建议
+3-5条具体建议：可以换什么角度、哪些结构可优化、如何差异化
 
 【重要】请直接输出纯JSON，不要用markdown代码块包裹：
 {
-  "viralFactors": ["因子1", "因子2"],
-  "contentStructure": {"opening": "开头", "middle": "中间", "ending": "结尾"},
+  "viralScore": 85,
+  "viralFactors": ["因子1", "因子2", "因子3"],
+  "contentStructure": {"opening": "开头分析", "body": "正文分析", "ending": "结尾分析"},
   "topicAngle": "选题角度分析",
+  "hooks": ["钩子1", "钩子2", "钩子3"],
+  "styleFeatures": "语言风格特点分析",
   "reusableFormula": "可复用公式",
-  "suggestions": ["建议1", "建议2"]
-}`;
+  "suggestions": ["建议1", "建议2", "建议3"]
+}\`;
 
   const response = await deepseek.chat.completions.create({
     model: 'deepseek-chat',
