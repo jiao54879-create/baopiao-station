@@ -664,6 +664,79 @@ export default function Cases() {
           </div>
         )}
       </Modal>
+
+      {/* AI分析弹窗 */}
+      <Modal
+        title="🔥 爆款分析"
+        open={!!selectedCase?.analysis}
+        onCancel={() => setSelectedCase(null)}
+        footer={[
+          <Button key="close" onClick={() => setSelectedCase(null)}>关闭</Button>,
+          <Button key="rewrite" type="primary" icon={<EditOutlined />} onClick={() => { handleRewrite(selectedCase); setSelectedCase(null) }}>
+            一键仿写
+          </Button>
+        ]}
+        width={700}
+      >
+        {selectedCase?.analysis && (
+          <div className="space-y-4">
+            <div>
+              <div className="text-lg font-bold mb-2">{selectedCase.title}</div>
+              <div className="flex gap-3 text-sm text-gray-500">
+                <span>👍 {selectedCase.likesCount}</span>
+                <span>⭐ {selectedCase.favoritesCount}</span>
+                <span>💬 {selectedCase.commentsCount}</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <div className="font-medium mb-2">📊 爆款指数分析</div>
+              <div className="text-sm text-gray-700 whitespace-pre-wrap">{selectedCase.analysis.viralScoreAnalysis || selectedCase.analysis.summary || ''}</div>
+            </div>
+
+            {selectedCase.analysis.structure && (
+              <div className="p-4 bg-green-50 rounded-lg">
+                <div className="font-medium mb-2">🏗️ 内容结构</div>
+                <div className="text-sm text-gray-700 whitespace-pre-wrap">{selectedCase.analysis.structure}</div>
+              </div>
+            )}
+
+            {selectedCase.analysis.hooks && (
+              <div className="p-4 bg-yellow-50 rounded-lg">
+                <div className="font-medium mb-2">🪝 爆款钩子</div>
+                <div className="text-sm text-gray-700 whitespace-pre-wrap">{Array.isArray(selectedCase.analysis.hooks) ? selectedCase.analysis.hooks.join('\n') : selectedCase.analysis.hooks}</div>
+              </div>
+            )}
+
+            {selectedCase.analysis.styleFeatures && (
+              <div className="p-4 bg-purple-50 rounded-lg">
+                <div className="font-medium mb-2">✍️ 风格特点</div>
+                <div className="text-sm text-gray-700 whitespace-pre-wrap">{selectedCase.analysis.styleFeatures}</div>
+              </div>
+            )}
+
+            {selectedCase.analysis.suggestions && (
+              <div className="p-4 bg-orange-50 rounded-lg">
+                <div className="font-medium mb-2">💡 仿写建议</div>
+                <div className="text-sm text-gray-700 whitespace-pre-wrap">{Array.isArray(selectedCase.analysis.suggestions) ? selectedCase.analysis.suggestions.join('\n') : selectedCase.analysis.suggestions}</div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* 分析加载中 */}
+      <Modal
+        title="🔥 爆款分析"
+        open={analyzing}
+        footer={null}
+        closable={false}
+      >
+        <div className="text-center py-8">
+          <Spin size="large" />
+          <div className="mt-4 text-gray-500">AI 正在深度分析中...</div>
+        </div>
+      </Modal>
     </div>
   )
 }
