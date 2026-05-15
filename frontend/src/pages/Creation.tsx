@@ -158,24 +158,30 @@ const rewriteStyles = [
 ]
 
 export default function Creation() {
-  const [topic, setTopic] = useState('')
-  const [reference, setReference] = useState('')
-  const [customStyleDesc, setCustomStyleDesc] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<any>(null)
-  
   // 创作模式：create=从零创作，rewrite=仿写改写
   const [mode, setMode] = useState<'create' | 'rewrite'>('create')
-  // 仿写输入
+  
+  // 从零创作模式状态
+  const [topic, setTopic] = useState('')
+  const [reference, setReference] = useState('')
+  
+  // 仿写输入状态
   const [inputMode, setInputMode] = useState<'url' | 'manual'>('url')
   const [url, setUrl] = useState('')
   const [manualContent, setManualContent] = useState('')
   const [manualTitle, setManualTitle] = useState('')
+  
   // 跨领域仿写
   const [crossDomainEnabled, setCrossDomainEnabled] = useState(false)
   const [targetTopic, setTargetTopic] = useState('')
+  
   // 仿写目标风格
   const [rewriteStyle, setRewriteStyle] = useState<'xhs' | 'wechat'>('xhs')
+  
+  // 公共状态
+  const [customStyleDesc, setCustomStyleDesc] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<any>(null)
 
   // 选项状态
   const [selectedStructure, setSelectedStructure] = useState<string>('')
@@ -199,6 +205,13 @@ export default function Creation() {
     } else {
       setSelectedMaster('')
     }
+  }
+
+  // 模式切换时重置状态
+  const handleModeChange = (newMode: 'create' | 'rewrite') => {
+    setMode(newMode)
+    setResult(null)
+    // 不重置公共状态：selectedStyle, selectedMaster, customStyleDesc, selectedStructure, selectedStructureSub
   }
 
   const handleCreate = async () => {
@@ -245,8 +258,8 @@ export default function Creation() {
         message.warning('请输入文章链接')
         return
       }
-      if (inputMode === 'manual' && !manualContent.trim()) {
-        message.warning('请粘贴文章内容')
+      if (inputMode === 'manual' && (!manualTitle.trim() || !manualContent.trim())) {
+        message.warning('请填写标题和内容')
         return
       }
       if (crossDomainEnabled && !targetTopic.trim()) {
@@ -310,6 +323,16 @@ export default function Creation() {
     copyText(full, '完整内容')
   }
 
+  // 判断按钮是否禁用
+  const isButtonDisabled = () => {
+    if (mode === 'create') {
+      return !topic.trim() || !selectedStyle || !selectedMaster
+    } else {
+      const hasInput = inputMode === 'url' ? !!url.trim() : (!!manualTitle.trim() && !!manualContent.trim())
+      return !hasInput || !selectedStyle || !selectedMaster
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto">
       {/* 页头 */}
@@ -318,55 +341,235 @@ export default function Creation() {
           ✨ 笔记创作
         </Title>
         <Paragraph type="secondary">
-          从零开始创作保险笔记，输入选题，选择风格，AI 自动生成完整的小红书爆款内容
+          从零开始创作保险笔记，或仿写其他爆款内容为保险领域
         </Paragraph>
       </div>
+
+      {/* 模式切换 */}
+      <Card className="mb-4" style={{ background: '#f8f9ff', borderColor: '#4f46e5' }}>
+        <Radio.Group 
+          value={mode} 
+          onChange={e => handleModeChange(e.target.value)}
+          optionType="button"
+          buttonStyle="solid"
+        >
+          <Radio.Button value="create">
+            <EditOutlined className="mr-1" />
+            从零创作
+          </Radio.Button>
+          <Radio.Button value="rewrite">
+            <SwapOutlined className="mr-1" />
+            仿写改写
+          </Radio.Button>
+        </Radio.Group>
+      </Card>
 
       <Row gutter={24}>
         {/* 左侧：输入区域 */}
         <Col xs={24} lg={12}>
           <Space direction="vertical" size={16} className="w-full">
-            {/* 选题输入 */}
-            <Card 
-              title={
-                <span>
-                  <EditOutlined className="mr-2" />
-                  选题/主题
-                </span>
-              }
-            >
-              <Input
-                placeholder="例如：宝宝保险怎么买、成人保险方案、父母保险攻略..."
-                value={topic}
-                onChange={e => setTopic(e.target.value)}
-                size="large"
-                showCount
-                maxLength={100}
-              />
-              <Text type="secondary" style={{ fontSize: 12 }} className="mt-2 block">
-                💡 输入你想写的保险话题，越具体越好
-              </Text>
-            </Card>
+            {/* 从零创作模式 - 选题输入 */}
+            {mode === 'create' && (
+              <>
+                <Card 
+                  title={
+                    <span>
+                      <EditOutlined className="mr-2" />
+                      选题/主题
+                    </span>
+                  }
+                >
+                  <Input
+                    placeholder="例如：宝宝保险怎么买、成人保险方案、父母保险攻略..."
+                    value={topic}
+                    onChange={e => setTopic(e.target.value)}
+                    size="large"
+                    showCount
+                    maxLength={100}
+                  />
+                  <Text type="secondary" style={{ fontSize: 12 }} className="mt-2 block">
+                    💡 输入你想写的保险话题，越具体越好
+                  </Text>
+                </Card>
 
-            {/* 参考内容（可选） */}
-            <Card 
-              title={
-                <span>
-                  <BulbOutlined className="mr-2" />
-                  参考素材（可选）
-                </span>
-              }
-              extra={<Tag>非必填</Tag>}
-            >
-              <TextArea
-                placeholder="粘贴你已有的素材、灵感、或者想要参考的内容片段..."
-                value={reference}
-                onChange={e => setReference(e.target.value)}
-                rows={4}
-                showCount
-                maxLength={2000}
-              />
-            </Card>
+                {/* 参考内容（可选） */}
+                <Card 
+                  title={
+                    <span>
+                      <BulbOutlined className="mr-2" />
+                      参考素材（可选）
+                    </span>
+                  }
+                  extra={<Tag>非必填</Tag>}
+                >
+                  <TextArea
+                    placeholder="粘贴你已有的素材、灵感、或者想要参考的内容片段..."
+                    value={reference}
+                    onChange={e => setReference(e.target.value)}
+                    rows={4}
+                    showCount
+                    maxLength={2000}
+                  />
+                </Card>
+              </>
+            )}
+
+            {/* 仿写改写模式 - 输入原文 */}
+            {mode === 'rewrite' && (
+              <Card 
+                title={
+                  <span>
+                    <SwapOutlined className="mr-2" />
+                    输入原文
+                  </span>
+                }
+              >
+                {/* 输入方式切换 */}
+                <Radio.Group 
+                  value={inputMode} 
+                  onChange={e => setInputMode(e.target.value)}
+                  className="mb-4"
+                >
+                  <Radio.Button value="url">
+                    <LinkOutlined className="mr-1" />
+                    粘贴链接
+                  </Radio.Button>
+                  <Radio.Button value="manual">
+                    <EditOutlined className="mr-1" />
+                    手动粘贴
+                  </Radio.Button>
+                </Radio.Group>
+
+                {/* URL模式 */}
+                {inputMode === 'url' && (
+                  <>
+                    <Input
+                      placeholder="请输入文章链接，如公众号、知乎、头条等文章链接..."
+                      value={url}
+                      onChange={e => setUrl(e.target.value)}
+                      size="large"
+                      prefix={<LinkOutlined style={{ color: '#999' }} />}
+                    />
+                    <Alert
+                      type="info"
+                      showIcon
+                      icon={<LinkOutlined />}
+                      message="支持公众号、知乎、头条等平台文章"
+                      description="小红书内容建议使用手动粘贴模式"
+                      className="mt-3"
+                      style={{ background: '#f6ffed', borderColor: '#b7eb8f' }}
+                    />
+                  </>
+                )}
+
+                {/* Manual模式 */}
+                {inputMode === 'manual' && (
+                  <Space direction="vertical" size={12} className="w-full">
+                    <Input
+                      placeholder="请输入文章标题..."
+                      value={manualTitle}
+                      onChange={e => setManualTitle(e.target.value)}
+                      prefix={<span style={{ color: '#999' }}>标题</span>}
+                    />
+                    <TextArea
+                      placeholder="请粘贴文章正文内容..."
+                      value={manualContent}
+                      onChange={e => setManualContent(e.target.value)}
+                      rows={8}
+                      showCount
+                      maxLength={5000}
+                    />
+                  </Space>
+                )}
+
+                <Divider style={{ margin: '20px 0 16px' }} />
+
+                {/* 跨领域仿写 */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <Text strong>跨领域仿写</Text>
+                      <Text type="secondary" style={{ fontSize: 12 }} className="ml-2">
+                        <SwapOutlined className="mr-1" />
+                        将其他领域爆款移植到保险
+                      </Text>
+                    </div>
+                    <Switch 
+                      checked={crossDomainEnabled} 
+                      onChange={setCrossDomainEnabled}
+                      checkedChildren="开"
+                      unCheckedChildren="关"
+                    />
+                  </div>
+                  
+                  {crossDomainEnabled ? (
+                    <Input
+                      placeholder="请输入目标保险选题方向，如：宝宝保险、成人重疾险..."
+                      value={targetTopic}
+                      onChange={e => setTargetTopic(e.target.value)}
+                      prefix={<SwapOutlined style={{ color: '#4f46e5' }} />}
+                    />
+                  ) : (
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      💡 开启后可将其他领域内容的爆款技巧应用到保险内容创作
+                    </Text>
+                  )}
+                </div>
+
+                <Divider style={{ margin: '16px 0' }} />
+
+                {/* 目标平台风格 */}
+                <div>
+                  <Text strong className="mb-3 block">目标平台风格</Text>
+                  <Row gutter={12}>
+                    <Col span={12}>
+                      <div
+                        onClick={() => setRewriteStyle('xhs')}
+                        className="cursor-pointer rounded-lg p-4 text-center transition-all border-2 relative"
+                        style={{
+                          borderColor: rewriteStyle === 'xhs' ? '#ff2442' : '#e5e7eb',
+                          background: rewriteStyle === 'xhs' ? '#fff5f6' : 'white'
+                        }}
+                      >
+                        {rewriteStyle === 'xhs' && (
+                          <div 
+                            className="absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs"
+                            style={{ background: '#ff2442' }}
+                          >
+                            ✓
+                          </div>
+                        )}
+                        <RedditOutlined style={{ fontSize: 24, color: '#ff2442' }} className="mb-2" />
+                        <div className="font-medium">小红书风格</div>
+                        <div className="text-xs text-gray-500">简短精炼，带标签</div>
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <div
+                        onClick={() => setRewriteStyle('wechat')}
+                        className="cursor-pointer rounded-lg p-4 text-center transition-all border-2 relative"
+                        style={{
+                          borderColor: rewriteStyle === 'wechat' ? '#52c41a' : '#e5e7eb',
+                          background: rewriteStyle === 'wechat' ? '#f6ffed' : 'white'
+                        }}
+                      >
+                        {rewriteStyle === 'wechat' && (
+                          <div 
+                            className="absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs"
+                            style={{ background: '#52c41a' }}
+                          >
+                            ✓
+                          </div>
+                        )}
+                        <WechatOutlined style={{ fontSize: 24, color: '#52c41a' }} className="mb-2" />
+                        <div className="font-medium">公众号风格</div>
+                        <div className="text-xs text-gray-500">深度长文，干货</div>
+                      </div>
+                    </Col>
+                  </Row>
+                </div>
+              </Card>
+            )}
 
             {/* 内容结构选择 */}
             <Card 
@@ -526,10 +729,10 @@ export default function Creation() {
               type="primary"
               size="large"
               block
-              icon={<ThunderboltOutlined />}
+              icon={mode === 'create' ? <ThunderboltOutlined /> : <SwapOutlined />}
               onClick={handleCreate}
               loading={loading}
-              disabled={mode === 'create' ? (!topic.trim() || !selectedStyle || !selectedMaster) : ((inputMode === 'url' ? !url.trim() : !manualContent.trim()) || !selectedStyle || !selectedMaster)}
+              disabled={isButtonDisabled()}
               style={{ height: 56, fontSize: 16 }}
             >
               {loading ? 'AI 创作中...' : mode === 'create' ? '开始创作' : '一键仿写'}
@@ -543,9 +746,15 @@ export default function Creation() {
             <Card className="h-full flex flex-col items-center justify-center" style={{ minHeight: 400 }}>
               <div className="text-center py-16 text-gray-400">
                 <EditOutlined style={{ fontSize: 48, marginBottom: 16 }} />
-                <div style={{ fontSize: 16 }}>输入选题，选择风格</div>
-                <div style={{ fontSize: 16 }}>点击「开始创作」</div>
-                <div style={{ fontSize: 13, marginTop: 8 }}>AI 将为你生成完整的小红书保险笔记</div>
+                <div style={{ fontSize: 16 }}>
+                  {mode === 'create' ? '输入选题，选择风格' : '输入原文，选择风格'}
+                </div>
+                <div style={{ fontSize: 16 }}>
+                  点击「{mode === 'create' ? '开始创作' : '一键仿写'}」
+                </div>
+                <div style={{ fontSize: 13, marginTop: 8 }}>
+                  AI 将为你{mode === 'create' ? '创作' : '仿写'}保险笔记
+                </div>
               </div>
             </Card>
           )}
@@ -554,7 +763,9 @@ export default function Creation() {
             <Card style={{ minHeight: 400 }} className="flex items-center justify-center">
               <div className="text-center py-16">
                 <Spin size="large" />
-                <div className="mt-4 text-gray-500">AI 正在创作中，通常需要 15-30 秒...</div>
+                <div className="mt-4 text-gray-500">
+                  AI 正在{mode === 'create' ? '创作' : '仿写'}中，通常需要 15-30 秒...
+                </div>
               </div>
             </Card>
           )}
@@ -562,7 +773,7 @@ export default function Creation() {
           {result && !loading && (
             <Space direction="vertical" size={16} className="w-full">
               <Card
-                title={<span><CheckCircleOutlined style={{ color: '#52c41a' }} /> 创作完成</span>}
+                title={<span><CheckCircleOutlined style={{ color: '#52c41a' }} /> {mode === 'create' ? '创作' : '仿写'}完成</span>}
                 extra={
                   <Button
                     size="small"
@@ -641,9 +852,11 @@ export default function Creation() {
                 <div className="flex gap-2">
                   <BulbOutlined style={{ color: '#4f46e5', marginTop: 2 }} />
                   <div>
-                    <Text strong style={{ fontSize: 12, color: '#4f46e5' }}>创作说明</Text>
+                    <Text strong style={{ fontSize: 12, color: '#4f46e5' }}>
+                      {mode === 'create' ? '创作' : '仿写'}说明
+                    </Text>
                     <div className="text-sm text-gray-600 mt-1">
-                      以上内容由 AI 基于「{rewriteStyles.find(s => s.value === selectedStyle)?.label}」×「{currentStyleMasters.find(m => m.value === selectedMaster)?.name}」风格创作
+                      以上内容由 AI 基于「{rewriteStyles.find(s => s.value === selectedStyle)?.label}」×「{currentStyleMasters.find(m => m.value === selectedMaster)?.name}」风格{mode === 'create' ? '创作' : '仿写'}
                     </div>
                     {result.usageTip && (
                       <div className="text-sm text-gray-500 mt-1">
@@ -656,7 +869,7 @@ export default function Creation() {
 
               {/* 重新创作 */}
               <Button block onClick={() => setResult(null)}>
-                重新创作
+                重新{mode === 'create' ? '创作' : '仿写'}
               </Button>
             </Space>
           )}
