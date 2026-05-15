@@ -18,6 +18,7 @@ import TitleOptimizer from './pages/TitleOptimizer'
 import Products from './pages/Products'
 import Materials from './pages/Materials'
 import Creation from './pages/Creation'
+import ImageGen from './pages/ImageGen'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore()
@@ -56,6 +57,7 @@ function App() {
         <Route path="templates" element={<Templates />} />
         <Route path="products" element={<Products />} />
         <Route path="creation" element={<Creation />} />
+        <Route path="image-gen" element={<ImageGen />} />
       </Route>
 
       {/* 需登录的路由 - 个性化功能 */}
