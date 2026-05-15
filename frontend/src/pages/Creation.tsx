@@ -9,7 +9,6 @@ import {
   RedditOutlined, WechatOutlined
 } from '@ant-design/icons'
 import api from '../utils/api'
-import html2canvas from 'html2canvas'
 
 const { TextArea } = Input
 const { Title, Paragraph, Text } = Typography
@@ -264,14 +263,68 @@ export default function Creation() {
   const imageRef = useRef<HTMLDivElement>(null)
 
   // 解析标记语法
-  const parseMarkupHtml = (text: string): string => {
-    // **高亮** → 黄色背景
-    text = text.replace(/\*\*(.+?)\*\*/g, '<span style="background:#FFE66D;padding:2px 6px;border-radius:4px;font-weight:600">$1</span>')
-    // *换色* → 红色
-    text = text.replace(/\*(.+?)\*/g, '<span style="color:#FF4757;font-weight:700">$1</span>')
-    // __下划线__ → 下划线
-    text = text.replace(/__(.+?)__/g, '<span style="text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:4px">$1</span>')
-    return text
+  // Canvas绘制文字辅助：自动换行
+  const wrapText = (ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number): number => {
+    let currentY = y
+    // 按标记分段处理
+    const segments: {text: string; style: string}[] = []
+    let remaining = text
+    // 解析 **高亮** *换色* __下划线__
+    while (remaining.length > 0) {
+      const boldMatch = remaining.match(/^\*\*(.+?)\*\*/)
+      const colorMatch = remaining.match(/^\*(.+?)\*/)
+      const underMatch = remaining.match(/^__(.+?)__/)
+      if (boldMatch) {
+        segments.push({text: boldMatch[1], style: 'highlight'})
+        remaining = remaining.slice(boldMatch[0].length)
+      } else if (colorMatch) {
+        segments.push({text: colorMatch[1], style: 'color'})
+        remaining = remaining.slice(colorMatch[0].length)
+      } else if (underMatch) {
+        segments.push({text: underMatch[1], style: 'underline'})
+        remaining = remaining.slice(underMatch[0].length)
+      } else {
+        const nextSpecial = remaining.search(/(\*\*|\*|__)/)
+        if (nextSpecial === -1) {
+          segments.push({text: remaining, style: 'normal'})
+          remaining = ''
+        } else {
+          segments.push({text: remaining.slice(0, nextSpecial), style: 'normal'})
+          remaining = remaining.slice(nextSpecial)
+        }
+      }
+    }
+    // 逐段绘制
+    let currentX = x
+    for (const seg of segments) {
+      ctx.save()
+      if (seg.style === 'highlight') {
+        const w = ctx.measureText(seg.text).width + 12
+        ctx.fillStyle = '#FFE66D'
+        ctx.fillRect(currentX - 4, currentY - lineHeight + 6, w, lineHeight)
+        ctx.fillStyle = '#333'
+        ctx.font = 'bold 38px -apple-system, PingFang SC, Microsoft YaHei, sans-serif'
+      } else if (seg.style === 'color') {
+        ctx.fillStyle = '#FF4757'
+        ctx.font = 'bold 38px -apple-system, PingFang SC, Microsoft YaHei, sans-serif'
+      } else if (seg.style === 'underline') {
+        ctx.fillStyle = '#333'
+        const w = ctx.measureText(seg.text).width
+        ctx.fillRect(currentX, currentY + 4, w, 3)
+      } else {
+        ctx.fillStyle = '#333'
+        ctx.font = '38px -apple-system, PingFang SC, Microsoft YaHei, sans-serif'
+      }
+      ctx.fillText(seg.text, currentX, currentY)
+      currentX += ctx.measureText(seg.text).width
+      ctx.restore()
+    }
+    return currentY + lineHeight
+  }
+
+  // 去除标记语法的纯文本
+  const stripMarkup = (text: string): string => {
+    return text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/__(.+?)__/g, '$1')
   }
 
   const handleGenerateImages = async () => {
@@ -279,45 +332,113 @@ export default function Creation() {
     setImageLoading(true)
     try {
       const generatedImages: string[] = []
-      const titleHtml = parseMarkupHtml(result.title)
       const noteContent = imageContent || result.content
       const lines = noteContent.split('\n').filter(l => l.trim())
+      const W = 1080, H = 1440
 
-      // 生成首图
-      const coverDiv = document.createElement('div')
-      coverDiv.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:540px;height:720px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif;'
-      coverDiv.style.background = imageBgColor
-      coverDiv.innerHTML = '<div style="position:absolute;top:30px;left:30px;width:60px;height:4px;background:#FF4757;border-radius:2px"></div>' +
-        '<div style="font-size:38px;font-weight:800;color:#333;line-height:1.5;text-align:center;word-break:break-word;max-width:460px">' + titleHtml + '</div>' +
-        '<div style="position:absolute;bottom:30px;font-size:14px;color:#999;letter-spacing:2px">保险干货 | 关注不迷路</div>' +
-        '<div style="position:absolute;bottom:30px;right:30px;width:60px;height:4px;background:#FF4757;border-radius:2px"></div>'
-      document.body.appendChild(coverDiv)
-      const coverCanvas = await html2canvas(coverDiv, { scale: 2, useCORS: true, backgroundColor: imageBgColor })
+      // === 生成首图 ===
+      const coverCanvas = document.createElement('canvas')
+      coverCanvas.width = W
+      coverCanvas.height = H
+      const cCtx = coverCanvas.getContext('2d')!
+      // 背景
+      cCtx.fillStyle = imageBgColor
+      cCtx.fillRect(0, 0, W, H)
+      // 装饰线
+      cCtx.fillStyle = '#FF4757'
+      cCtx.fillRect(60, 60, 120, 8)
+      cCtx.fillRect(W - 180, H - 68, 120, 8)
+      // 标题居中
+      cCtx.textAlign = 'center'
+      cCtx.textBaseline = 'middle'
+      const cleanTitle = stripMarkup(result.title)
+      cCtx.font = 'bold 72px -apple-system, PingFang SC, Microsoft YaHei, sans-serif'
+      cCtx.fillStyle = '#333'
+      // 简单换行
+      const titleLines: string[] = []
+      let line = ''
+      for (const char of cleanTitle) {
+        const testLine = line + char
+        if (cCtx.measureText(testLine).width > 800) {
+          titleLines.push(line)
+          line = char
+        } else {
+          line = testLine
+        }
+      }
+      titleLines.push(line)
+      const titleStartY = H / 2 - (titleLines.length * 100) / 2
+      titleLines.forEach((l, i) => {
+        cCtx.fillText(l, W / 2, titleStartY + i * 100)
+      })
+      // 水印
+      cCtx.font = '28px -apple-system, PingFang SC, Microsoft YaHei, sans-serif'
+      cCtx.fillStyle = '#999'
+      cCtx.fillText('保险干货 | 关注不迷路', W / 2, H - 70)
       generatedImages.push(coverCanvas.toDataURL('image/png'))
-      document.body.removeChild(coverDiv)
 
-      // 拆分内容生成内容图，每7行一张
-      const LINES_PER_PAGE = 7
+      // === 生成内容图 ===
+      const LINES_PER_PAGE = 8
       const pages: string[][] = []
       for (let i = 0; i < lines.length; i += LINES_PER_PAGE) {
         pages.push(lines.slice(i, i + LINES_PER_PAGE))
       }
 
       for (const pageLines of pages) {
-        const contentDiv = document.createElement('div')
-        contentDiv.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:540px;height:720px;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif;'
-        contentDiv.style.background = imageBgColor
-        const linesHtml = pageLines.map(line => {
-          const parsed = parseMarkupHtml(line)
-          return '<div style="font-size:18px;line-height:2;color:#333;margin-bottom:10px;padding:12px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">' + parsed + '</div>'
-        }).join('')
-        contentDiv.innerHTML = '<div style="background:#FF4757;padding:24px 30px;text-align:center"><div style="font-size:26px;font-weight:700;color:white;letter-spacing:2px">' + parseMarkupHtml(result.title) + '</div></div>' +
-          '<div style="flex:1;padding:24px 20px;overflow:hidden">' + linesHtml + '</div>' +
-          '<div style="text-align:center;padding:12px;font-size:12px;color:#999;letter-spacing:2px">保险干货 | 关注不迷路</div>'
-        document.body.appendChild(contentDiv)
-        const contentCanvas = await html2canvas(contentDiv, { scale: 2, useCORS: true, backgroundColor: imageBgColor })
+        const contentCanvas = document.createElement('canvas')
+        contentCanvas.width = W
+        contentCanvas.height = H
+        const ctx = contentCanvas.getContext('2d')!
+        // 背景
+        ctx.fillStyle = imageBgColor
+        ctx.fillRect(0, 0, W, H)
+        // 顶部标题栏
+        ctx.fillStyle = '#FF4757'
+        ctx.fillRect(0, 0, W, 120)
+        ctx.font = 'bold 44px -apple-system, PingFang SC, Microsoft YaHei, sans-serif'
+        ctx.fillStyle = 'white'
+        ctx.textAlign = 'center'
+        ctx.fillText(stripMarkup(result.title), W / 2, 78)
+        // 内容行
+        ctx.textAlign = 'left'
+        let currentY = 180
+        for (const pageLine of pageLines) {
+          // 白色卡片背景
+          ctx.fillStyle = 'white'
+          const cardH = 70
+          const radius = 16
+          const cardY = currentY - 40
+          // 圆角矩形
+          ctx.beginPath()
+          ctx.moveTo(60 + radius, cardY)
+          ctx.lineTo(W - 60 - radius, cardY)
+          ctx.quadraticCurveTo(W - 60, cardY, W - 60, cardY + radius)
+          ctx.lineTo(W - 60, cardY + cardH - radius)
+          ctx.quadraticCurveTo(W - 60, cardY + cardH, W - 60 - radius, cardY + cardH)
+          ctx.lineTo(60 + radius, cardY + cardH)
+          ctx.quadraticCurveTo(60, cardY + cardH, 60, cardY + cardH - radius)
+          ctx.lineTo(60, cardY + radius)
+          ctx.quadraticCurveTo(60, cardY, 60 + radius, cardY)
+          ctx.fill()
+          // 文字
+          ctx.font = '32px -apple-system, PingFang SC, Microsoft YaHei, sans-serif'
+          const cleanLine = stripMarkup(pageLine)
+          ctx.fillStyle = '#333'
+          // 截断超长文字
+          let displayText = cleanLine
+          while (ctx.measureText(displayText).width > W - 160 && displayText.length > 0) {
+            displayText = displayText.slice(0, -1)
+          }
+          if (displayText.length < cleanLine.length) displayText += '...'
+          ctx.fillText(displayText, 80, currentY)
+          currentY += 85 + 20
+        }
+        // 水印
+        ctx.font = '24px -apple-system, PingFang SC, Microsoft YaHei, sans-serif'
+        ctx.fillStyle = '#999'
+        ctx.textAlign = 'center'
+        ctx.fillText('保险干货 | 关注不迷路', W / 2, H - 40)
         generatedImages.push(contentCanvas.toDataURL('image/png'))
-        document.body.removeChild(contentDiv)
       }
 
       setImages(generatedImages)
@@ -330,7 +451,7 @@ export default function Creation() {
     }
   }
 
-  const handleCreate = async () => {
+    const handleCreate = async () => {
     if (mode === 'create') {
       // 从零创作模式
       if (!topic.trim()) {
