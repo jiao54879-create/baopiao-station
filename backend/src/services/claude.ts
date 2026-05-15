@@ -431,7 +431,7 @@ export async function analyzeViralCase(
   "styleFeatures": "语言风格特点分析",
   "reusableFormula": "可复用公式",
   "suggestions": ["建议1", "建议2", "建议3"]
-}\`;
+}`;
 
   const response = await deepseek.chat.completions.create({
     model: 'deepseek-chat',
