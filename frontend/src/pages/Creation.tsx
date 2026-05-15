@@ -332,8 +332,8 @@ export default function Creation() {
     setImageLoading(true)
     try {
       const generatedImages: string[] = []
-      const noteContent = imageContent || result.content
-      const lines = noteContent.split('\n').filter((l: string) => l.trim())
+      const noteContent: string = (imageContent || result.content || '') as string
+      const lines = noteContent.split('\n').filter((line: string) => line.trim())
       const W = 1080, H = 1440
 
       // === 生成首图 ===
