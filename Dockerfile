@@ -11,7 +11,7 @@ WORKDIR /app/frontend
 RUN npm ci
 
 COPY frontend/ .
-# Force rebuild marker - 2026-05-15-v7
+# Force rebuild marker - 2026-05-15-v8
 # 设置 API 地址为空（后端 serve 前端时使用同源）
 ENV VITE_API_URL=""
 RUN npm run build
