@@ -154,6 +154,16 @@ const rewriteStyles = [
       { value: 'no-imitation', name: '不模仿，自由发挥', avatar: '🎨', desc: 'AI根据内容自然发挥' },
       { value: 'custom-imitation', name: '自定义风格', avatar: '✏️', desc: '输入你的风格描述' }
     ]
+  },
+  {
+    value: 'custom',
+    label: '自定义风格',
+    desc: '自由定义你的写作风格',
+    icon: '✏️',
+    color: '#14b8a6',
+    masters: [
+      { value: 'no-imitation', name: '自由发挥', avatar: '🎨', desc: 'AI根据你的描述自然发挥' },
+    ]
   }
 ]
 
@@ -185,7 +195,7 @@ export default function Creation() {
 
   // 选项状态
   const [selectedStructure, setSelectedStructure] = useState<string>('')
-  const [selectedStructureSub, setSelectedStructureSub] = useState<string>('')
+  const [selectedStructureSub, setSelectedStructureSub] = useState<string[]>([])
   const [selectedStyle, setSelectedStyle] = useState<string>('')
   const [selectedMaster, setSelectedMaster] = useState<string>('')
   const [articleLength, setArticleLength] = useState<'short' | 'medium' | 'long'>('medium')
@@ -205,6 +215,10 @@ export default function Creation() {
       setSelectedMaster(style.masters[0].value)
     } else {
       setSelectedMaster('')
+    }
+    // 自定义风格时，强制需要描述
+    if (styleValue === 'custom') {
+      setSelectedMaster('no-imitation')
     }
   }
 
@@ -241,7 +255,7 @@ export default function Creation() {
           master: selectedMaster
         }
         if (selectedStructure) requestData.structure = selectedStructure
-        if (selectedStructureSub) requestData.structureSub = selectedStructureSub
+        if (selectedStructureSub.length > 0) requestData.structureSub = selectedStructureSub.join(',')
         if (customStyleDesc.trim()) requestData.customStyleDesc = customStyleDesc.trim()
         if (reference.trim()) requestData.reference = reference.trim()
         requestData.length = articleLength
@@ -589,7 +603,7 @@ export default function Creation() {
                     <div
                       onClick={() => {
                         setSelectedStructure(selectedStructure === struct.value ? '' : struct.value)
-                        setSelectedStructureSub('')
+                        setSelectedStructureSub([])
                       }}
                       className="cursor-pointer rounded-lg p-3 transition-all border-2"
                       style={{
@@ -619,11 +633,11 @@ export default function Creation() {
                     {currentStructureSubOptions.map(sub => (
                       <div
                         key={sub.value}
-                        onClick={() => setSelectedStructureSub(selectedStructureSub === sub.value ? '' : sub.value)}
+                        onClick={() => setSelectedStructureSub(selectedStructureSub.includes(sub.value) ? selectedStructureSub.filter(v => v !== sub.value) : [...selectedStructureSub, sub.value])}
                         className="cursor-pointer px-3 py-1.5 rounded-full text-sm transition-all border"
                         style={{
-                          borderColor: selectedStructureSub === sub.value ? contentStructures.find(s => s.value === selectedStructure)?.color : '#e5e7eb',
-                          background: selectedStructureSub === sub.value ? `${contentStructures.find(s => s.value === selectedStructure)?.color}15` : 'white'
+                          borderColor: selectedStructureSub.includes(sub.value) ? contentStructures.find(s => s.value === selectedStructure)?.color : '#e5e7eb',
+                          background: selectedStructureSub.includes(sub.value) ? `${contentStructures.find(s => s.value === selectedStructure)?.color}15` : 'white'
                         }}
                       >
                         <span className="mr-1">{sub.icon}</span>
@@ -710,7 +724,7 @@ export default function Creation() {
               )}
 
               {/* 自定义风格输入 */}
-              {selectedMaster === 'custom-imitation' && (
+              {(selectedMaster === 'custom-imitation' || selectedStyle === 'custom') && (
                 <div className="mt-4">
                   <Text type="secondary" style={{ fontSize: 12 }} className="mb-2 block">
                     自定义风格描述：
