@@ -689,36 +689,86 @@ export default function Cases() {
               </div>
             </div>
 
+            {/* 爆款指数 */}
             <div className="p-4 bg-blue-50 rounded-lg">
-              <div className="font-medium mb-2">📊 爆款指数分析</div>
-              <div className="text-sm text-gray-700 whitespace-pre-wrap">{selectedCase.analysis.viralScoreAnalysis || selectedCase.analysis.summary || ''}</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-medium">📊 爆款指数</div>
+                <div className="text-2xl font-bold" style={{ color: (selectedCase.analysis.viralScore || 0) >= 80 ? '#ef4444' : (selectedCase.analysis.viralScore || 0) >= 60 ? '#f59e0b' : '#6b7280' }}>
+                  {selectedCase.analysis.viralScore || '?'}/100
+                </div>
+              </div>
+              {selectedCase.analysis.viralFactors && selectedCase.analysis.viralFactors.length > 0 && (
+                <div className="mt-2">
+                  {selectedCase.analysis.viralFactors.map((f: string, i: number) => (
+                    <Tag key={i} color="blue" className="mb-1">{f}</Tag>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {selectedCase.analysis.structure && (
+            {/* 内容结构 */}
+            {selectedCase.analysis.contentStructure && (
               <div className="p-4 bg-green-50 rounded-lg">
-                <div className="font-medium mb-2">🏗️ 内容结构</div>
-                <div className="text-sm text-gray-700 whitespace-pre-wrap">{selectedCase.analysis.structure}</div>
+                <div className="font-medium mb-2">🏗️ 内容结构拆解</div>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <div><span className="font-medium text-green-700">开头：</span>{selectedCase.analysis.contentStructure.opening}</div>
+                  <div><span className="font-medium text-green-700">正文：</span>{selectedCase.analysis.contentStructure.body}</div>
+                  <div><span className="font-medium text-green-700">结尾：</span>{selectedCase.analysis.contentStructure.ending}</div>
+                </div>
               </div>
             )}
 
-            {selectedCase.analysis.hooks && (
+            {/* 选题角度 */}
+            {selectedCase.analysis.topicAngle && (
+              <div className="p-4 bg-indigo-50 rounded-lg">
+                <div className="font-medium mb-2">🎯 选题角度</div>
+                <div className="text-sm text-gray-700">{selectedCase.analysis.topicAngle}</div>
+              </div>
+            )}
+
+            {/* 爆款钩子 */}
+            {selectedCase.analysis.hooks && selectedCase.analysis.hooks.length > 0 && (
               <div className="p-4 bg-yellow-50 rounded-lg">
                 <div className="font-medium mb-2">🪝 爆款钩子</div>
-                <div className="text-sm text-gray-700 whitespace-pre-wrap">{Array.isArray(selectedCase.analysis.hooks) ? selectedCase.analysis.hooks.join('\n') : selectedCase.analysis.hooks}</div>
+                <div className="space-y-1">
+                  {selectedCase.analysis.hooks.map((h: string, i: number) => (
+                    <div key={i} className="text-sm text-gray-700 flex items-start gap-2">
+                      <span className="text-yellow-500 mt-0.5">•</span>
+                      <span>{h}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
+            {/* 语言风格 */}
             {selectedCase.analysis.styleFeatures && (
               <div className="p-4 bg-purple-50 rounded-lg">
-                <div className="font-medium mb-2">✍️ 风格特点</div>
-                <div className="text-sm text-gray-700 whitespace-pre-wrap">{selectedCase.analysis.styleFeatures}</div>
+                <div className="font-medium mb-2">✍️ 语言风格</div>
+                <div className="text-sm text-gray-700">{selectedCase.analysis.styleFeatures}</div>
               </div>
             )}
 
-            {selectedCase.analysis.suggestions && (
+            {/* 可复用公式 */}
+            {selectedCase.analysis.reusableFormula && (
+              <div className="p-4 bg-cyan-50 rounded-lg">
+                <div className="font-medium mb-2">📋 可复用公式</div>
+                <div className="text-sm text-gray-700 whitespace-pre-wrap">{selectedCase.analysis.reusableFormula}</div>
+              </div>
+            )}
+
+            {/* 仿写建议 */}
+            {selectedCase.analysis.suggestions && selectedCase.analysis.suggestions.length > 0 && (
               <div className="p-4 bg-orange-50 rounded-lg">
                 <div className="font-medium mb-2">💡 仿写建议</div>
-                <div className="text-sm text-gray-700 whitespace-pre-wrap">{Array.isArray(selectedCase.analysis.suggestions) ? selectedCase.analysis.suggestions.join('\n') : selectedCase.analysis.suggestions}</div>
+                <div className="space-y-1">
+                  {selectedCase.analysis.suggestions.map((s: string, i: number) => (
+                    <div key={i} className="text-sm text-gray-700 flex items-start gap-2">
+                      <span className="text-orange-500 mt-0.5">•</span>
+                      <span>{s}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
