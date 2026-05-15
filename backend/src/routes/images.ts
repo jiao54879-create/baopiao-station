@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { chromium } from 'playwright';
+import puppeteer from 'puppeteer';
 
 const router = Router();
 
@@ -191,17 +191,17 @@ router.post('/cover', async (req, res) => {
     }
     
     console.log('生成首图，标题:', title.substring(0, 50));
-    browser = await chromium.launch({
+    browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu']
     });
     
     const page = await browser.newPage();
-    await page.setViewportSize({ width: 1080, height: 1440 });
+    await page.setViewport({ width: 1080, height: 1440 });
     
     const html = generateCoverHtml(title, bgColor, accentColor, highlightColor);
-    await page.setContent(html, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(500);
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await new Promise(r => setTimeout(r, 500));
     
     const screenshot = await page.screenshot({ type: 'png' });
     const base64 = `data:image/png;base64,${screenshot.toString('base64')}`;
@@ -238,17 +238,17 @@ router.post('/content', async (req, res) => {
     }
     
     console.log('生成内容图，标题:', title, '行数:', lines.length);
-    browser = await chromium.launch({
+    browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu']
     });
     
     const page = await browser.newPage();
-    await page.setViewportSize({ width: 1080, height: 1440 });
+    await page.setViewport({ width: 1080, height: 1440 });
     
     const html = generateContentHtml(title, lines, bgColor, accentColor, highlightColor);
-    await page.setContent(html, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(500);
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await new Promise(r => setTimeout(r, 500));
     
     const screenshot = await page.screenshot({ type: 'png' });
     const base64 = `data:image/png;base64,${screenshot.toString('base64')}`;
@@ -381,20 +381,20 @@ router.post('/note', async (req, res) => {
     }
     
     console.log('生成笔记配图，标题:', title.substring(0, 50));
-    browser = await chromium.launch({
+    browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu']
     });
     
     const page = await browser.newPage();
-    await page.setViewportSize({ width: 1080, height: 1440 });
+    await page.setViewport({ width: 1080, height: 1440 });
     
     const images: string[] = [];
     
     // 1. 生成首图
     const coverHtml = generateCoverHtml(title, bgColor, accentColor, highlightColor);
     await page.setContent(coverHtml, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(500);
+    await new Promise(r => setTimeout(r, 500));
     const coverScreenshot = await page.screenshot({ type: 'png' });
     images.push(`data:image/png;base64,${coverScreenshot.toString('base64')}`);
     
@@ -411,8 +411,8 @@ router.post('/note', async (req, res) => {
     // 3. 生成每张内容图
     for (const pageLines of pages) {
       const html = generateContentHtml(title, pageLines, bgColor, accentColor, highlightColor);
-      await page.setContent(html, { waitUntil: 'networkidle' });
-      await page.waitForTimeout(300);
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+      await new Promise(r => setTimeout(r, 300));
       const screenshot = await page.screenshot({ type: 'png' });
       images.push(`data:image/png;base64,${screenshot.toString('base64')}`);
     }

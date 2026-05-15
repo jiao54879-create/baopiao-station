@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     libcups2 libdrm2 libxkbcommon0 libxcomposite1 \
     libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 \
     libcairo2 libasound2 libxshmfence1 \
+    fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -26,8 +27,8 @@ RUN npm run build
 WORKDIR /app
 COPY backend/package*.json ./backend/
 WORKDIR /app/backend
+ENV PUPPETEER_SKIP_DOWNLOAD=false
 RUN npm cache clean --force && npm install
-RUN npx playwright install chromium
 
 COPY backend/ .
 
