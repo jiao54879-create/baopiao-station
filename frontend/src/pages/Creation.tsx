@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
   Card, Input, Button, Tag, Divider, Radio, Spin,
-  message, Spin, Row, Col, Typography, Space, Alert, Switch
+  message, Row, Col, Typography, Space, Alert, Switch
 } from 'antd'
 import {
   EditOutlined, CopyOutlined, ThunderboltOutlined,
@@ -9,6 +9,7 @@ import {
   RedditOutlined, WechatOutlined
 } from '@ant-design/icons'
 import api from '../utils/api'
+import html2canvas from 'html2canvas'
 
 const { TextArea } = Input
 const { Title, Paragraph, Text } = Typography
@@ -260,23 +261,70 @@ export default function Creation() {
     }
   }
 
+  const imageRef = useRef<HTMLDivElement>(null)
+
+  // 解析标记语法
+  const parseMarkupHtml = (text: string): string => {
+    // **高亮** → 黄色背景
+    text = text.replace(/\*\*(.+?)\*\*/g, '<span style="background:#FFE66D;padding:2px 6px;border-radius:4px;font-weight:600">$1</span>')
+    // *换色* → 红色
+    text = text.replace(/\*(.+?)\*/g, '<span style="color:#FF4757;font-weight:700">$1</span>')
+    // __下划线__ → 下划线
+    text = text.replace(/__(.+?)__/g, '<span style="text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:4px">$1</span>')
+    return text
+  }
+
   const handleGenerateImages = async () => {
     if (!result) return
     setImageLoading(true)
     try {
-      const { data } = await api.post('/images/note', {
-        title: result.title,
-        content: imageContent || result.content,
-        bgColor: imageBgColor,
-        accentColor: '#FF4757',
-        highlightColor: '#FFE66D'
-      })
-      if (data.success) {
-        setImages(data.images)
-        message.success('生成 ' + data.count + ' 张配图')
+      const generatedImages: string[] = []
+      const titleHtml = parseMarkupHtml(result.title)
+      const noteContent = imageContent || result.content
+      const lines = noteContent.split('\n').filter(l => l.trim())
+
+      // 生成首图
+      const coverDiv = document.createElement('div')
+      coverDiv.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:540px;height:720px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif;'
+      coverDiv.style.background = imageBgColor
+      coverDiv.innerHTML = '<div style="position:absolute;top:30px;left:30px;width:60px;height:4px;background:#FF4757;border-radius:2px"></div>' +
+        '<div style="font-size:38px;font-weight:800;color:#333;line-height:1.5;text-align:center;word-break:break-word;max-width:460px">' + titleHtml + '</div>' +
+        '<div style="position:absolute;bottom:30px;font-size:14px;color:#999;letter-spacing:2px">保险干货 | 关注不迷路</div>' +
+        '<div style="position:absolute;bottom:30px;right:30px;width:60px;height:4px;background:#FF4757;border-radius:2px"></div>'
+      document.body.appendChild(coverDiv)
+      const coverCanvas = await html2canvas(coverDiv, { scale: 2, useCORS: true, backgroundColor: imageBgColor })
+      generatedImages.push(coverCanvas.toDataURL('image/png'))
+      document.body.removeChild(coverDiv)
+
+      // 拆分内容生成内容图，每7行一张
+      const LINES_PER_PAGE = 7
+      const pages: string[][] = []
+      for (let i = 0; i < lines.length; i += LINES_PER_PAGE) {
+        pages.push(lines.slice(i, i + LINES_PER_PAGE))
       }
+
+      for (const pageLines of pages) {
+        const contentDiv = document.createElement('div')
+        contentDiv.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:540px;height:720px;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Microsoft YaHei,sans-serif;'
+        contentDiv.style.background = imageBgColor
+        const linesHtml = pageLines.map(line => {
+          const parsed = parseMarkupHtml(line)
+          return '<div style="font-size:18px;line-height:2;color:#333;margin-bottom:10px;padding:12px 16px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.04)">' + parsed + '</div>'
+        }).join('')
+        contentDiv.innerHTML = '<div style="background:#FF4757;padding:24px 30px;text-align:center"><div style="font-size:26px;font-weight:700;color:white;letter-spacing:2px">' + parseMarkupHtml(result.title) + '</div></div>' +
+          '<div style="flex:1;padding:24px 20px;overflow:hidden">' + linesHtml + '</div>' +
+          '<div style="text-align:center;padding:12px;font-size:12px;color:#999;letter-spacing:2px">保险干货 | 关注不迷路</div>'
+        document.body.appendChild(contentDiv)
+        const contentCanvas = await html2canvas(contentDiv, { scale: 2, useCORS: true, backgroundColor: imageBgColor })
+        generatedImages.push(contentCanvas.toDataURL('image/png'))
+        document.body.removeChild(contentDiv)
+      }
+
+      setImages(generatedImages)
+      message.success('生成 ' + generatedImages.length + ' 张配图')
     } catch (error: any) {
-      message.error(error.response?.data?.error || '配图生成失败')
+      console.error('配图生成失败:', error)
+      message.error('配图生成失败: ' + (error.message || '未知错误'))
     } finally {
       setImageLoading(false)
     }
