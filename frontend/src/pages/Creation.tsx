@@ -333,7 +333,7 @@ export default function Creation() {
     try {
       const generatedImages: string[] = []
       const noteContent = imageContent || result.content
-      const lines = noteContent.split('\n').filter(l => l.trim())
+      const lines = noteContent.split('\n').filter((l: string) => l.trim())
       const W = 1080, H = 1440
 
       // === 生成首图 ===
