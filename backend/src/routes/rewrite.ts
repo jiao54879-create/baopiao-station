@@ -2,8 +2,44 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import * as cheerio from 'cheerio';
-import { rewriteContent } from '../services/claude.js';
+import OpenAI from 'openai';
 import { AppError } from '../middleware/errorHandler.js';
+
+// 合规规则（与creation.ts保持一致）
+const complianceRules = `
+## 🚨 小红书保险笔记合规红线（2026最新）
+### 绝对禁用词
+- 保本保息/零风险/无风险 → 长期储蓄/稳健增值/现金价值增长
+- 银行存款/定期存款/理财 → 年金险/增额终身寿/教育金/养老金
+- 避税/避债/资产隔离/遗产税 → 财富规划/资产配置/家庭财务安全
+- 抗癌/防癌/治病/报销医药费 → 覆盖医疗费用/减轻经济负担/大病保障
+- 保证理赔/100%理赔/理赔最快 → 理赔流程透明/支持协赔/理赔案例分享
+- 终身保证续保/无条件续保 → 保证续保20年/续保条件友好
+- 秒杀/疯抢/限时停售/最后3天 → 产品即将调整/建议尽早规划/核保政策收紧
+- 国家推荐/政府补贴/社保替代 → 社保补充/个人保障/家庭风险转移
+
+### 高风险词
+- 最好的/性价比最高/全网第一/销量第一/TOP1 → 我整理的几款/人气很高/口碑不错
+- 最便宜/最划算 → 百元级保障/学生党友好/高性价比之选
+- 有病治病/无病养老 → 保障+储蓄双重功能/身故返还保费
+- 专家推荐/央视推荐 → 很多博主都在推/我自己也买了
+- 什么都保/全险/万能险 → 保障全面/覆盖多种风险
+
+### 中风险词
+- 最适合/必买/一定要买 → 建议配置/适合XX人群/我认为值得买
+- 免费/白嫖/零元购 → 免费咨询/免费测算
+- 躺着赚钱/被动收入/财务自由 → 被动现金流/养老补充
+- 确诊即赔/立刻赔钱 → 符合条件即可赔付/理赔流程简单
+- 收益最高/回报率最高 → 收益稳定/复利增长/长期收益可观
+
+### 绝对不能做
+❌ 留联系方式（微信/电话/二维码/私信领资料）
+❌ 贬低其他保险公司
+❌ 承诺具体收益数字
+❌ 谐音/拼音/符号规避（系统精准识别）
+❌ 绝对化用语：最佳/最优/最好/最高/顶级/极致/完美/100%/万能/永久/独家/天花板
+❌ 医疗用语：治疗/治愈/根治/特效
+`;
 
 const router = Router();
 
@@ -121,14 +157,104 @@ router.post('/', async (req, res, next) => {
       throw new AppError('请提供文章链接或直接粘贴文章内容', 400);
     }
 
-    // 调用 AI 仿写（支持跨领域仿写）
-    const result = await rewriteContent(title, content, style, url, targetTopic);
+    // AI 仿写
+    const deepseek = new OpenAI({
+      apiKey: process.env.DEEPSEEK_API_KEY || '',
+      baseURL: 'https://api.deepseek.com',
+    });
+
+    const isXhs = style === 'xhs';
+    const crossDomainHint = targetTopic ? `
+## 跨领域仿写
+原文不是保险领域内容，请将原文的爆款结构、钩子、情绪技巧移植到保险赛道。
+目标保险选题：${targetTopic}
+` : '';
+
+    const rewritePrompt = `你是一个深谙小红书流量密码的保险赛道内容创作者。
+
+## 任务：仿写改写
+请基于以下原文，创作一篇全新的${isXhs ? '小红书风格' : '公众号风格'}保险笔记。
+保留原文的爆款结构和核心观点，但内容必须完全重写。
+
+## 原文
+标题：${title}
+内容：${content}
+${crossDomainHint}
+${complianceRules}
+
+## ${isXhs ? '小红书' : '公众号'}风格要求
+${isXhs ? `- emoji点缀增加可读性
+- 一句话一段，口语化
+- ⭕/✅对比格式
+- 互动引导结尾` : `- 专业深度，逻辑清晰
+- 段落完整，论述充分
+- 数据支撑观点
+- 权威感+亲和力平衡`}
+
+## 严格要求
+1. 标题≤20字，爆款感，像真人发的
+2. 正文1000-1500字
+3. 3-5个热门标签
+4. 严格遵循合规红线，绝不使用禁用词
+5. 保留原文爆款结构和钩子，但内容100%重写
+6. 结尾互动引导+CTA
+7. 不能留联系方式、不能贬低其他公司、不能承诺收益
+
+## 输出格式
+请直接输出纯JSON，不要用markdown代码块：
+{
+  "style": "${style}",
+  "targetTopic": ${targetTopic ? `"${targetTopic}"` : 'null'},
+  "originalAnalysis": {
+    "topic": "原文选题",
+    "coreIdea": "核心观点",
+    "structure": "内容结构",
+    "styleFeatures": "风格特点",
+    "hooks": ["钩子1", "钩子2"]
+  },
+  "rewrittenContent": {
+    "title": "新标题",
+    "content": "新正文",
+    "hashtags": ["标签1", "标签2", "标签3"],
+    "callToAction": "互动引导语"
+  },
+  "writingNotes": "仿写说明"
+}`;
+
+    const response = await deepseek.chat.completions.create({
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: rewritePrompt }],
+      temperature: 0.8,
+      max_tokens: 4096,
+    });
+
+    const responseText = response.choices[0]?.message?.content || '';
+    let jsonStr = responseText.trim();
+    while (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').trim();
+    }
+    while (jsonStr.endsWith('```')) {
+      jsonStr = jsonStr.replace(/\n?```$/, '').trim();
+    }
+
+    let result;
+    try {
+      result = JSON.parse(jsonStr);
+    } catch {
+      const braceStart = jsonStr.indexOf('{');
+      const braceEnd = jsonStr.lastIndexOf('}');
+      if (braceStart !== -1 && braceEnd !== -1) {
+        result = JSON.parse(jsonStr.substring(braceStart, braceEnd + 1));
+      } else {
+        throw new AppError('AI 返回格式错误', 500);
+      }
+    }
 
     res.json({
       success: true,
       sourceUrl: url || null,
       originalTitle: title,
-      targetTopic: targetTopic || null,  // 返回目标选题（如果有）
+      targetTopic: targetTopic || null,
       result,
       generatedAt: new Date().toISOString()
     });
