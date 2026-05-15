@@ -410,7 +410,16 @@ export default function Cases() {
               >
                 <Card.Meta
                   title={
-                    <div className="text-sm font-medium line-clamp-2">
+                    <div style={{ 
+                      fontSize: 14, 
+                      fontWeight: 500, 
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      whiteSpace: 'normal',
+                      lineHeight: 1.4
+                    }}>
                       {item.title}
                     </div>
                   }
