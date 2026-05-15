@@ -1,7 +1,7 @@
 {
   "name": "baopiang-intelligence-station",
   "version": "1.0.0",
-  "description": "爆款情报站 - 保险内容创作者一站式平台",
+  "description": "\u7206\u6b3e\u60c5\u62a5\u7ad9 - \u4fdd\u9669\u5185\u5bb9\u521b\u4f5c\u8005\u4e00\u7ad9\u5f0f\u5e73\u53f0",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
@@ -38,7 +38,7 @@
     "openai": "^4.28.0",
     "redis": "^4.6.10",
     "zod": "^3.22.4",
-    "playwright": "^1.40.0"
+    "playwright": "^1.52.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -53,7 +53,6 @@
     "@types/pg": "^8.20.0",
     "@types/pdf-parse": "^1.1.4",
     "pg": "^8.20.0",
-    "playwright": "^1.59.1",
     "prisma": "^5.7.0",
     "tsx": "^4.6.2",
     "typescript": "^5.3.2"

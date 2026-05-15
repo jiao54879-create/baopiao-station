@@ -1,7 +1,13 @@
 FROM node:20-slim
 
 # 安装 OpenSSL (Prisma 需要)
-RUN apt-get update && apt-get install -y openssl libssl-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    openssl libssl-dev \
+    libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 \
+    libcups2 libdrm2 libxkbcommon0 libxcomposite1 \
+    libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 \
+    libcairo2 libasound2 libxshmfence1 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -21,6 +27,7 @@ WORKDIR /app
 COPY backend/package*.json ./backend/
 WORKDIR /app/backend
 RUN npm cache clean --force && npm install
+RUN npx playwright install chromium
 
 COPY backend/ .
 
