@@ -16,7 +16,8 @@ import {
   ThunderboltOutlined,
   ShoppingOutlined,
   UploadOutlined,
-  FileTextOutlined
+  FileTextOutlined,
+  PictureOutlined
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import { useAuthStore } from '../store/auth'
@@ -31,6 +32,7 @@ const menuItems = [
   { key: '/cases', icon: <BookOutlined />, label: '爆款案例' },
   { key: '/generator', icon: <EditOutlined />, label: '标题生成' },
   { key: '/creation', icon: <FileTextOutlined />, label: '笔记创作 ✨' },
+  { key: '/image-gen', icon: <PictureOutlined />, label: '配图生成 🖼️' },
   { key: '/title-optimizer', icon: <ThunderboltOutlined />, label: '标题优化 ✨' },
   { key: '/templates', icon: <BarChartOutlined />, label: '模板库' },
   { key: '/saved', icon: <StarOutlined />, label: '我的收藏' },
