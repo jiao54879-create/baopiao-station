@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import {
-  Card, Input, Button, Tag, Divider, Radio,
+  Card, Input, Button, Tag, Divider, Radio, Spin,
   message, Spin, Row, Col, Typography, Space, Alert, Switch
 } from 'antd'
 import {
   EditOutlined, CopyOutlined, ThunderboltOutlined,
-  CheckCircleOutlined, BulbOutlined, LinkOutlined, SwapOutlined,
+  CheckCircleOutlined, BulbOutlined, LinkOutlined, SwapOutlined, PictureOutlined,
   RedditOutlined, WechatOutlined
 } from '@ant-design/icons'
 import api from '../utils/api'
@@ -190,6 +190,9 @@ export default function Creation() {
   
   // 公共状态
   const [customStyleDesc, setCustomStyleDesc] = useState('')
+  const [images, setImages] = useState<string[]>([])
+  const [imageLoading, setImageLoading] = useState(false)
+  const [imageBgColor, setImageBgColor] = useState('#FFF5F5')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
 
@@ -227,6 +230,28 @@ export default function Creation() {
     setMode(newMode)
     setResult(null)
     // 不重置公共状态：selectedStyle, selectedMaster, customStyleDesc, selectedStructure, selectedStructureSub
+  }
+
+  const handleGenerateImages = async () => {
+    if (!result) return
+    setImageLoading(true)
+    try {
+      const { data } = await api.post('/images/note', {
+        title: result.title,
+        content: result.content,
+        bgColor: imageBgColor,
+        accentColor: '#FF4757',
+        highlightColor: '#FFE66D'
+      })
+      if (data.success) {
+        setImages(data.images)
+        message.success('生成 ' + data.count + ' 张配图')
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.error || '配图生成失败')
+    } finally {
+      setImageLoading(false)
+    }
   }
 
   const handleCreate = async () => {
@@ -932,8 +957,75 @@ export default function Creation() {
                 </div>
               </Card>
 
+              {/* 生成配图 */}
+              <Card 
+                title={<span><PictureOutlined style={{ color: '#ff4757' }} /> 一键生成配图</span>}
+                extra={
+                  <Space>
+                    <div className="flex gap-2 items-center">
+                      {['#FFF5F5','#FFF8F0','#F0F5FF','#F0FFF4','#F5F0FF','#FFFFF0'].map(c => (
+                        <div
+                          key={c}
+                          onClick={() => setImageBgColor(c)}
+                          className="cursor-pointer w-6 h-6 rounded-full border-2 transition-all"
+                          style={{
+                            background: c,
+                            borderColor: imageBgColor === c ? '#333' : '#ddd',
+                            transform: imageBgColor === c ? 'scale(1.2)' : 'scale(1)'
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <Button
+                      type="primary"
+                      icon={<PictureOutlined />}
+                      onClick={handleGenerateImages}
+                      loading={imageLoading}
+                    >
+                      {imageLoading ? '生成中...' : '生成配图'}
+                    </Button>
+                  </Space>
+                }
+              >
+                {images.length === 0 && !imageLoading && (
+                  <div className="text-center py-8 text-gray-400">
+                    <PictureOutlined style={{ fontSize: 48 }} />
+                    <div className="mt-2">点击「生成配图」自动生成首图+内容图</div>
+                  </div>
+                )}
+                {imageLoading && (
+                  <div className="text-center py-8">
+                    <Spin size="large" />
+                    <div className="mt-2 text-gray-500">AI 正在生成配图...</div>
+                  </div>
+                )}
+                {images.length > 0 && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {images.map((img, index) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={img} 
+                          alt={index === 0 ? '首图' : '内容图' + index}
+                          className="w-full rounded-lg border"
+                        />
+                        <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                          {index === 0 ? '首图' : '内容图' + index}
+                        </div>
+                        <a
+                          href={img}
+                          download={index === 0 ? '首图.png' : '内容图' + index + '.png'}
+                          className="absolute top-2 right-2 bg-white/80 text-gray-700 px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          下载
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
               {/* 重新创作 */}
-              <Button block onClick={() => setResult(null)}>
+              <Button block onClick={() => { setResult(null); setImages([]) }}>
                 重新{mode === 'create' ? '创作' : '仿写'}
               </Button>
             </Space>

@@ -301,4 +301,78 @@ router.get('/presets', (req, res) => {
   });
 });
 
+
+// POST /api/images/note - 一键生成笔记全部配图（首图+内容图）
+router.post('/note', async (req, res) => {
+  let browser;
+  try {
+    const { 
+      title, 
+      content: noteContent, 
+      bgColor = '#FFF5F5', 
+      accentColor = '#FF4757', 
+      highlightColor = '#FFE66D' 
+    } = req.body;
+    
+    if (!title || !noteContent) {
+      return res.status(400).json({ error: '标题和内容不能为空' });
+    }
+    
+    console.log('生成笔记配图，标题:', title.substring(0, 50));
+    browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    
+    const page = await browser.newPage();
+    await page.setViewportSize({ width: 1080, height: 1440 });
+    
+    const images: string[] = [];
+    
+    // 1. 生成首图
+    const coverHtml = generateCoverHtml(title, bgColor, accentColor, highlightColor);
+    await page.setContent(coverHtml, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);
+    const coverScreenshot = await page.screenshot({ type: 'png' });
+    images.push(`data:image/png;base64,${coverScreenshot.toString('base64')}`);
+    
+    // 2. 自动拆分内容生成内容图
+    // 按段落拆分，每5-7行一张图
+    const allLines = noteContent.split('\n').filter((line: string) => line.trim());
+    const LINES_PER_PAGE = 7;
+    const pages: string[][] = [];
+    
+    for (let i = 0; i < allLines.length; i += LINES_PER_PAGE) {
+      pages.push(allLines.slice(i, i + LINES_PER_PAGE));
+    }
+    
+    // 3. 生成每张内容图
+    for (const pageLines of pages) {
+      const html = generateContentHtml(title, pageLines, bgColor, accentColor, highlightColor);
+      await page.setContent(html, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(300);
+      const screenshot = await page.screenshot({ type: 'png' });
+      images.push(`data:image/png;base64,${screenshot.toString('base64')}`);
+    }
+    
+    await browser.close();
+    
+    res.json({
+      success: true,
+      count: images.length,
+      coverCount: 1,
+      contentCount: pages.length,
+      images: images
+    });
+    
+  } catch (error) {
+    console.error('生成笔记配图失败:', error);
+    if (browser) await browser.close();
+    res.status(500).json({ 
+      error: '生成失败',
+      message: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
 export default router;
