@@ -233,7 +233,8 @@ const CreationSchema = z.object({
   style: z.enum(['hearth', 'practical', 'twist', 'anxiety', 'data']),
   master: z.string(),
   customStyleDesc: z.string().optional(),
-  reference: z.string().optional()
+  reference: z.string().optional(),
+  length: z.enum(['short', 'medium', 'long']).optional().default('medium')
 });
 
 // 创作笔记内容
@@ -244,7 +245,8 @@ async function createNoteContent(
   structure?: string,
   structureSub?: string,
   customStyleDesc?: string,
-  reference?: string
+  reference?: string,
+  length?: string
 ): Promise<{ title: string; content: string; tags: string[]; callToAction?: string; usageTip?: string }> {
   const deepseek = new OpenAI({
     apiKey: process.env.DEEPSEEK_API_KEY || '',
@@ -356,7 +358,7 @@ ${viralTemplate}
 
 ## 严格要求
 1. 标题：≤20字，要有爆款感，像真人发的
-2. 正文：500-800字，符合小红书排版风格
+2. 正文长度：${length === 'short' ? '100字以内，极简精炼，只留最核心的观点' : length === 'long' ? '1500-2200字，深度详尽，多角度展开' : '1000-1500字，内容充实但不冗长'}
 3. 标签：生成3-5个小红书热门标签（格式：#标签名）
 4. 全文要用emoji增加可读性
 5. 正文要分段，每段不要太长，一句话一段为佳
@@ -365,12 +367,13 @@ ${viralTemplate}
 8. 严格遵循上述语言DNA的每个维度
 9. ${structureHint ? '严格按照内容结构要求来组织文章' : '灵活组织文章结构'}
 10. 结尾要有互动引导（问问题/评论区见）+ CTA（有问题找我/可以问我）
+11. 【关键】严格保留用户选题中的所有关键信息，包括年份、人数、金额等数字，绝对不能擅自更改（如用户写9年就不能写成8年）
 
 ## 输出格式
 请直接输出纯JSON，不要用markdown代码块包裹，不要加\`\`\`json或\`\`\`：
 {
   "title": "新标题（≤20字）",
-  "content": "正文内容（500-800字，含emoji和分段）",
+  "content": "正文内容（${length === 'short' ? '100字以内' : length === 'long' ? '1500-2200字' : '1000-1500字'}，含emoji和分段）",
   "tags": ["标签1", "标签2", "标签3", "标签4", "标签5"],
   "callToAction": "互动引导语（引导评论+表明可咨询）",
   "usageTip": "创作亮点说明"
@@ -437,7 +440,7 @@ ${viralTemplate}
 // POST /api/creation - 创建笔记
 router.post('/', async (req, res, next) => {
   try {
-    const { topic, structure, structureSub, style, master, customStyleDesc, reference } = CreationSchema.parse(req.body);
+    const { topic, structure, structureSub, style, master, customStyleDesc, reference, length } = CreationSchema.parse(req.body);
 
     if (!process.env.DEEPSEEK_API_KEY) {
       throw new AppError('AI 服务未配置，请联系管理员配置 DeepSeek API Key', 500);
@@ -451,7 +454,8 @@ router.post('/', async (req, res, next) => {
       structure,
       structureSub,
       customStyleDesc,
-      reference
+      reference,
+      length
     );
 
     res.json(result);
