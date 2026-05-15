@@ -741,6 +741,54 @@ export default function Creation() {
               )}
             </Card>
 
+            {/* 文章长度 */}
+            <Card title={<span><span className="mr-2">3️⃣</span>文章长度</span>}>
+              <Row gutter={12}>
+                <Col span={8}>
+                  <div
+                    onClick={() => setArticleLength('short')}
+                    className="cursor-pointer rounded-lg p-3 text-center transition-all border-2"
+                    style={{
+                      borderColor: articleLength === 'short' ? '#f59e0b' : '#e5e7eb',
+                      background: articleLength === 'short' ? '#fffbeb' : 'white'
+                    }}
+                  >
+                    <div className="text-xl mb-1">⚡</div>
+                    <div className="font-medium text-sm">短文</div>
+                    <div className="text-xs text-gray-500 mt-1">1000字以内</div>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div
+                    onClick={() => setArticleLength('medium')}
+                    className="cursor-pointer rounded-lg p-3 text-center transition-all border-2"
+                    style={{
+                      borderColor: articleLength === 'medium' ? '#3b82f6' : '#e5e7eb',
+                      background: articleLength === 'medium' ? '#eff6ff' : 'white'
+                    }}
+                  >
+                    <div className="text-xl mb-1">📝</div>
+                    <div className="font-medium text-sm">中长文</div>
+                    <div className="text-xs text-gray-500 mt-1">1000-1500字</div>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div
+                    onClick={() => setArticleLength('long')}
+                    className="cursor-pointer rounded-lg p-3 text-center transition-all border-2"
+                    style={{
+                      borderColor: articleLength === 'long' ? '#8b5cf6' : '#e5e7eb',
+                      background: articleLength === 'long' ? '#f5f3ff' : 'white'
+                    }}
+                  >
+                    <div className="text-xl mb-1">📖</div>
+                    <div className="font-medium text-sm">长文</div>
+                    <div className="text-xs text-gray-500 mt-1">1500-2200字</div>
+                  </div>
+                </Col>
+              </Row>
+            </Card>
+
             {/* 创作按钮 */}
             <Button
               type="primary"
