@@ -433,6 +433,11 @@ export default function Cases() {
                           <Tag>{insuranceTypeMap[item.insuranceType] || item.insuranceType}</Tag>
                         )}
                       </div>
+                      {item.author && (
+                        <div className="text-xs text-gray-400 mb-1">
+                          ✍️ {item.author}
+                        </div>
+                      )}
                       <div className="text-xs text-gray-500 flex gap-3">
                         <span>👍 {item.likesCount || 0}</span>
                         <span>⭐ {item.favoritesCount || 0}</span>
