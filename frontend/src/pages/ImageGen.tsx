@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Tabs, Input, Button, ColorPicker, Space, message, Spin, Tooltip } from 'antd';
+import { useState } from 'react';
+import { Tabs, Input, Button, ColorPicker, message, Spin, Tooltip } from 'antd';
 import { DownloadOutlined, CopyOutlined, BulbOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
 
