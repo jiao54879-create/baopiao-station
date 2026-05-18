@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Tabs, Input, Button, ColorPicker, message, Spin, Tooltip } from 'antd';
+import { Tabs, Input, Button, ColorPicker, message, Spin, Tooltip, Slider } from 'antd';
 import { DownloadOutlined, CopyOutlined, BulbOutlined, DownloadOutlined as ZipOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
+
 // 预设颜色
 const BG_PRESETS = [
   { key: 'pink', label: '淡粉', value: '#FFF5F5' },
@@ -27,6 +28,7 @@ const HIGHLIGHT_COLORS = [
   { key: 'orange', label: '橙色', value: '#FFD700' },
   { key: 'purple', label: '紫色', value: '#DDA0DD' },
 ];
+
 // 颜色选择器组件
 function ColorSelector({ 
   label, 
@@ -63,7 +65,40 @@ function ColorSelector({
     </div>
   );
 }
-// Canvas绘制文字辅助：自动换行（支持标记语法）- 字体加大
+
+// 字体大小调节控件组件
+function FontSizeControl({ 
+  label, 
+  value, 
+  onChange, 
+  min, 
+  max 
+}: { 
+  label: string; 
+  value: number; 
+  onChange: (value: number) => void; 
+  min: number; 
+  max: number;
+}) {
+  return (
+    <div className="mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-sm text-gray-600">{label}</div>
+        <div className="text-sm text-gray-500">{value}px</div>
+      </div>
+      <Slider
+        min={min}
+        max={max}
+        step={1}
+        value={value}
+        onChange={onChange}
+        tooltip={{ formatter: (val) => `${val}px` }}
+      />
+    </div>
+  );
+}
+
+// Canvas绘制文字辅助：自动换行（支持标记语法）
 const wrapText = (
   ctx: CanvasRenderingContext2D, 
   text: string, 
@@ -109,23 +144,24 @@ const wrapText = (
   let currentX = x;
   for (const seg of segments) {
     ctx.save();
+    const fontSize = lineHeight * 0.9;
     if (seg.style === 'highlight') {
       const w = ctx.measureText(seg.text).width + 16;
       ctx.fillStyle = highlightColor;
-      ctx.fillRect(currentX - 6, currentY - lineHeight + 8, w, lineHeight);
+      ctx.fillRect(currentX - 6, currentY - fontSize + 8, w, fontSize);
       ctx.fillStyle = '#333';
-      ctx.font = `bold ${lineHeight * 0.9}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
+      ctx.font = `bold ${fontSize}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
     } else if (seg.style === 'color') {
       ctx.fillStyle = accentColor;
-      ctx.font = `bold ${lineHeight * 0.9}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
+      ctx.font = `bold ${fontSize}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
     } else if (seg.style === 'underline') {
       ctx.fillStyle = '#333';
       const w = ctx.measureText(seg.text).width;
       ctx.fillRect(currentX, currentY + 6, w, 4);
-      ctx.font = `${lineHeight * 0.9}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
+      ctx.font = `${fontSize}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
     } else {
       ctx.fillStyle = '#333';
-      ctx.font = `${lineHeight * 0.9}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
+      ctx.font = `${fontSize}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
     }
     ctx.fillText(seg.text, currentX, currentY);
     currentX += ctx.measureText(seg.text).width;
@@ -134,16 +170,19 @@ const wrapText = (
   
   return currentY + lineHeight;
 };
+
 // 去除标记语法的纯文本
 const stripMarkup = (text: string): string => {
   return text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/__(.+?)__/g, '$1');
 };
-// 生成封面图（前端Canvas绘制）- 字体加大
+
+// 生成封面图（支持字体大小参数）
 const generateCoverImage = (
   title: string,
   bgColor: string,
   accentColor: string,
-  highlightColor: string
+  highlightColor: string,
+  titleFontSize: number
 ): string => {
   const W = 1080, H = 1440;
   const canvas = document.createElement('canvas');
@@ -155,27 +194,34 @@ const generateCoverImage = (
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, W, H);
   
-  // 左上角装饰线 - 加粗
+  // 装饰线位置根据标题字号动态调整
+  const decorLineWidth = Math.max(120, titleFontSize * 1.2);
+  const decorLineHeight = 12;
+  const decorMargin = 80;
+  
+  // 左上角装饰线
   ctx.fillStyle = accentColor;
-  ctx.fillRect(80, 80, 160, 12);
+  ctx.fillRect(decorMargin, decorMargin, decorLineWidth, decorLineHeight);
   
-  // 右下角装饰线 - 加粗
-  ctx.fillRect(W - 240, H - 92, 160, 12);
+  // 右下角装饰线
+  ctx.fillRect(W - decorMargin - decorLineWidth, H - decorMargin - decorLineHeight, decorLineWidth, decorLineHeight);
   
-  // 标题居中（支持自动换行和标记语法）
+  // 标题设置
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   
   const cleanTitle = stripMarkup(title);
-  ctx.font = 'bold 110px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
+  ctx.font = `bold ${titleFontSize}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
   ctx.fillStyle = '#333';
   
-  // 简单换行
+  // 自动换行计算
+  const maxTextWidth = W - 200; // 左右各100px边距
   const titleLines: string[] = [];
   let line = '';
+  
   for (const char of cleanTitle) {
     const testLine = line + char;
-    if (ctx.measureText(testLine).width > 880) {
+    if (ctx.measureText(testLine).width > maxTextWidth) {
       titleLines.push(line);
       line = char;
     } else {
@@ -184,48 +230,81 @@ const generateCoverImage = (
   }
   titleLines.push(line);
   
-  // 每行高度120px，确保标题占图片的1/2到2/3
-  const totalHeight = titleLines.length * 120;
-  const titleStartY = (H - totalHeight) / 2 + 60;
+  // 动态计算行高（fontSize * 1.3，保持1.3倍行高比例）
+  const lineHeight = Math.round(titleFontSize * 1.3);
+  const totalHeight = titleLines.length * lineHeight;
+  
+  // 标题垂直居中：单行垂直居中，多行则首行从中心向上偏移
+  const centerY = H / 2;
+  let titleStartY;
+  
+  if (titleLines.length === 1) {
+    // 单行标题：完全垂直居中
+    titleStartY = centerY;
+  } else {
+    // 多行标题：均匀分布，首行在中心向上偏移
+    titleStartY = centerY - (totalHeight - lineHeight) / 2;
+  }
   
   // 如果有标记语法，用带样式的绘制
   if (title.includes('**') || title.includes('*') || title.includes('__')) {
     ctx.textAlign = 'left';
+    const textStartX = W / 2 - maxTextWidth / 2;
     let currentY = titleStartY;
     for (const titleLine of titleLines) {
-      currentY = wrapText(ctx, titleLine, W / 2 - 440, currentY, 880, 110, accentColor, highlightColor);
+      currentY = wrapText(ctx, titleLine, textStartX, currentY, maxTextWidth, titleFontSize, accentColor, highlightColor);
     }
   } else {
+    // 纯文本绘制，每行居中对齐
     titleLines.forEach((l, i) => {
-      ctx.fillText(l, W / 2, titleStartY + i * 120);
+      const lineY = titleStartY + i * lineHeight;
+      ctx.textAlign = 'center';
+      ctx.fillText(l, W / 2, lineY);
     });
   }
   
-  // 水印 - 加大
+  // 水印
+  const watermarkSize = Math.round(titleFontSize * 0.33);
   ctx.textAlign = 'center';
-  ctx.font = '36px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
+  ctx.font = `${watermarkSize}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
   ctx.fillStyle = '#999';
-  ctx.fillText('保险干货 | 关注不迷路', W / 2, H - 80);
+  ctx.fillText('保险干货 | 关注不迷路', W / 2, H - 60);
   
   return canvas.toDataURL('image/png');
 };
-// 生成内容图（前端Canvas绘制）- 字体加大
+
+// 生成内容图（支持字体大小参数）
 const generateContentImages = (
   title: string,
   lines: string[],
   bgColor: string,
   accentColor: string,
-  highlightColor: string
+  highlightColor: string,
+  titleFontSize: number,
+  contentFontSize: number
 ): string[] => {
   const W = 1080, H = 1440;
-  // 调整：每页6行（原8行），字体加大后需要更多空间
-  const LINES_PER_PAGE = 6;
   const images: string[] = [];
+  
+  // 根据正文字号动态计算每页行数
+  // 内容区域高度 = H - 顶部标题栏(160) - 上边距(60) - 下边距(100) - 水印(50)
+  const contentAreaHeight = H - 160 - 60 - 100 - 50;
+  // 卡片高度 = 正文字号 * 2
+  const cardHeight = Math.round(contentFontSize * 2);
+  // 行间距 = 正文字号 * 0.5
+  const lineSpacing = Math.round(contentFontSize * 0.5);
+  // 每行总高度
+  const lineTotalHeight = cardHeight + lineSpacing;
+  // 动态计算每页行数
+  const linesPerPage = Math.max(3, Math.floor(contentAreaHeight / lineTotalHeight));
+  
+  // 顶部标题栏高度根据标题字号动态调整（至少是标题字号的2倍）
+  const headerHeight = Math.max(140, titleFontSize * 2.2);
   
   // 分页
   const pages: string[][] = [];
-  for (let i = 0; i < lines.length; i += LINES_PER_PAGE) {
-    pages.push(lines.slice(i, i + LINES_PER_PAGE));
+  for (let i = 0; i < lines.length; i += linesPerPage) {
+    pages.push(lines.slice(i, i + linesPerPage));
   }
   
   for (const pageLines of pages) {
@@ -238,82 +317,106 @@ const generateContentImages = (
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, W, H);
     
-    // 顶部标题栏 - 加高（原120→160）
-    const HEADER_HEIGHT = 160;
+    // 顶部标题栏
     ctx.fillStyle = accentColor;
-    ctx.fillRect(0, 0, W, HEADER_HEIGHT);
-    ctx.font = 'bold 56px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
+    ctx.fillRect(0, 0, W, headerHeight);
+    
+    // 标题文字垂直居中
+    ctx.font = `bold ${titleFontSize}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
-    ctx.fillText(stripMarkup(title), W / 2, 105);
+    ctx.textBaseline = 'middle';
+    // 标题Y坐标 = 标题栏高度的一半
+    ctx.fillText(stripMarkup(title), W / 2, headerHeight / 2);
     
     // 内容区域
     ctx.textAlign = 'left';
-    let currentY = HEADER_HEIGHT + 60;
+    ctx.textBaseline = 'top';
     
-    // 卡片高度加大（原70→95）
-    const CARD_HEIGHT = 95;
-    const LINE_SPACING = 25;
+    // 计算内容区域起始Y，确保卡片在内容区域内垂直居中分布
+    const totalContentHeight = pageLines.length * lineTotalHeight;
+    const contentStartY = headerHeight + 60;
+    const availableHeight = H - headerHeight - 100 - 50; // 100为底部边距，50为水印高度
+    let currentY = contentStartY;
+    
+    // 如果内容不满一屏，垂直居中
+    if (totalContentHeight < availableHeight) {
+      const verticalPadding = (availableHeight - totalContentHeight) / 2;
+      currentY = contentStartY + verticalPadding;
+    }
+    
+    // 卡片左右边距
+    const cardPadding = 80;
+    const cardWidth = W - cardPadding * 2;
+    const cardRadius = 20;
     
     for (const pageLine of pageLines) {
+      const cardY = currentY;
+      
       // 白色卡片背景
       ctx.fillStyle = 'white';
-      const cardY = currentY - 55;
-      const radius = 20;
-      
-      // 圆角矩形
       ctx.beginPath();
-      ctx.moveTo(80 + radius, cardY);
-      ctx.lineTo(W - 80 - radius, cardY);
-      ctx.quadraticCurveTo(W - 80, cardY, W - 80, cardY + radius);
-      ctx.lineTo(W - 80, cardY + CARD_HEIGHT - radius);
-      ctx.quadraticCurveTo(W - 80, cardY + CARD_HEIGHT, W - 80 - radius, cardY + CARD_HEIGHT);
-      ctx.lineTo(80 + radius, cardY + CARD_HEIGHT);
-      ctx.quadraticCurveTo(80, cardY + CARD_HEIGHT, 80, cardY + CARD_HEIGHT - radius);
-      ctx.lineTo(80, cardY + radius);
-      ctx.quadraticCurveTo(80, cardY, 80 + radius, cardY);
+      ctx.moveTo(cardPadding + cardRadius, cardY);
+      ctx.lineTo(W - cardPadding - cardRadius, cardY);
+      ctx.quadraticCurveTo(W - cardPadding, cardY, W - cardPadding, cardY + cardRadius);
+      ctx.lineTo(W - cardPadding, cardY + cardHeight - cardRadius);
+      ctx.quadraticCurveTo(W - cardPadding, cardY + cardHeight, W - cardPadding - cardRadius, cardY + cardHeight);
+      ctx.lineTo(cardPadding + cardRadius, cardY + cardHeight);
+      ctx.quadraticCurveTo(cardPadding, cardY + cardHeight, cardPadding, cardY + cardHeight - cardRadius);
+      ctx.lineTo(cardPadding, cardY + cardRadius);
+      ctx.quadraticCurveTo(cardPadding, cardY, cardPadding + cardRadius, cardY);
       ctx.fill();
       
-      // 绘制文字（支持标记语法）- 字体加大（原32→46）
+      // 文字在卡片内垂直居中
+      const textY = cardY + cardHeight / 2;
       const hasMarkup = pageLine.includes('**') || pageLine.includes('*') || pageLine.includes('__');
       
       if (hasMarkup) {
-        wrapText(ctx, pageLine, 100, currentY, W - 200, 60, accentColor, highlightColor);
+        wrapText(ctx, pageLine, cardPadding + 20, textY, cardWidth - 40, contentFontSize, accentColor, highlightColor);
       } else {
-        ctx.font = '46px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
+        ctx.font = `${contentFontSize}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
         ctx.fillStyle = '#333';
+        ctx.textBaseline = 'middle';
         
-        // 截断超长文字
+        // 截断超长文字（使用省略号）
         let displayText = stripMarkup(pageLine);
-        while (ctx.measureText(displayText).width > W - 200 && displayText.length > 0) {
+        const maxTextWidth = cardWidth - 40;
+        while (ctx.measureText(displayText).width > maxTextWidth && displayText.length > 0) {
           displayText = displayText.slice(0, -1);
         }
-        if (displayText.length < stripMarkup(pageLine).length) displayText += '...';
-        ctx.fillText(displayText, 100, currentY);
+        if (displayText.length < stripMarkup(pageLine).length) {
+          displayText += '…';
+        }
+        ctx.fillText(displayText, cardPadding + 20, textY);
       }
       
-      currentY += CARD_HEIGHT + LINE_SPACING;
+      currentY += cardHeight + lineSpacing;
     }
     
-    // 水印 - 加大
-    ctx.font = '30px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
+    // 水印
+    const watermarkSize = Math.round(contentFontSize * 0.65);
+    ctx.font = `${watermarkSize}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
     ctx.fillStyle = '#999';
     ctx.textAlign = 'center';
-    ctx.fillText('保险干货 | 关注不迷路', W / 2, H - 50);
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('保险干货 | 关注不迷路', W / 2, H - 40);
     
     images.push(canvas.toDataURL('image/png'));
   }
   
   return images;
 };
+
 // 首图生成组件
 function CoverTab() {
   const [title, setTitle] = useState('');
   const [bgColor, setBgColor] = useState('#FFF5F5');
   const [accentColor, setAccentColor] = useState('#FF4757');
   const [highlightColor, setHighlightColor] = useState('#FFE66D');
+  const [titleFontSize, setTitleFontSize] = useState(110);
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  
   const handleGenerate = async () => {
     if (!title.trim()) {
       message.warning('请输入标题');
@@ -321,8 +424,7 @@ function CoverTab() {
     }
     setLoading(true);
     try {
-      // 前端Canvas生成图片
-      const generatedImage = generateCoverImage(title, bgColor, accentColor, highlightColor);
+      const generatedImage = generateCoverImage(title, bgColor, accentColor, highlightColor, titleFontSize);
       setImage(generatedImage);
       message.success('首图生成成功');
     } catch (error: any) {
@@ -331,6 +433,7 @@ function CoverTab() {
       setLoading(false);
     }
   };
+  
   const handleDownload = () => {
     if (!image) return;
     const link = document.createElement('a');
@@ -338,6 +441,7 @@ function CoverTab() {
     link.download = `cover-${Date.now()}.png`;
     link.click();
   };
+  
   return (
     <div className="flex gap-6">
       {/* 左侧输入 */}
@@ -365,6 +469,15 @@ function CoverTab() {
         <ColorSelector label="背景色" presets={BG_PRESETS} value={bgColor} onChange={setBgColor} />
         <ColorSelector label="强调色" presets={ACCENT_COLORS} value={accentColor} onChange={setAccentColor} />
         <ColorSelector label="高亮色" presets={HIGHLIGHT_COLORS} value={highlightColor} onChange={setHighlightColor} />
+        
+        {/* 字体大小调节 */}
+        <FontSizeControl
+          label="标题字号"
+          value={titleFontSize}
+          onChange={setTitleFontSize}
+          min={60}
+          max={150}
+        />
         
         <Button 
           type="primary" 
@@ -422,33 +535,43 @@ function CoverTab() {
     </div>
   );
 }
-// 内容图生成组件 - 全文自动生成模式
+
+// 内容图生成组件
 function ContentTab() {
   const [title, setTitle] = useState('');
   const [fullText, setFullText] = useState('');
   const [bgColor, setBgColor] = useState('#FFF5F5');
   const [accentColor, setAccentColor] = useState('#FF4757');
   const [highlightColor, setHighlightColor] = useState('#FFE66D');
+  const [titleFontSize, setTitleFontSize] = useState(56);
+  const [contentFontSize, setContentFontSize] = useState(46);
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   
   // 智能拆分文本
   const splitTextToLines = (text: string): string[] => {
-    // 按换行符分割
     let lines = text.split(/\n/);
-    // 过滤空行和只含空白字符的行
     lines = lines.filter(line => line.trim().length > 0);
-    // 限制最多40行，确保3-5张图（每页6行）
     if (lines.length > 40) {
       lines = lines.slice(0, 40);
     }
     return lines;
   };
   
-  // 计算预计生成图片数量
+  // 计算预计生成图片数量（根据字号动态计算）
   const estimatedImages = () => {
     const lines = splitTextToLines(fullText);
-    return Math.max(1, Math.ceil(lines.length / 6));
+    if (lines.length === 0) return 1;
+    
+    const H = 1440;
+    const headerHeight = Math.max(140, titleFontSize * 2.2);
+    const cardHeight = Math.round(contentFontSize * 2);
+    const lineSpacing = Math.round(contentFontSize * 0.5);
+    const lineTotalHeight = cardHeight + lineSpacing;
+    const contentAreaHeight = H - headerHeight - 60 - 100 - 50;
+    const linesPerPage = Math.max(3, Math.floor(contentAreaHeight / lineTotalHeight));
+    
+    return Math.max(1, Math.ceil(lines.length / linesPerPage));
   };
   
   const handleGenerate = async () => {
@@ -469,8 +592,15 @@ function ContentTab() {
     
     setLoading(true);
     try {
-      // 调用已有的 generateContentImages 函数
-      const generatedImages = generateContentImages(title, validLines, bgColor, accentColor, highlightColor);
+      const generatedImages = generateContentImages(
+        title, 
+        validLines, 
+        bgColor, 
+        accentColor, 
+        highlightColor,
+        titleFontSize,
+        contentFontSize
+      );
       setImages(generatedImages);
       message.success(`内容图生成成功，共 ${generatedImages.length} 张`);
     } catch (error: any) {
@@ -488,7 +618,6 @@ function ContentTab() {
     link.click();
   };
   
-  // 下载全部图片
   const handleDownloadAll = () => {
     images.forEach((img, index) => {
       setTimeout(() => {
@@ -496,7 +625,7 @@ function ContentTab() {
         link.href = img;
         link.download = `content-${index + 1}-${Date.now()}.png`;
         link.click();
-      }, index * 300); // 间隔300ms避免浏览器拦截
+      }, index * 300);
     });
     message.success(`开始下载 ${images.length} 张图片`);
   };
@@ -529,7 +658,7 @@ function ContentTab() {
           <TextArea
             value={fullText}
             onChange={(e) => setFullText(e.target.value)}
-            placeholder={`粘贴笔记全文，支持多段落&#10;&#10;示例：&#10;第一段内容...&#10;第二段内容...&#10;第三段内容...`}
+            placeholder={`粘贴笔记全文，支持多段落\n\n示例：\n第一段内容...\n第二段内容...\n第三段内容...`}
             rows={10}
             style={{ fontSize: 15 }}
           />
@@ -547,6 +676,22 @@ function ContentTab() {
         <ColorSelector label="背景色" presets={BG_PRESETS} value={bgColor} onChange={setBgColor} />
         <ColorSelector label="强调色" presets={ACCENT_COLORS} value={accentColor} onChange={setAccentColor} />
         <ColorSelector label="高亮色" presets={HIGHLIGHT_COLORS} value={highlightColor} onChange={setHighlightColor} />
+        
+        {/* 字体大小调节 */}
+        <FontSizeControl
+          label="标题字号"
+          value={titleFontSize}
+          onChange={setTitleFontSize}
+          min={36}
+          max={80}
+        />
+        <FontSizeControl
+          label="正文字号"
+          value={contentFontSize}
+          onChange={setContentFontSize}
+          min={28}
+          max={60}
+        />
         
         <Button 
           type="primary" 
@@ -623,6 +768,7 @@ function ContentTab() {
     </div>
   );
 }
+
 // 主页面组件
 export default function ImageGen() {
   return (
