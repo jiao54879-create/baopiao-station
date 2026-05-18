@@ -147,6 +147,47 @@ function TemplateSelector({
   );
 }
 
+
+// Emoji快捷插入组件
+const EMOJI_GROUPS = [
+  { label: '保险', emojis: ['💰','🛡️','⚠️','❗','✅','❌','💡','🔥','📉','📈','🏦','📋','📝','🔍'] },
+  { label: '表情', emojis: ['😊','😢','🤔','😱','😤','🙏','💪','👍','❤️','⭐','🎯','💎','🏆','😱'] },
+  { label: '手势', emojis: ['👆','👇','👈','👉','🤚','✋','👌','🤝','✌️','👏','🫶','🤞','🤙','🖖'] },
+  { label: '其他', emojis: ['📌','🔔','🌟','💫','⏰','📅','🎉','🎊','🔑','🚨','💡','💵','🏷️','🎁'] },
+];
+
+function EmojiPicker({ onInsert }: { onInsert: (emoji: string) => void }) {
+  const [collapsed, setCollapsed] = useState(true);
+  return (
+    <div className="mb-4">
+      <div 
+        className="text-sm text-gray-600 mb-2 cursor-pointer flex items-center gap-1"
+        onClick={() => setCollapsed(!collapsed)}
+      >
+        <span>😀 快捷Emoji</span>
+        <span className="text-xs text-gray-400">{collapsed ? '展开' : '收起'}</span>
+      </div>
+      {!collapsed && EMOJI_GROUPS.map(group => (
+        <div key={group.label} className="mb-2">
+          <div className="text-xs text-gray-400 mb-1">{group.label}</div>
+          <div className="flex flex-wrap gap-1">
+            {group.emojis.map((emoji, i) => (
+              <button
+                key={i}
+                onClick={() => onInsert(emoji)}
+                className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 transition-colors text-lg"
+                type="button"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // 去除标记语法的纯文本
 const stripMarkup = (text: string): string => {
   return text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/__(.+?)__/g, '$1');
@@ -1439,8 +1480,16 @@ const splitChatContent = (lines: string[]): string[][] => {
 // ==================== 首图生成组件 ====================
 
 function CoverTab() {
-  const [title, setTitle] = useState('');
+  const titleRef = useState('');
+  const [title, setTitle] = titleRef;
   const [content, setContent] = useState('');
+  
+  const insertEmojiToTitle = (emoji: string) => {
+    setTitle(prev => prev + emoji);
+  };
+  const insertEmojiToContent = (emoji: string) => {
+    setContent(prev => prev + emoji);
+  };
   const [bgColor, setBgColor] = useState('#FFF5F5');
   const [accentColor, setAccentColor] = useState('#FF4757');
   const [highlightColor, setHighlightColor] = useState('#FFE66D');
@@ -1508,10 +1557,11 @@ function CoverTab() {
           <TextArea
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder='输入标题，如：姐干保险**9年**，说点XHS上不流通的'
+            placeholder='输入标题，如：姐干保险**9年**⚠️，说点XHS上不流通的💰'
             rows={3}
             style={{ fontSize: 16 }}
           />
+          <EmojiPicker onInsert={insertEmojiToTitle} />
         </div>
         
         {(template === 'memo' || template === 'book') && (
@@ -1524,6 +1574,7 @@ function CoverTab() {
               rows={4}
               style={{ fontSize: 15 }}
             />
+            <EmojiPicker onInsert={insertEmojiToContent} />
           </div>
         )}
         
@@ -1639,6 +1690,10 @@ function CoverTab() {
 function ContentTab() {
   const [title, setTitle] = useState('');
   const [fullText, setFullText] = useState('');
+  
+  const insertEmojiToFullText = (emoji: string) => {
+    setFullText(prev => prev + emoji);
+  };
   const [bgColor, setBgColor] = useState('#FFF5F5');
   const [accentColor, setAccentColor] = useState('#FF4757');
   const [highlightColor, setHighlightColor] = useState('#FFE66D');
@@ -1788,6 +1843,7 @@ function ContentTab() {
             rows={10}
             style={{ fontSize: 15 }}
           />
+          <EmojiPicker onInsert={insertEmojiToFullText} />
         </div>
         
         <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm text-gray-500">
@@ -1905,7 +1961,7 @@ export default function ImageGen() {
     <div>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800">小红书配图生成</h2>
-        <p className="text-gray-500 mt-1">生成小红书风格的封面图和内容图，支持5种风格和重点文字标记</p>
+        <p className="text-gray-500 mt-1">生成小红书风格的封面图和内容图，支持5种风格、重点文字标记和Emoji表情</p>
       </div>
       
       <Tabs
