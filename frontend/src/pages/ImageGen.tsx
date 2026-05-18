@@ -1,4 +1,80 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+
+// ==================== Emoji 支持 ====================
+
+// 常用 emoji 分组
+const EMOJI_GROUPS = [
+  { label: '保险相关', emojis: ['💰', '🛡️', '⚠️', '❗', '✅', '❌', '💡', '🔥', '📉', '📈', '🏦', '📋', '📝', '🔍'] },
+  { label: '表情类', emojis: ['😊', '😢', '🤔', '😱', '😤', '🙏', '💪', '👍', '❤️', '⭐', '🎯', '💎', '🏆'] },
+  { label: '手势类', emojis: ['👆', '👇', '👈', '👉', '🤚', '✋', '🖐️', '👌', '🤝', '✌️'] },
+  { label: '其他', emojis: ['📌', '🔔', '💡', '🌟', '💫', '⏰', '📅', '🎉', '🎊', '💪', '🔑', '🚨'] },
+];
+
+// 判断字符是否为 emoji
+const isEmoji = (char: string): boolean => {
+  return char.codePointAt(0) !== undefined && char.codePointAt(0)! > 0x1F300;
+};
+
+// 计算文本宽度（emoji 宽度修正）
+const measureTextWidth = (ctx: CanvasRenderingContext2D, text: string): number => {
+  let width = 0;
+  for (const char of text) {
+    const charWidth = ctx.measureText(char).width;
+    if (isEmoji(char)) {
+      width += charWidth * 1.2; // emoji 宽度修正
+    } else {
+      width += charWidth;
+    }
+  }
+  return width;
+};
+
+// Emoji 快捷按钮组件
+function EmojiPicker({ onSelect }: { onSelect: (emoji: string) => void }) {
+  return (
+    <div className="bg-gray-50 rounded-lg p-2 mb-4">
+      <div className="text-xs text-gray-500 mb-2">💡 点击插入 emoji</div>
+      <div className="flex flex-wrap gap-1">
+        {EMOJI_GROUPS.map(group => (
+          <div key={group.label} className="flex flex-wrap gap-1 mr-2 mb-1">
+            {group.emojis.map(emoji => (
+              <button
+                key={emoji}
+                onClick={() => onSelect(emoji)}
+                className="w-7 h-7 flex items-center justify-center text-lg hover:bg-gray-200 rounded transition-colors"
+                title={group.label}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 插入 emoji 到 textarea 光标位置
+const insertEmojiAtCursor = (
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>,
+  setValue: (value: string) => void,
+  emoji: string
+) => {
+  if (!textareaRef.current) return;
+  const textarea = textareaRef.current;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const value = textarea.value;
+  const newValue = value.substring(0, start) + emoji + value.substring(end);
+  setValue(newValue);
+  // 设置光标位置到 emoji 后
+  setTimeout(() => {
+    textarea.focus();
+    textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+  }, 0);
+};
+
+
 import { Tabs, Input, Button, ColorPicker, message, Spin, Tooltip } from 'antd';
 import { DownloadOutlined, CopyOutlined, BulbOutlined, DownloadOutlined as ZipOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
@@ -283,7 +359,7 @@ const drawTextWithMarkup = (
   for (const seg of segments) {
     ctx.save();
     if (seg.style === 'highlight') {
-      const w = ctx.measureText(seg.text).width + 16;
+      const w = measureTextWidth(ctx, seg.text) + 16;
       ctx.fillStyle = highlightColor;
       ctx.fillRect(currentX - 6, currentY - lineHeight * 0.75, w, lineHeight * 0.9);
       ctx.fillStyle = '#333';
@@ -293,7 +369,7 @@ const drawTextWithMarkup = (
       ctx.font = `bold ${lineHeight * 0.9}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
     } else if (seg.style === 'underline') {
       ctx.fillStyle = '#333';
-      const w = ctx.measureText(seg.text).width;
+      const w = measureTextWidth(ctx, seg.text);
       ctx.fillRect(currentX, currentY + lineHeight * 0.15, w, 4);
       ctx.font = `${lineHeight * 0.9}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
     } else {
@@ -301,7 +377,7 @@ const drawTextWithMarkup = (
       ctx.font = `${lineHeight * 0.9}px -apple-system, PingFang SC, Microsoft YaHei, sans-serif`;
     }
     ctx.fillText(seg.text, currentX, currentY);
-    currentX += ctx.measureText(seg.text).width;
+    currentX += measureTextWidth(ctx, seg.text);
     ctx.restore();
   }
   
@@ -1449,6 +1525,8 @@ const splitChatContent = (lines: string[]): string[][] => {
 function CoverTab() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const titleRef = React.useRef<HTMLTextAreaElement>(null);
+  const contentRef = React.useRef<HTMLTextAreaElement>(null);
   const [bgColor, setBgColor] = useState('#FFF5F5');
   const [accentColor, setAccentColor] = useState('#FF4757');
   const [highlightColor, setHighlightColor] = useState('#FFE66D');
@@ -1514,12 +1592,14 @@ function CoverTab() {
         <div className="mb-4">
           <div className="text-sm text-gray-600 mb-2">标题（支持标记语法）</div>
           <TextArea
+            ref={titleRef}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder='输入标题，如：姐干保险**9年**，说点XHS上不流通的'
             rows={3}
             style={{ fontSize: 16 }}
           />
+          <EmojiPicker onSelect={(emoji) => insertEmojiAtCursor(titleRef, setTitle, emoji)} />
         </div>
         
         {(template === 'memo' || template === 'book') && (
@@ -1647,6 +1727,8 @@ function CoverTab() {
 function ContentTab() {
   const [title, setTitle] = useState('');
   const [fullText, setFullText] = useState('');
+  const contentTitleRef = React.useRef<HTMLInputElement>(null);
+  const fullTextRef = React.useRef<HTMLTextAreaElement>(null);
   const [bgColor, setBgColor] = useState('#FFF5F5');
   const [accentColor, setAccentColor] = useState('#FF4757');
   const [highlightColor, setHighlightColor] = useState('#FFE66D');
@@ -1790,12 +1872,14 @@ function ContentTab() {
             )}
           </div>
           <TextArea
+            ref={fullTextRef}
             value={fullText}
             onChange={(e) => setFullText(e.target.value)}
             placeholder={`粘贴笔记全文，支持多段落\n\n示例：\n第一段内容...\n第二段内容...\n第三段内容...`}
             rows={10}
             style={{ fontSize: 15 }}
           />
+          <EmojiPicker onSelect={(emoji) => insertEmojiAtCursor(fullTextRef, setFullText, emoji)} />
         </div>
         
         <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm text-gray-500">
