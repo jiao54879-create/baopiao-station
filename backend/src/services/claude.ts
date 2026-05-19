@@ -735,3 +735,31 @@ export async function analyzeViralCase(
 // 导出类型和常量供前端使用
 export { TitleOutputSchema, TitleArraySchema };
 export { STYLE_DEFINITIONS, CROSS_DOMAIN_HOOKS, FILL_IN_TEMPLATES, PSYCHOLOGICAL_TRIGGERS };
+
+// ==================== 情报摘要功能（兼容旧接口） ====================
+
+export async function summarizeIntelligence(title: string, content?: string): Promise<string> {
+  const prompt = `请为以下保险情报生成简洁的中文摘要（100字以内）：
+
+标题：${title}
+${content ? '内容：' + content.substring(0, 1000) : ''}
+
+摘要要求：
+1. 提取核心信息
+2. 突出关键数据或变化
+3. 100字以内`;
+
+  try {
+    const response = await deepseek.chat.completions.create({
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+      max_tokens: 200,
+    });
+
+    return response.choices[0]?.message?.content?.trim() || title;
+  } catch (error: any) {
+    console.error('AI摘要生成失败:', error?.message || error);
+    return title;
+  }
+}
