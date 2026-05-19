@@ -734,7 +734,6 @@ export async function analyzeViralCase(
 
 // 导出类型和常量供前端使用
 export { TitleOutputSchema, TitleArraySchema };
-export { STYLE_DEFINITIONS, CROSS_DOMAIN_HOOKS, FILL_IN_TEMPLATES, PSYCHOLOGICAL_TRIGGERS };
 
 // ==================== 情报摘要功能（兼容旧接口） ====================
 
