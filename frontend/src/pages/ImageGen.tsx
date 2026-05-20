@@ -148,6 +148,21 @@ function TemplateSelector({
 }
 
 
+// 智能高亮稀疏化：如果高亮标记太密集，只保留最关键的N个
+const sparseHighlights = (lines: string[], maxHighlights: number = 4): string[] => {
+  let highlightCount = 0;
+  return lines.map(line => {
+    const highlights = (line.match(/\*\*[^*]+\*\*/g) || []).length;
+    if (highlights === 0) return line;
+    highlightCount += highlights;
+    if (highlightCount > maxHighlights) {
+      // 超出限制，去掉高亮标记但保留文字
+      return line.replace(/\*\*([^*]+)\*\*/g, '$1');
+    }
+    return line;
+  });
+};
+
 // Emoji快捷插入组件
 const EMOJI_GROUPS = [
   { label: '保险', emojis: ['💰','🛡️','⚠️','❗','✅','❌','💡','🔥','📉','📈','🏦','📋','📝','🔍'] },
@@ -420,7 +435,15 @@ const generateCoverCard = (
   return canvas.toDataURL('image/png');
 };
 
-// 生成内容图（简约卡片）- 无标题栏，无每行卡片
+// 检测标题行：短文本、含高亮标记、或以特定符号开头
+const isTitleLine = (line: string): boolean => {
+  const clean = line.replace(/\*\*|\*|__/g, '').trim();
+  if (clean.length <= 25 && (line.includes('**') || line.includes('⭕') || line.includes('✅') || line.includes('❌'))) return true;
+  if (/^[⭕✅❌🔴🟠🟡🟢🔵🟣💥🔥⚠️]/.test(line)) return false; // 列表项不是标题
+  return false;
+};
+
+// 生成内容图（简约卡片）- 无标题栏，自动跳过标题行
 const generateContentCard = (
   lines: string[],
   bgColor: string,
@@ -451,7 +474,15 @@ const generateContentCard = (
   
   let currentY = 100;
   
-  for (const pageLine of lines) {
+  // 跳过第一行标题（通常是笔记标题重复）
+  let startIdx = 0;
+  if (lines.length > 0 && isTitleLine(lines[0])) {
+    startIdx = 1;
+  }
+  
+  const processedLines = sparseHighlights(lines.slice(startIdx));
+  for (let i = 0; i < processedLines.length; i++) {
+    const pageLine = processedLines[i];
     const hasMarkup = pageLine.includes('**') || pageLine.includes('*') || pageLine.includes('__');
     
     if (hasMarkup) {
@@ -737,7 +768,8 @@ const generateContentMemo = (
   let currentY = contentStartY;
   const lineHeight = Math.round(contentFontSize * 1.5);
   
-  for (const line of lines) {
+  const processedLines = sparseHighlights(lines);
+  for (const line of processedLines) {
     const hasMarkup = line.includes('**') || line.includes('*') || line.includes('__');
     
     if (hasMarkup) {
