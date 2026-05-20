@@ -11,7 +11,7 @@ WORKDIR /app/frontend
 RUN npm ci
 
 COPY frontend/ .
-# Force rebuild marker - 2026-05-15-v9
+# Force rebuild marker - 2026-05-20-v10
 # Bust cache: tsconfig noImplicitAny fix
 # 设置 API 地址为空（后端 serve 前端时使用同源）
 ENV VITE_API_URL=""
