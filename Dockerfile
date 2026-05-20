@@ -20,7 +20,7 @@ COPY backend/package*.json ./backend/
 WORKDIR /app/backend
 RUN npm cache clean --force && npm install
 
-# Force full rebuild - bust all COPY cache - 2026-05-20-v13
+# Force full rebuild - bust all COPY cache - 2026-05-20-v14
 COPY backend/ .
 
 # 生成 Prisma Client
