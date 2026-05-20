@@ -31,11 +31,14 @@ interface GeneratedTitle {
 const STYLE_COLORS: Record<string, string> = {
   A: '#ef4444', B: '#f97316', C: '#eab308',
   D: '#22c55e', E: '#3b82f6', F: '#a855f7',
+  G: '#ec4899', H: '#6366f1',
   CROSS_DOMAIN: '#ec4899',
 }
 
 const STYLE_EMOJIS: Record<string, string> = {
-  A: '🔴', B: '🟠', C: '🟡', D: '🟢', E: '🔵', F: '🟣', CROSS_DOMAIN: '🌐',
+  A: '🔴', B: '🟠', C: '🟡', D: '🟢', E: '🔵', F: '🟣',
+  G: '😏', H: '🎬',
+  CROSS_DOMAIN: '🌐',
 }
 
 const DEFAULT_STYLES: StyleDefinition[] = [
@@ -45,6 +48,8 @@ const DEFAULT_STYLES: StyleDefinition[] = [
   { id: 'D', name: '权威背书+实操', emoji: '🟢', color: 'green', description: '第三方权威加持+真实实操', coreLogic: '权威佐证+亲身实操', exampleTitles: ['和儿科医生聊完，我把宝宝保险全换了'], templateCount: 4 },
   { id: 'E', name: '数字/清单/对比', emoji: '🔵', color: 'blue', description: '数字清晰、对比强烈', coreLogic: '干货密集，用户收藏自用', exampleTitles: ['保险买对vs买错，差距居然这么大'], templateCount: 4 },
   { id: 'F', name: '情绪/故事/悬念', emoji: '🟣', color: 'purple', description: '情绪驱动，抓住用户共情', coreLogic: '打破陌生距离感', exampleTitles: ['我后悔了，保险真的不该买太早'], templateCount: 4 },
+  { id: 'G', name: '阴阳怪气/网感热梗', emoji: '😏', color: 'pink', description: '反讽句式+安全热词，靠结构出味道', coreLogic: '反讽句式+网感热词制造情绪冲击', exampleTitles: ['理赔被拒了，真·赢麻了'], templateCount: 5 },
+  { id: 'H', name: '短剧悬念', emoji: '🎬', color: 'indigo', description: '标题是剧情浓缩，有起因→转折→悬念', coreLogic: '短剧钩子制造剧情推进感', exampleTitles: ['理赔被拒后，我靠这一条翻盘了'], templateCount: 5 },
 ]
 
 export default function Generator() {
@@ -179,7 +184,7 @@ export default function Generator() {
               <label className="block text-sm font-medium mb-2">选择风格类型（可多选）</label>
               <Row gutter={[12, 12]}>
                 {styles.map(style => (
-                  <Col key={style.id} xs={12} sm={8} md={4}>
+                  <Col key={style.id} xs={12} sm={8} md={6} lg={3}>
                     <div
                       className={`p-3 rounded-lg border-2 cursor-pointer transition-all text-center ${
                         selectedStyles.includes(style.id) 
@@ -280,10 +285,10 @@ export default function Generator() {
 
       {/* 风格说明 */}
       {!showLegacyMode && (
-        <Card title="6大风格类型说明" size="small">
+        <Card title="8大风格类型说明" size="small">
           <Row gutter={[12, 12]}>
             {styles.map(style => (
-              <Col key={style.id} xs={24} sm={12} md={8}>
+              <Col key={style.id} xs={24} sm={12} md={8} lg={6}>
                 <div className="p-3 bg-gray-50 rounded">
                   <div className="font-medium mb-1">{style.emoji} {style.name}</div>
                   <div className="text-xs text-gray-500">{style.description}</div>
