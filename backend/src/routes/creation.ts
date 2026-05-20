@@ -1,4 +1,4 @@
-// 笔记创作API - 从零创作保险笔记
+// 笔记创作API - 从零创作保险笔记（深度内容版本）
 import { Router } from 'express';
 import { z } from 'zod';
 import { AppError } from '../middleware/errorHandler.js';
@@ -23,11 +23,17 @@ const contentStructures = {
   },
   pitfall: {
     label: '避坑类',
-    promptHint: `重点揭露保险信息差和坑点，参考爆款结构：
-    - 身份背书开头：如"8年保险人大实话"、"和儿科医生聊完1小时"
+    promptHint: `重点揭露保险领域真正的高阶信息差和认知陷阱，参考爆款结构：
+    - 身份背书开头：如"8年保险人大实话"、"和理赔员聊完1小时"
     - 按险种分块：医疗险/重疾险/意外险等
-    - 每块先列坑(⭕)再给正确做法(✅)：对比强烈，坑点用emoji标记
-    - 简洁有力：每个观点一句话，独立成段
+    - 每个坑点必须深入展开，包含以下4个层次：
+      ① 坑点描述（⭕）：具体是什么坑，用真实场景或数据说明
+      ② 为什么是坑：拆解底层逻辑，很多人不知道的细节
+      ③ 这个坑的后果：落到实处的损失（用具体数字/案例）
+      ④ 正确做法（✅）：应该怎么做，给出可操作的方案
+    - 每个坑点至少3-5句话，不允许一两句话带过
+    - 禁止写常识性"信息差"：如"买保险要如实告知""等待期内不赔"等人人皆知的点
+    - 要写真正的高阶信息差：如"重疾险不是确诊即赔""保证续保≠承诺续保""甲状腺癌分级赔付"等多数人不知道的细节
     - CTA引导："有问题的评论区见"`,
     examples: [
       '《8年保险人大实话！普通家庭真没必要买保险》',
@@ -38,10 +44,10 @@ const contentStructures = {
     label: '产品类',
     promptHint: `重点做产品测评对比，参考结构：
     - 产品测评开头：用数据或对比抓眼球
-    - 保障内容拆解：表格或条列形式
-    - 价格对比：突出性价比
-    - 优缺点分析：客观专业
-    - 适合人群总结
+    - 保障内容拆解：表格或条列形式，每个责任深入分析不是罗列
+    - 价格对比：突出性价比，但要说明性价比背后的条件
+    - 优缺点分析：客观专业，优缺点各至少展开3句
+    - 适合人群总结：具体到什么条件的人适合，不是泛泛而谈
     - 购买建议+CTA`,
     examples: ['产品横向对比类笔记']
   },
@@ -58,7 +64,6 @@ const contentStructures = {
 
 // 大佬锚点配置
 const masterConfigs: Record<string, { name: string; languageDNA: any }> = {
-  // 走心唠嗑风
   mimeng: {
     name: '咪蒙模式',
     languageDNA: {
@@ -89,7 +94,6 @@ const masterConfigs: Record<string, { name: string; languageDNA: any }> = {
       ending: '朴实但有力，"这事儿就这么简单"'
     }
   },
-  // 干货避坑风
   banfo: {
     name: '半佛仙人模式',
     languageDNA: {
@@ -120,7 +124,6 @@ const masterConfigs: Record<string, { name: string; languageDNA: any }> = {
       ending: '一句话核心总结'
     }
   },
-  // 反转打脸风
   baguamangguo: {
     name: '八卦芒果模式',
     languageDNA: {
@@ -151,7 +154,6 @@ const masterConfigs: Record<string, { name: string; languageDNA: any }> = {
       ending: '行动指南，三步自救'
     }
   },
-  // 焦虑共鸣风
   'zhangxuefeng-anxiety': {
     name: '张雪峰焦虑模式',
     languageDNA: {
@@ -182,7 +184,6 @@ const masterConfigs: Record<string, { name: string; languageDNA: any }> = {
       ending: '有力的立场宣言'
     }
   },
-  // 数据震撼风
   'kazike-data': {
     name: '卡兹克数据模式',
     languageDNA: {
@@ -237,6 +238,43 @@ const CreationSchema = z.object({
   length: z.enum(['short', 'medium', 'long']).optional().default('medium')
 });
 
+// 深度内容规则 - 所有内容类型通用
+const depthRules = `
+## 🔥 深度内容铁律（避免空洞罗列）
+
+### 核心原则：少而深，不要多而浅
+- 宁可只写3个坑点但每个深入分析，也不要写8个坑点每个一两句话
+- 每个观点/坑点/推荐至少3-5句话展开，包含：是什么→为什么→后果→怎么办
+- 禁止"一句话观点+emoji"式写法，那种内容用户看完等于没看
+
+### 避坑类专项规则
+1. 禁止写常识性"信息差"：
+   - ❌ "买保险要如实告知"（谁都知道）
+   - ❌ "等待期内出险不赔"（保险常识）
+   - ❌ "不要买返还型"（2024年就说烂了）
+   - ❌ "先大人后小孩"（已是共识）
+2. 必须写高阶信息差：
+   - ✅ "重疾险不是确诊即赔，28种重疾中只有恶性肿瘤是确诊即赔，其他要手术或达到状态"
+   - ✅ "保证续保≠承诺续保，20年到期后大概率要重新健康告知"
+   - ✅ "甲状腺癌TNMⅠ期按轻症赔，不是所有甲状腺癌都按重疾赔"
+   - ✅ "两年不可抗辩条款≠满两年一定赔，仍可能因未如实告知拒赔"
+3. 每个坑点必须按四层结构展开：
+   - ① 坑点描述（⭕）：具体场景+数据
+   - ② 为什么是坑：底层逻辑拆解
+   - ③ 后果：具体损失（用数字）
+   - ④ 正确做法（✅）：可操作方案
+
+### 思路类专项规则
+- 每个推荐的产品/方案要说明"为什么适合这类人"，不是泛泛说"性价比高"
+- 预算分配要给出具体比例和理由
+- 要说明哪些是"可以省的"和"不能省的"，以及原因
+
+### 产品类专项规则
+- 保障内容不只是罗列，要说明每项责任的实际意义（对投保人意味着什么）
+- 优缺点各至少3句展开，不是"优点：保障全；缺点：价格贵"
+- 适合人群要具体到"什么条件下的人适合"，不是"适合年轻人"
+`;
+
 // 创作笔记内容
 async function createNoteContent(
   topic: string,
@@ -253,13 +291,11 @@ async function createNoteContent(
     baseURL: 'https://api.deepseek.com',
   });
 
-  // 获取大佬语言DNA
   let masterInfo = masterConfigs[master];
   if (!masterInfo) {
     masterInfo = masterConfigs['no-imitation'];
   }
 
-  // 构建语言DNA
   let languageDNA = masterInfo.languageDNA;
   if (master === 'custom-imitation' && customStyleDesc) {
     languageDNA = {
@@ -271,62 +307,16 @@ async function createNoteContent(
     };
   }
 
-  // 获取内容结构提示
   let structureHint = '';
   if (structure && contentStructures[structure as keyof typeof contentStructures]) {
     const structInfo = contentStructures[structure as keyof typeof contentStructures];
     structureHint = `\n\n## 内容类型：${structInfo.label}\n${structInfo.promptHint}`;
-    
     if (structureSub) {
       structureHint += `\n具体方向：${structureSub}`;
     }
   }
 
-  // 参考素材提示
   const referenceHint = reference ? `\n\n## 参考素材\n用户提供的素材：\n${reference}` : '';
-
-  // 爆款写作模板
-  const viralTemplate = `
-## 爆款保险笔记写作模板（已验证有效结构）
-
-### 模板1：避坑类（⭕坑点 + ✅正确做法）
-开头：身份背书/震撼数字/反转结论
-正文：
-【XX险】
-⭕ 坑点1：xxx
-✅ 正确做法：xxx
-⭕ 坑点2：xxx
-✅ 正确做法：xxx
-
-结尾：引导互动 + 表明可咨询
-
-### 模板2：思路类（人群划分）
-开头：震撼数字/大佬背书
-正文：
-【人群1】
-- 推荐1：xxx（价格参考）
-- 推荐2：xxx（价格参考）
-
-【人群2】
-...
-
-结尾：互动引导 + CTA
-
-### 模板3：个人经历类
-开头：个人真实经历，建立信任
-正文：
-- 观点1（简短有力）
-- 观点2（简短有力）
-- 观点3（简短有力）
-
-结尾：温暖鼓励 + 咨询引导
-
-### 通用爆款要素
-1. 开头3秒抓人：身份背书/震撼数字/反转结论/场景代入
-2. 独立成段：一句话一段，不要长段落
-3. 避坑类用⭕/✅对比，思路类用1/2/3条列
-4. 全文emoji点缀，增加可读性
-5. 结尾CTA：引导互动 + 表明可咨询`;
 
   // 小红书合规规则
   const complianceRules = `
@@ -408,29 +398,28 @@ ${structureHint}${referenceHint}
 ## 选题要求
 请围绕"${topic}"创作一篇小红书保险笔记。
 
-## 爆款写作模板参考
-${viralTemplate}
+${depthRules}
 
 ${complianceRules}
 
 ## 严格要求
 1. 标题：≤20字，要有爆款感，像真人发的
-2. 正文长度：${length === 'short' ? '1000字以内，精炼紧凑' : length === 'long' ? '1500-2200字，深度详尽，多角度展开' : '1000-1500字，内容充实但不冗长'}
+2. 正文长度：${length === 'short' ? '1000字以内，精炼但不空洞' : length === 'long' ? '1500-2200字，深度详尽，多角度展开每个观点' : '1000-1500字，内容充实有深度'}
 3. 标签：生成3-5个小红书热门标签（格式：#标签名）
 4. 全文要用emoji增加可读性
 5. 正文要分段，每段不要太长，一句话一段为佳
 6. 保险相关内容要专业但易懂
-7. 参考爆款模板结构组织文章
-8. 严格遵循上述语言DNA的每个维度
-9. ${structureHint ? '严格按照内容结构要求来组织文章' : '灵活组织文章结构'}
-10. 结尾要有互动引导（问问题/评论区见）+ CTA（有问题找我/可以问我）
-11. 【关键】严格保留用户选题中的所有关键信息，包括年份、人数、金额等数字，绝对不能擅自更改（如用户写9年就不能写成8年）
-12. 【合规红线】绝对不能使用上述任何禁用词，必须使用安全替代方案
-13. 【合规】不能留联系方式、不能贬低其他公司、不能承诺具体收益、不能用绝对化用语
-14. 【推流优化】标题和正文前100字布局搜索关键词，用具体数字代替模糊描述
+7. 严格遵循上述语言DNA的每个维度
+8. ${structureHint ? '严格按照内容结构要求来组织文章' : '灵活组织文章结构'}
+9. 结尾要有互动引导（问问题/评论区见）+ CTA（有问题找我/可以问我）
+10. 【关键】严格保留用户选题中的所有关键信息，包括年份、人数、金额等数字，绝对不能擅自更改
+11. 【合规红线】绝对不能使用上述任何禁用词，必须使用安全替代方案
+12. 【合规】不能留联系方式、不能贬低其他公司、不能承诺具体收益、不能用绝对化用语
+13. 【推流优化】标题和正文前100字布局搜索关键词，用具体数字代替模糊描述
+14. 【深度要求】每个观点/坑点必须深入展开3-5句，包含是什么→为什么→怎么办，禁止一句话带过
 
 ## 输出格式
-请直接输出纯JSON，不要用markdown代码块包裹，不要加\`\`\`json或\`\`\`：
+请直接输出纯JSON，不要用markdown代码块包裹：
 {
   "title": "新标题（≤20字）",
   "content": "正文内容（${length === 'short' ? '1000字以内' : length === 'long' ? '1500-2200字' : '1000-1500字'}，含emoji和分段）",
@@ -454,9 +443,7 @@ ${complianceRules}
 
   const responseText = response.choices[0]?.message?.content || '';
 
-  // 解析JSON响应
   let jsonStr = responseText.trim();
-  // 去掉markdown代码块包裹
   while (jsonStr.startsWith('```')) {
     jsonStr = jsonStr.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').trim();
   }
@@ -474,7 +461,6 @@ ${complianceRules}
       usageTip: parsed.usageTip || ''
     };
   } catch (e) {
-    // 尝试从文本中提取JSON
     const braceStart = jsonStr.indexOf('{');
     const braceEnd = jsonStr.lastIndexOf('}');
     if (braceStart !== -1 && braceEnd !== -1 && braceEnd > braceStart) {
@@ -506,7 +492,6 @@ router.post('/', async (req, res, next) => {
       throw new AppError('AI 服务未配置，请联系管理员配置 DeepSeek API Key', 500);
     }
 
-    // 生成笔记内容
     const result = await createNoteContent(
       topic,
       style,
