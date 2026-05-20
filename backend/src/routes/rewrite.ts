@@ -1,4 +1,4 @@
-// 一键仿写路由
+// 一键仿写路由（骨架提取两步法版本）
 import { Router } from 'express';
 import { z } from 'zod';
 import * as cheerio from 'cheerio';
@@ -48,7 +48,6 @@ const RewriteSchema = z.object({
   title: z.string().optional(),
   content: z.string().optional(),
   style: z.enum(['xhs', 'wechat'], { errorMap: () => ({ message: '风格必须是 xhs 或 wechat' }) }),
-  // 跨领域仿写：目标保险选题方向
   targetTopic: z.string().optional(),
 });
 
@@ -84,17 +83,14 @@ async function fetchArticle(url: string): Promise<{ title: string; content: stri
 
   const $ = cheerio.load(html);
 
-  // 移除无用元素
   $('script, style, nav, footer, header, .ad, .ads, .advertisement, #comments, .share, .related').remove();
 
-  // 尝试多种选择器提取标题
   let title =
     $('h1').first().text().trim() ||
     $('meta[property="og:title"]').attr('content') ||
     $('title').text().trim() ||
     '';
 
-  // 尝试提取正文
   const contentSelectors = [
     'article',
     '.article-content',
@@ -103,9 +99,9 @@ async function fetchArticle(url: string): Promise<{ title: string; content: stri
     '#content',
     '.content',
     'main',
-    '.rich_media_content',  // 公众号
-    '#js_content',          // 公众号
-    '.note-content',        // 小红书
+    '.rich_media_content',
+    '#js_content',
+    '.note-content',
   ];
 
   let content = '';
@@ -117,12 +113,10 @@ async function fetchArticle(url: string): Promise<{ title: string; content: stri
     }
   }
 
-  // fallback：取 body 文本
   if (!content || content.length < 50) {
     content = $('body').text().replace(/\s+/g, ' ').trim();
   }
 
-  // 限制长度
   content = content.substring(0, 5000);
 
   if (!content || content.length < 30) {
@@ -144,7 +138,6 @@ router.post('/', async (req, res, next) => {
     let title = manualTitle || '';
     let content = manualContent || '';
 
-    // 如果提供了 URL，抓取内容
     if (url) {
       if (!content || content.length < 20) {
         const fetched = await fetchArticle(url);
@@ -157,7 +150,6 @@ router.post('/', async (req, res, next) => {
       throw new AppError('请提供文章链接或直接粘贴文章内容', 400);
     }
 
-    // AI 仿写
     const deepseek = new OpenAI({
       apiKey: process.env.DEEPSEEK_API_KEY || '',
       baseURL: 'https://api.deepseek.com',
@@ -172,15 +164,34 @@ router.post('/', async (req, res, next) => {
 
     const rewritePrompt = `你是一个深谙小红书流量密码的保险赛道内容创作者。
 
-## 任务：仿写改写
-请基于以下原文，创作一篇全新的${isXhs ? '小红书风格' : '公众号风格'}保险笔记。
-保留原文的爆款结构和核心观点，但内容必须完全重写。
+## 任务：两步仿写改写
+请严格按照两步执行：
+第一步：提取原文的句式骨架（保留结构，替换具体内容为占位符）
+第二步：基于骨架填入保险内容
 
 ## 原文
 标题：${title}
 内容：${content}
 ${crossDomainHint}
 ${complianceRules}
+
+## 第一步：骨架提取规则
+- 标题骨架：保留句式结构、情绪词、连接词，把具体产品名/数字/人群替换为[XX]
+  例：原文标题"截图为证，这位姐妹买保险的思路真是清晰"
+  → 骨架："[证据]，这位[身份]买保险的思路真是[评价]"
+- 正文骨架：逐句提取句式，替换具体内容为占位符
+  例：原文"她先给自己配了重疾险，年交3800"
+  → 骨架："她先给自己配了[险种]，年交[价格]"
+- 骨架示例：
+  1. 原文标题"年收入30万的宝妈，保险这么配省了2万" → 骨架："年收入[数字]的[人群]，保险这么配省了[数字]"
+  2. 原文标题"和理赔员聊完1小时，我把全家保险换了" → 骨架："和[权威人物]聊完[时长]，我把[范围]保险换了"
+  3. 原文正文"第一步：先把百万医疗买了，这个是底线" → 骨架："第一步：先把[险种]买了，这个是[定位]"
+
+## 第二步：骨架填充规则
+- 骨架结构不变，只替换占位符
+- 填入的内容必须是保险领域相关信息
+- 填入的内容要自然流畅，不像模板套出来的
+- 每个观点/坑点深入展开3-5句，不要一句话带过
 
 ## ${isXhs ? '小红书' : '公众号'}风格要求
 ${isXhs ? `- emoji点缀增加可读性
@@ -196,15 +207,22 @@ ${isXhs ? `- emoji点缀增加可读性
 2. 正文1000-1500字
 3. 3-5个热门标签
 4. 严格遵循合规红线，绝不使用禁用词
-5. 保留原文爆款结构和钩子，但内容100%重写
-6. 结尾互动引导+CTA
-7. 不能留联系方式、不能贬低其他公司、不能承诺收益
+5. 必须先提取骨架，再基于骨架生成仿写（不是自由发挥）
+6. 每个观点/坑点必须深入展开3-5句，包含是什么→为什么→怎么办
+7. 结尾互动引导+CTA
+8. 不能留联系方式、不能贬低其他公司、不能承诺收益
 
 ## 输出格式
 请直接输出纯JSON，不要用markdown代码块：
 {
   "style": "${style}",
   "targetTopic": ${targetTopic ? `"${targetTopic}"` : 'null'},
+  "skeleton": {
+    "title": "标题骨架（含占位符）",
+    "titlePlaceholders": ["占位符1说明", "占位符2说明"],
+    "content": ["正文骨架句1", "正文骨架句2", "正文骨架句3"],
+    "contentPlaceholders": ["占位符1说明", "占位符2说明", "占位符3说明"]
+  },
   "originalAnalysis": {
     "topic": "原文选题",
     "coreIdea": "核心观点",
