@@ -20,8 +20,13 @@ COPY backend/package*.json ./backend/
 WORKDIR /app/backend
 RUN npm cache clean --force && npm install
 
-# Force full rebuild - bust all COPY cache - 2026-05-20-v14
+# NUCLEAR CACHE BUST - changes every commit to force fresh COPY
+ARG CACHEBUST=20260520v14
+RUN echo "Cache bust: $CACHEBUST"
+
+# Verify titleOptimizer.ts line count before proceeding
 COPY backend/ .
+RUN echo "=== titleOptimizer.ts line count ===" && wc -l /app/backend/src/services/titleOptimizer.ts
 
 # 生成 Prisma Client
 RUN npx prisma generate
