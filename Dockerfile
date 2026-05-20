@@ -11,9 +11,6 @@ WORKDIR /app/frontend
 RUN npm ci
 
 COPY frontend/ .
-# Force rebuild marker - 2026-05-20-v12
-# Bust cache: tsconfig noImplicitAny fix
-# 设置 API 地址为空（后端 serve 前端时使用同源）
 ENV VITE_API_URL=""
 RUN npm run build
 
@@ -23,6 +20,7 @@ COPY backend/package*.json ./backend/
 WORKDIR /app/backend
 RUN npm cache clean --force && npm install
 
+# Force full rebuild - bust all COPY cache - 2026-05-20-v13
 COPY backend/ .
 
 # 生成 Prisma Client
