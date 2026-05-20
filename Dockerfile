@@ -21,7 +21,7 @@ WORKDIR /app/backend
 RUN npm cache clean --force && npm install
 
 # NUCLEAR CACHE BUST - changes every commit to force fresh COPY
-ARG CACHEBUST=20260520v14
+ARG CACHEBUST=20260520v15
 RUN echo "Cache bust: $CACHEBUST"
 
 # Verify titleOptimizer.ts line count before proceeding
