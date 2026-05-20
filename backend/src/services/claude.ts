@@ -1,4 +1,4 @@
-// DeepSeek AI 服务封装（替代 Claude）- 风格类型版本
+// DeepSeek AI 服务封装（替代 Claude）- 风格类型版本（8种风格 A-H）
 import OpenAI from 'openai';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
@@ -38,7 +38,7 @@ const tripleBacktick = '\x60\x60\x60';
 
 // ==================== 风格类型定义 ====================
 
-export type StyleType = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
+export type StyleType = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H';
 
 export interface StyleDefinition {
   id: StyleType;
@@ -93,6 +93,20 @@ export const STYLE_DEFINITIONS: Record<StyleType, StyleDefinition> = {
     coreLogic: '用情绪、真实故事、悬念抓住用户共情，打破陌生距离感',
     exampleTitles: ['我后悔了，保险真的不该买太早','28岁一场小病，让我彻底读懂了保险的意义','做保险5年，我见过最扎心的6个真实理赔故事','但凡你想退保，一定要先看完这篇再决定'],
     templates: ['我后悔了，[事件]','[年龄]，[事件]让我重新认识了[主题]','做[X]年[职业]，我见过最扎心的[N]个故事','但凡你想[做某事]，一定要先看完这篇']
+  },
+  G: {
+    id: 'G', name: '阴阳怪气/网感热梗', emoji: '😏', color: 'pink',
+    description: '反讽句式+安全热词，阴阳怪气靠结构不靠敏感词',
+    coreLogic: '用反讽句式+安全网感热词制造情绪冲击，靠结构出味道不靠敏感词硬顶',
+    exampleTitles: ['理赔被拒了，真·赢麻了','交了5年保费，只保了个寂寞','看了别人的理赔单，直接破防了','买了返还型重疾险，小丑竟是我自己🤡','之前觉得线上买保险不靠谱，现在真香'],
+    templates: ['[动作]了，真·[反义词]','[动作]了半天，只[惨淡结果]','看了[信息]，直接破防了','买了[产品]，小丑竟是我自己🤡','之前觉得[观点]，现在[反观点]，真香']
+  },
+  H: {
+    id: 'H', name: '短剧悬念', emoji: '🎬', color: 'indigo',
+    description: '标题是一集剧情浓缩，有起因→转折→悬念',
+    coreLogic: '用短剧式钩子制造剧情推进感，读者忍不住追后续',
+    exampleTitles: ['理赔被拒后，我靠这一条翻盘了','那个说包赔的代理人，其实是个话术机器','退保后第3天，保险公司打来电话让我愣住了','被劝退的那款重疾险，反而是最值得买的','已经下架的这款保险，竟然还能买到'],
+    templates: ['[惨事]后，我靠[翻盘点]翻盘了','那个[人设]，其实是个[真相]','退保后第[X]天，[意外转折]','被[动作]的那款[产品]，反而是[反转]','已经下架的[产品]，竟然[意外结果]']
   }
 };
 
@@ -194,7 +208,7 @@ function parseAIResponse(responseText: string): z.infer<typeof TitleOutputSchema
   }
 
   try {
-    const titleRegex = /"title"\s*:\s*"([^"]+)"\s*,\s*"type"\s*:\s*"([^"]+)"\s*,\s*"score"\s*:\s*(\d+)\s*,\s*"explanation"\s*:\s*"(.+?)"\s*,\s*"hashtags"\s*:\s*\[[^\]]*\]\s*,\s*"selfCriticism"\s*:\s*"(.+?)"\s*}/g;
+    const titleRegex = /"title"\s*:\s*"([^"]+)"\s*,\s*"type"\s*:\s*"([^"]+)"\s*,\s*"score"\s*:\s*(\d+)\s*,\s*"explanation"\s*:\s*"(.+?)"\s*,\s*"hashtags"\s*:\s*\[[^\]]*\]\s*,\s*"selfCriticism"\s*:\s*"(.+?)"/g;
     const extractedTitles: Array<{title: string; type: string; score: number; explanation: string; hashtags: string[]; selfCriticism: string; targetAudience?: string; styleType?: string}> = [];
     let match;
     while ((match = titleRegex.exec(cleanText)) !== null) {
@@ -217,9 +231,6 @@ function parseAIResponse(responseText: string): z.infer<typeof TitleOutputSchema
 
 // ==================== 核心生成函数 ====================
 
-/**
- * 按风格类型生成标题（新接口）
- */
 export async function generateTitlesByStyle(
   keywords: string[],
   styleTypes: StyleType | StyleType[],
@@ -263,6 +274,16 @@ ${viralExamples ? '\n' + viralExamples : ''}
 5. 禁止医疗功效类词汇
 6. 风格要多样化，不要全是同一句式
 7. 必须覆盖至少3种精准人群标签
+${styleType === 'G' ? `\n## 类型G专属规则
+- 阴阳怪气靠句式结构出味道，不靠敏感词硬顶
+- 安全热词：破防、蚌埠住了、真香、芭比Q、emo、栓Q、赢麻了（自嘲）、绝绝子、小丑竟是我自己、无语子
+- 🔴禁用：智商税、割韭菜（高频限流词）
+- 🟡慎用：大冤种、离谱、摆烂/躺平、背刺` : ''}
+${styleType === 'H' ? `\n## 类型H专属规则
+- 标题必须有"起因→转折→悬念"的剧情走向
+- 不是纯吐槽/抱怨，而是有剧情推进感
+- 读者看到标题就像看到短剧的钩子，忍不住点进去追后续
+- 禁止2023老套句式："那一刻我才明白""一纸拒赔书我崩溃了"` : ''}
 
 生成8个标题，每个标题标注字数。
 
@@ -291,9 +312,6 @@ ${viralExamples ? '\n' + viralExamples : ''}
   return { titles: allTitles.slice(0, count) };
 }
 
-/**
- * 生成跨赛道借鉴标题
- */
 export async function generateCrossDomainTitles(
   keywords: string[],
   crossDomainType: string
@@ -318,9 +336,6 @@ ${viralExamples ? '\n' + viralExamples : ''}
   return parseAIResponse(responseText);
 }
 
-/**
- * 原有接口：生成标题
- */
 export async function generateTitles(keywords: string[], context?: string): Promise<z.infer<typeof TitleOutputSchema>> {
   let background = '';
   if (context) {
@@ -412,7 +427,7 @@ export async function generateTitles(keywords: string[], context?: string): Prom
   return parseAIResponse(responseText);
 }
 
-// ==================== 案例分析（保持原有功能） ====================
+// ==================== 案例分析 ====================
 
 const CaseAnalysisSchema = z.object({
   viralScore: z.number().min(0).max(100),
@@ -465,7 +480,7 @@ export async function analyzeViralCase(
   }
 }
 
-// ==================== 情报摘要（兼容旧接口） ====================
+// ==================== 情报摘要 ====================
 
 export async function summarizeIntelligence(title: string, content?: string): Promise<string> {
   const prompt = `请为以下保险情报生成简洁的中文摘要（100字以内）：
