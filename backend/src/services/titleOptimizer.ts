@@ -401,7 +401,8 @@ export async function generateDynamicPrompt(context?: {
 ## 输出格式（生成8个标题，必须覆盖至少4种钩子类型）
 [字数|类型+触发器] 标题内容 | 评分 | 1句话说明流量触发点
 
-评分：8分以上需真正有创意，大部分4-6分，严禁滥给高分。`;/**
+评分：8分以上需真正有创意，大部分4-6分，严禁滥给高分。`;
+/**
  * AI标题优化（使用 DeepSeek / OpenAI）
  */
 export async function optimizeTitle(
